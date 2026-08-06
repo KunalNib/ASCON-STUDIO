@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ASCON Cryptography Simulator & Analytics Studio
 
-## Getting Started
+![System Architecture](https://via.placeholder.com/1200x400/111/4444ff?text=ASCON+Cryptography+Studio)
 
-First, run the development server:
+The **ASCON Cryptography Simulator** is an advanced, cinematic educational framework designed to demystify **ASCON**—the NIST standard for lightweight cryptography in constrained IoT environments. It bridges complex discrete mathematics, low-level bitslicing, and algorithmic performance metrics with a highly interactive, Vercel-tier user experience. 
 
+Built as a definitive Final Year Project, this platform allows students and security researchers to inspect internal state permutations in real-time, guided by a localized, context-aware LLM Agent.
+
+---
+
+## 🏛️ System Architecture
+
+The application is deployed using a decoupled, event-driven architecture relying on a high-concurrency Python backend and an animated Next.js frontend.
+
+### 1. Frontend Client (Next.js)
+- **Framework**: Built on **Next.js 16** (App Router) maximizing React 19 concurrent features. 
+- **State Management**: **Zustand** is utilized for deeply nested store persistence, maintaining the ASCON state matrix (`nonce`, `key`, `associated_data`), the micro-step synchronization index, and JWT Auth sessions across renders.
+- **Cinematic Rendering**: **Framer Motion** powers smooth physics-based UI transitions. Layout changes, step-scrubbing in the Avalanche matrix, and the custom RoboExplainer typewriter mascot rely on heavily optimized GPU bounds.
+- **Styling**: Tailored with modular **Tailwind CSS v4** utilizing deep, glassmorphic UI tokens.
+
+### 2. Live API & RAG Engine (FastAPI)
+- **Communication Protocol**: Dual-lane API logic. Traditional REST routes handle Authentication (`/login`, `/register`) using **PyMongo/MongoDB**, while **WebSockets** maintain a persistent zero-latency duplex connection for the AI Copilot.
+- **Context-Aware RAG Engine**: The AI-Tutor runs entirely locally. It parses user questions and pushes queries to a locally hosted **Ollama (Mistral)** instance via **LangChain**.
+- **Algorithmic UI Control**: The LLM acts as the UI's director. Via semantic parsing matrices, the backend evaluates the cryptographic context of user questions (e.g., "explain permutation bounds") and ejects JSON-based triggers (`actions: { highlight: 'permutation-view', open_side_panel: true }`) back into the WebSocket stream, actively shifting the Next.js visualizer states autonomously.
+
+---
+
+## ✨ Core Analytical Modules
+
+### 🔗 The Context-Aware AI Copilot 
+The AI Tutor panel isn't just a chatbot—it physically drives the environment. Powered by Ollama, it answers strict cryptographic queries and automatically loads the requisite Visualizer Panels (S-Box models, State Array matrices) to aid its explanation. 
+
+### 🧮 320-Bit Internal State Matrix Explorer
+Watch ASCON's Sponge construction run live. The $5 \times 64$-bit ($x_0$ to $x_4$) matrix is meticulously detailed into 8-bit bytes. Users can inspect distinct hex thresholds, trace logic flows, and perform simulated bit-flipping Avalanche attacks directly on the UI grid to visualize how non-linearity propagates via the `p^12` permutation.
+
+### 🤖 Robo-Explainer Learning Modules
+An interactive, gamified learning path targeting IoT security problems. Context is not simply dumped on the screen; it is typed out live by an animated floating mascot (`ASCON Bot`), minimizing cognitive overload while ensuring deeper engagement.
+
+### 🔌 Embedded Hardware Target Dashboard (IoT)
+Simulates a live ESP32-C3 implementation to validate NIST's standardization reasoning. Features live UART ciphertext intercepts and animated metrics charting ASCON's ultra-low RAM/ROM footprint and live power draw against traditional AES-256-GCM configurations.
+
+---
+
+## ⚙️ Local Development Setup
+
+To run this platform locally, spin up both the FastAPI backend server and the Next.js frontend portal.
+
+### Prerequisites
+- Node.js (v18+)
+- Python 3.10+
+- A running MongoDB Database
+- **Ollama**: Installed locally with the Mistral model initialized (`ollama pull mistral`)
+
+### 1. Initialize Backend Core
+The Python environment handles the API routes and local LangChain intelligence.
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cd backend
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Execute the ASGI Server
+python main.py
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Initialize Frontend Portal
+```bash
+npm install
+npm run dev
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Visit `http://localhost:3000` to dive into the dashboard.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

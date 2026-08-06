@@ -1,0 +1,1 @@
+"use client"; export default function Page() { return <div className="p-8 text-zinc-400 max-w-7xl mx-auto"><h2 className="text-3xl font-bold text-white mb-2 capitalize">reports</h2><p>This module is under construction.</p></div>; }
