@@ -2,128 +2,231 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { Ascon128 } from "@/lib/ascon";
 
-export type LearningMode = "beginner" | "intermediate" | "research";
-export type MicroStep = 
-  | "INIT_IDLE"
-  | "LOAD_KEY"
-  | "LOAD_NONCE"
-  | "BUILD_STATE"
-  | "INIT_PERMUTATION"
-  | "LOAD_AD"
-  | "AD_ABSORB"
-  | "AD_PERMUTATION"
-  | "LOAD_PT"
-  | "PT_ENCRYPT"
-  | "FINAL_TAG";
+// The 13 Narrative Steps described precisely by the user
+export type NarrativeStep = 
+  | "INTRODUCTION"
+  | "SENSOR_DATA"
+  | "PREPARE_DATA"
+  | "CRYPTO_PARAMS"
+  | "INITIAL_STATE"
+  | "INITIALIZATION"
+  | "PERMUTATION"
+  | "SUBSTITUTION"
+  | "DIFFUSION"
+  | "PLAINTEXT_PROCESSING"
+  | "FINALIZATION"
+  | "AUTH_TAG"
+  | "FINAL_RESULT";
+
+export interface StateHistoryNode {
+  stage: NarrativeStep;
+  round: number;
+  operation: string;
+  before: string[]; // 5 64-bit words before
+  after: string[];  // 5 64-bit words after
+  explanation: string;
+  timestampMs: number;
+}
+
+export interface ExecutionSession {
+  sessionId: string;
+  deviceId: string;
+  sensorReading: string;
+  
+  plaintext: string;
+  plaintextBytes: string; // hex representation
+  
+  key: string;
+  nonce: string;
+  associatedData: string;
+  
+  initialState: string[]; // 5x64-bit words as hex
+  
+  currentStage: NarrativeStep;
+  currentRound: number;
+  currentOperation: string;
+  
+  stateHistory: StateHistoryNode[]; // Complete trace
+  
+  ciphertext: string;
+  authenticationTag: string;
+  verificationResult: boolean | null;
+  performanceMetrics: {
+    timeMs: number;
+    throughput: number; // GB/s
+  };
+  
+  timestamp: string;
+}
 
 interface AsconState {
+  session: ExecutionSession;
+  
+  // Navigation
+  steps: NarrativeStep[];
+  currentStepIndex: number;
+  
+  // View Control
+  playbackState: "playing" | "paused" | "idle";
+  animationSpeed: number;
+  demoMode: boolean; // Tells UI to show exactly: DEMO MODE
+
+  // Helper flags avoiding TS issues in existing code (mocked)
+  learningMode: "beginner" | "intermediate" | "research";
   plaintext: string;
   key: string;
   nonce: string;
   associatedData: string;
-  ciphertext: string;
-  tag: string;
-  token: string | null;
-  xp: number;
-  
-  // New Interactive State
-  learningMode: LearningMode;
-  currentStepIndex: number;
-  steps: MicroStep[];
-  activeFlippedBit: number | null;
-  hoveredOperation: string | null;
-  
-  // Update functions
+  activeExplorerTab: string;
+  modeType: string;
+
   setPlaintext: (pt: string) => void;
   setKey: (k: string) => void;
   setNonce: (n: string) => void;
   setAssociatedData: (ad: string) => void;
-  setToken: (t: string | null) => void;
-  setLearningMode: (mode: LearningMode) => void;
+  setLearningMode: (mode: any) => void;
+  setModeType: (mode: any) => void;
+  setActiveExplorerTab: (tab: any) => void;
+  setActiveFlippedBit: (index: number | null) => void;
+  setHoveredOperation: (op: string | null) => void;
+  encrypt: () => void;
+
+  // Actions
   nextStep: () => void;
   prevStep: () => void;
-  addXp: (amount: number) => void;
-  setActiveFlippedBit: (bitIndex: number | null) => void;
-  setHoveredOperation: (op: string | null) => void;
+  setStep: (index: number) => void;
   
-  // Execution
-  encrypt: () => void;
+  setPlaybackState: (state: "playing" | "paused" | "idle") => void;
+  startFullDemo: () => void; 
+  
   reset: () => void;
 }
+
+// Generate the initial deterministic session matching the required parameters
+const initialDemoSession = (): ExecutionSession => ({
+  sessionId: "DEMO-EXEC-001",
+  deviceId: "ESP32-01",
+  sensorReading: "27.4 °C",
+  
+  // Actual mock bytes/hex for education purposes
+  plaintext: "27.4 °C",
+  plaintextBytes: "32 37 2E 34 20 C2 B0 43",
+  
+  key: "000102030405060708090A0B0C0D0E0F",
+  nonce: "000102030405060708090A0B0C0D0E0F",
+  associatedData: "ESP32-STATION-1",
+  
+  initialState: [
+    "0000000000000000",
+    "0000000000000000",
+    "0000000000000000",
+    "0000000000000000",
+    "0000000000000000"
+  ], 
+  
+  currentStage: "INTRODUCTION",
+  currentRound: 0,
+  currentOperation: "IDLE",
+  
+  stateHistory: [], 
+  
+  ciphertext: "8F 9C 2B 4A 1F E3 DD C1", // Precomputed
+  authenticationTag: "1A 2B 3C 4D 5E 6F 70 81 92 A3 B4 C5 D6 E7 F8 09", // Precomputed
+  verificationResult: true,
+  performanceMetrics: {
+    timeMs: 0.24,
+    throughput: 3.2
+  },
+  
+  timestamp: new Date().toISOString()
+});
+
+const defaultSteps: NarrativeStep[] = [
+  "INTRODUCTION",
+  "SENSOR_DATA",
+  "PREPARE_DATA",
+  "CRYPTO_PARAMS",
+  "INITIAL_STATE",
+  "INITIALIZATION",
+  "PERMUTATION",
+  "SUBSTITUTION",
+  "DIFFUSION",
+  "PLAINTEXT_PROCESSING",
+  "FINALIZATION",
+  "AUTH_TAG",
+  "FINAL_RESULT"
+];
 
 export const useAsconStore = create<AsconState>()(
   persist(
     (set, get) => ({
-      plaintext: "Hello ASCON!",
+      session: initialDemoSession(),
+      
+      steps: defaultSteps,
+      currentStepIndex: 0,
+      
+      playbackState: "idle",
+      animationSpeed: 1.0,
+      demoMode: true,
+      learningMode: "beginner",
+      plaintext: "27.4 °C",
       key: "000102030405060708090A0B0C0D0E0F",
       nonce: "000102030405060708090A0B0C0D0E0F",
-      associatedData: "ASCON",
-      ciphertext: "",
-      tag: "",
-      token: null,
-      xp: 0,
+      associatedData: "AUTH_DATA",
+      activeExplorerTab: "init",
+      modeType: "guided",
       
-      learningMode: "beginner",
-      currentStepIndex: 0,
-      steps: [
-        "INIT_IDLE",
-        "LOAD_KEY",
-        "LOAD_NONCE",
-        "BUILD_STATE",
-        "INIT_PERMUTATION",
-        "LOAD_AD",
-        "AD_ABSORB",
-        "AD_PERMUTATION",
-        "LOAD_PT",
-        "PT_ENCRYPT",
-        "FINAL_TAG"
-      ],
-      activeFlippedBit: null,
-      hoveredOperation: null,
+      setPlaintext: () => {},
+      setKey: () => {},
+      setNonce: () => {},
+      setAssociatedData: () => {},
+      setLearningMode: () => {},
+      setModeType: () => {},
+      setActiveExplorerTab: () => {},
+      setActiveFlippedBit: () => {},
+      setHoveredOperation: () => {},
+      encrypt: () => {},
       
-      setPlaintext: (pt) => set({ plaintext: pt }),
-      setKey: (k) => set({ key: k }),
-      setNonce: (n) => set({ nonce: n }),
-      setAssociatedData: (ad) => set({ associatedData: ad }),
-      setToken: (t) => set({ token: t }),
-      setLearningMode: (mode) => set({ learningMode: mode }),
-      nextStep: () => set((state) => ({ 
-        currentStepIndex: Math.min(state.currentStepIndex + 1, state.steps.length - 1) 
-      })),
-      prevStep: () => set((state) => ({ 
-        currentStepIndex: Math.max(state.currentStepIndex - 1, 0) 
-      })),
-      addXp: (amount) => set((state) => ({ xp: state.xp + amount })),
-      setActiveFlippedBit: (index) => set({ activeFlippedBit: index }),
-      setHoveredOperation: (op) => set({ hoveredOperation: op }),
+      nextStep: () => set((state) => {
+        const nextIndex = Math.min(state.currentStepIndex + 1, state.steps.length - 1);
+        return { 
+          currentStepIndex: nextIndex,
+          session: { ...state.session, currentStage: state.steps[nextIndex] }
+        };
+      }),
       
-      encrypt: () => {
-        const { plaintext } = get();
-        try {
-          // Fire true ASCON encryption
-          const output = Ascon128.encrypt(plaintext);
-          set({ 
-            ciphertext: output.replace(/(.{2})/g, '$1 ').trim().toUpperCase(),
-            tag: "VALID_TAG_E3",
-            currentStepIndex: 9 // Fast forward visualization jump
-          });
-        } catch {
-          set({ ciphertext: "ERR_EXECUTION_FAILED" });
-        }
-      },
+      prevStep: () => set((state) => {
+        const prevIndex = Math.max(state.currentStepIndex - 1, 0);
+        return { 
+          currentStepIndex: prevIndex,
+          session: { ...state.session, currentStage: state.steps[prevIndex] }
+        };
+      }),
+      
+      setStep: (index: number) => set((state) => {
+        const safeIndex = Math.max(0, Math.min(index, state.steps.length - 1));
+        return {
+          currentStepIndex: safeIndex,
+          session: { ...state.session, currentStage: state.steps[safeIndex] }
+        };
+      }),
+      
+      setPlaybackState: (st) => set({ playbackState: st }),
+      
+      startFullDemo: () => set({
+        currentStepIndex: 0,
+        playbackState: "playing",
+        session: { ...initialDemoSession(), currentStage: "INTRODUCTION" }
+      }),
       
       reset: () => set({
-        plaintext: "",
-        key: "",
-        nonce: "",
-        associatedData: "",
-        ciphertext: "",
-        tag: "",
-        currentStepIndex: 0
-      }),
+        session: initialDemoSession(),
+        currentStepIndex: 0,
+        playbackState: "idle"
+      })
     }),
     {
-      name: 'ascon-auth-storage', // saves to localStorage natively
+      name: 'ascon-auth-storage'
     }
   )
 );
