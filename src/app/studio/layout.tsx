@@ -3,6 +3,7 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { GuidedTour } from "@/components/ui/GuidedTour";
+import { SidebarProvider } from "@/components/layout/SidebarContext";
 import React, { useLayoutEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAsconStore } from "@/store/useAsconStore";
@@ -30,15 +31,17 @@ export default function StudioLayout({ children }: { children: React.ReactNode }
   }
 
   return (
-    <div className="flex h-screen w-full bg-black text-zinc-100 overflow-hidden font-sans">
-      <GuidedTour />
-      <Sidebar />
-      <div className="flex flex-col flex-1 min-w-0">
-        <Topbar />
-        <main className="flex-1 overflow-y-auto w-full relative">
-          {children}
-        </main>
+    <SidebarProvider>
+      <div className="flex h-screen w-full bg-black text-zinc-100 overflow-hidden font-sans">
+        <GuidedTour />
+        <Sidebar />
+        <div className="flex flex-col flex-1 min-w-0">
+          <Topbar />
+          <main className="flex-1 overflow-y-auto w-full relative">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 }

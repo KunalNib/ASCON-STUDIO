@@ -1,130 +1,209 @@
-import { useState } from "react";
+"use client";
+
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAsconStore } from "@/store/useAsconStore";
-import { Fingerprint, ArrowRight, ShieldCheck, Database, Layers } from "lucide-react";
+import { Fingerprint, ArrowDown, ArrowRight } from "lucide-react";
+import { DEMO_ASSOC_DATA } from "@/lib/asconDemoData";
+
+// Split AD into 8-byte blocks for demo
+const AD_BLOCKS = ["ESP32-ST", "ATION-1\x80"]; // padded
+const BLOCK_COLORS = ["bg-emerald-900/20 border-emerald-500/30 text-emerald-100", "bg-zinc-900 border-zinc-700 text-zinc-400"];
 
 export function AssociatedDataFlow() {
-  const { associatedData } = useAsconStore();
-  const [showDifference, setShowDifference] = useState(false);
+  const [showAlt, setShowAlt] = useState(false);
+  const [step, setStep] = useState(0);
 
-  // Group AD into 64-bit blocks
-  const mockBlocks = associatedData.length > 0 
-      ? [associatedData, "PADDING"] 
-      : ["EMTPY_AD", "PADDING"];
+  useEffect(() => {
+    setStep(0);
+    const t1 = setTimeout(() => setStep(1), 400);
+    const t2 = setTimeout(() => setStep(2), 1000);
+    const t3 = setTimeout(() => setStep(3), 1800);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [showAlt]);
+
+  const AD_BYTES = DEMO_ASSOC_DATA.split("").map(c => c.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0"));
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center space-y-8 max-w-5xl mx-auto p-4">
-      
-      <div className="text-center space-y-2 mb-4">
-         <h2 className="text-3xl font-bold flex items-center justify-center gap-3 text-white">
-           <Fingerprint className="w-8 h-8 text-emerald-500" />
-           Associated Data (AD) Absorption
-         </h2>
-         <p className="text-zinc-400 max-w-2xl mx-auto">
-           AD is information that must be authenticated but travels in plaintext (like packet headers or IP addresses). It modifies the internal state to change the final MAC tag, guaranteeing it cannot be tampered with.
-         </p>
+    <div className="w-full h-full flex flex-col items-center p-4 md:p-8 max-w-4xl mx-auto gap-6 overflow-y-auto custom-scrollbar">
+
+      <div className="text-center shrink-0">
+        <h2 className="text-2xl font-bold flex items-center justify-center gap-3 text-white mb-2">
+          <Fingerprint className="w-6 h-6 text-emerald-500" />
+          Associated Data Authentication
+        </h2>
+        <p className="text-zinc-400 max-w-xl text-sm leading-relaxed">
+          AD (like packet headers or device IDs) is publicly known but must be <em>cryptographically bound</em> to the
+          ciphertext. ASCON absorbs it into the state before encryption — tampering with AD
+          completely invalidates the authentication tag.
+        </p>
       </div>
 
-      <div className="flex gap-4 mb-4">
-         <button 
-           onClick={() => setShowDifference(false)}
-           className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${!showDifference ? 'bg-emerald-600 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'bg-white/5 text-zinc-500'}`}
-         >
-           With Associated Data
-         </button>
-         <button 
-           onClick={() => setShowDifference(true)}
-           className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${showDifference ? 'bg-rose-600 text-white shadow-[0_0_15px_rgba(225,29,72,0.3)]' : 'bg-white/5 text-zinc-500'}`}
-         >
-           Without AD
-         </button>
+      {/* Toggle */}
+      <div className="flex gap-2 bg-black/60 border border-white/10 p-1.5 rounded-2xl shrink-0">
+        <button
+          onClick={() => setShowAlt(false)}
+          className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${!showAlt ? "bg-emerald-600 text-white shadow-[0_0_15px_rgba(16,185,129,0.4)]" : "text-zinc-500 hover:text-zinc-300"}`}
+        >
+          With Associated Data
+        </button>
+        <button
+          onClick={() => setShowAlt(true)}
+          className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${showAlt ? "bg-rose-600 text-white shadow-[0_0_15px_rgba(244,63,94,0.4)]" : "text-zinc-500 hover:text-zinc-300"}`}
+        >
+          Without AD (Empty)
+        </button>
       </div>
 
-      <div className="flex-1 w-full bg-black border border-white/5 rounded-2xl flex relative overflow-hidden items-center justify-center p-8">
-        
-        <AnimatePresence mode="wait">
-          {!showDifference ? (
-            <motion.div key="with-ad" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="flex w-full items-start justify-center gap-12">
-               
-               {/* AD Pipeline */}
-               <div className="flex flex-col items-center gap-4">
-                  <div className="text-emerald-500 font-bold uppercase tracking-widest text-xs mb-2">Input Blocks (Rate / 8 bytes)</div>
-                  
-                  {mockBlocks.map((block, idx) => (
-                    <motion.div 
-                      key={idx}
-                      initial={{ x: -20, opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      transition={{ delay: idx * 0.2 }}
-                      className="bg-emerald-900/20 border border-emerald-500/30 text-emerald-100 p-4 rounded-xl flex flex-col items-center min-w-[150px]"
-                    >
-                       <Fingerprint className="w-5 h-5 mb-2 text-emerald-400" />
-                       <span className="font-mono text-sm">{block}</span>
-                    </motion.div>
-                  ))}
-               </div>
-
-               <div className="flex flex-col items-center justify-center pt-16 text-zinc-600 font-bold gap-8">
-                  <div className="flex flex-col items-center">
-                    <span className="text-xs mb-1">XOR</span>
-                    <ArrowRight className="w-6 h-6 text-blue-500" />
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <span className="text-xs mb-1">XOR</span>
-                    <ArrowRight className="w-6 h-6 text-blue-500" />
-                  </div>
-               </div>
-
-               {/* State Pipeline */}
-               <div className="flex flex-col items-center gap-6">
-                 <div className="text-blue-500 font-bold uppercase tracking-widest text-xs mb-2">320-bit internal state</div>
-                 
-                 <div className="bg-blue-900/10 border border-blue-500/30 p-4 rounded-xl w-64">
-                    <div className="flex justify-between items-center bg-blue-950/50 p-2 rounded mb-2 border border-blue-900">
-                      <span className="font-mono text-xs text-blue-400">x0: 0xE8F1...</span>
-                      <ShieldCheck className="w-4 h-4 text-emerald-500" />
+      <AnimatePresence mode="wait">
+        {!showAlt ? (
+          <motion.div
+            key="with-ad"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="flex flex-col items-center gap-5 w-full"
+          >
+            {/* Step 1: AD string */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: step >= 1 ? 1 : 0, x: step >= 1 ? 0 : -20 }}
+              className="flex flex-col items-center gap-3 w-full"
+            >
+              <div className="text-[10px] text-emerald-400 uppercase tracking-widest font-bold">
+                Associated Data String
+              </div>
+              <div className="flex gap-1.5 flex-wrap justify-center">
+                {AD_BYTES.map((b, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: -12 }}
+                    animate={{ opacity: step >= 1 ? 1 : 0, y: step >= 1 ? 0 : -12 }}
+                    transition={{ delay: i * 0.04 }}
+                    className="flex flex-col items-center gap-1"
+                  >
+                    <div className="text-xs text-zinc-600 font-mono">{DEMO_ASSOC_DATA[i] ?? "·"}</div>
+                    <div className="w-9 h-9 rounded-lg bg-emerald-900/30 border border-emerald-500/30 flex items-center justify-center font-mono text-emerald-200 text-xs font-bold">
+                      {b}
                     </div>
-                 </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
 
-                 {/* Permutation block */}
-                 <div className="flex flex-col items-center gap-1">
-                   <ArrowRight className="w-4 h-4 text-zinc-500 rotate-90" />
-                   <div className="bg-purple-900/20 border border-purple-500/30 text-purple-300 py-3 px-8 rounded-xl font-bold flex items-center gap-2">
-                     <Layers className="w-4 h-4" /> p^8 Permutation
-                   </div>
-                   <ArrowRight className="w-4 h-4 text-zinc-500 rotate-90" />
-                 </div>
-
-                 <div className="bg-blue-900/10 border border-blue-500/30 p-4 rounded-xl w-64">
-                    <div className="flex justify-between items-center bg-blue-950/50 p-2 rounded mb-2 border border-blue-900">
-                      <span className="font-mono text-xs text-blue-400">x0: 0x3B2C...</span>
-                      <ShieldCheck className="w-4 h-4 text-emerald-500" />
+            {/* Arrow + XOR action */}
+            <AnimatePresence>
+              {step >= 2 && (
+                <motion.div
+                  initial={{ opacity: 0, scaleY: 0 }}
+                  animate={{ opacity: 1, scaleY: 1 }}
+                  className="flex flex-col items-center gap-1"
+                >
+                  <motion.div
+                    animate={{ y: [0, 6, 0] }}
+                    transition={{ repeat: Infinity, duration: 1.2 }}
+                    className="text-emerald-500"
+                  >
+                    <ArrowDown className="w-5 h-5" />
+                  </motion.div>
+                  <div className="flex items-center gap-3 bg-emerald-900/20 border border-emerald-500/30 rounded-2xl px-5 py-2.5">
+                    <span className="text-emerald-400 text-xl font-bold">⊕</span>
+                    <div className="text-xs text-emerald-300 font-bold uppercase tracking-widest">
+                      XOR into State x0 (Rate)
                     </div>
-                 </div>
+                  </div>
+                  <motion.div
+                    animate={{ y: [0, 6, 0] }}
+                    transition={{ repeat: Infinity, duration: 1.2, delay: 0.3 }}
+                    className="text-emerald-500"
+                  >
+                    <ArrowDown className="w-5 h-5" />
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-               </div>
-               
-            </motion.div>
-          ) : (
-            <motion.div key="no-ad" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="flex flex-col items-center text-center">
-               <Database className="w-16 h-16 text-rose-500 mb-6 opacity-50" />
-               <h3 className="text-2xl font-bold text-white mb-4">Domain Separation</h3>
-               <p className="text-zinc-400 max-w-lg mb-8 leading-relaxed">
-                 If there is no Associated Data, ASCON simply appends a single <span className="font-mono bg-white/10 px-2 py-0.5 rounded text-rose-300">1</span> bit 
-                 (padding) to the state to domain-separate it from the upcoming plaintext phase, and completely skips the p^8 intermediate permutation layer to save CPU cycles!
-               </p>
-               <div className="bg-rose-900/20 border border-rose-500/30 p-6 rounded-2xl flex items-center gap-4 shadow-xl">
-                 <div className="font-mono text-zinc-400">STATE END OF INIT</div>
-                 <ArrowRight className="w-5 h-5 text-zinc-500" />
-                 <div className="bg-rose-950 font-mono text-rose-400 p-3 rounded">XOR 0x01 (Domain Separation)</div>
-                 <ArrowRight className="w-5 h-5 text-zinc-500" />
-                 <div className="font-mono text-emerald-400">READY FOR PLAINTEXT</div>
-               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            {/* Step 3: State update */}
+            <AnimatePresence>
+              {step >= 3 && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: "spring" }}
+                  className="flex flex-col items-center gap-4 w-full"
+                >
+                  <div className="grid grid-cols-5 gap-2 w-full max-w-lg">
+                    {["x0", "x1", "x2", "x3", "x4"].map((label, i) => (
+                      <motion.div
+                        key={label}
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.08, type: "spring" }}
+                        className={`flex flex-col items-center py-3 rounded-xl border text-xs font-bold text-center ${
+                          i === 0
+                            ? "bg-emerald-900/30 border-emerald-500/50 text-emerald-300 shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+                            : "bg-zinc-900/50 border-zinc-800 text-zinc-500"
+                        }`}
+                      >
+                        <span className="font-mono">{label}</span>
+                        {i === 0 && (
+                          <span className="text-[9px] text-emerald-500 mt-1">AD absorbed</span>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
 
-      </div>
+                  <div className="flex items-center gap-3 bg-purple-900/20 border border-purple-500/30 rounded-2xl px-5 py-2.5">
+                    <span className="text-purple-400 font-bold">→</span>
+                    <span className="text-xs text-purple-300 font-bold uppercase tracking-widest">p⁸ Permutation applied</span>
+                  </div>
+
+                  <p className="text-xs text-zinc-500 text-center max-w-md">
+                    The AD is now permanently entangled into the state. Any change to it — even 1 bit —
+                    will produce a completely different authentication tag at the end.
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+
+        ) : (
+          <motion.div
+            key="no-ad"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="flex flex-col items-center gap-6 w-full max-w-xl text-center"
+          >
+            <div className="text-5xl">∅</div>
+            <h3 className="text-xl font-bold text-white">No Associated Data</h3>
+            <p className="text-zinc-400 text-sm leading-relaxed">
+              When AD is empty, ASCON does NOT run the p⁸ intermediate permutation.
+              Instead, it sets a <span className="text-rose-400 font-bold">domain separation</span> bit
+              to signal "no AD" before moving to plaintext absorption.
+            </p>
+
+            <div className="w-full bg-black border border-white/10 rounded-2xl p-5 font-mono flex items-center gap-3 justify-center flex-wrap">
+              <div className="text-zinc-400 text-sm">STATE_END_OF_INIT</div>
+              <ArrowRight className="w-4 h-4 text-zinc-600" />
+              <motion.div
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ repeat: Infinity, duration: 1.5 }}
+                className="bg-rose-950/60 border border-rose-500/40 px-3 py-2 rounded-lg text-rose-300 text-sm font-bold"
+              >
+                x4 ⊕= 0x01
+              </motion.div>
+              <ArrowRight className="w-4 h-4 text-zinc-600" />
+              <div className="text-emerald-400 text-sm font-bold">PLAINTEXT_READY</div>
+            </div>
+
+            <p className="text-xs text-zinc-600">
+              This ensures the domain of the AD phase and plaintext phase are
+              always mathematically separate, even when AD is empty.
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -20,6 +20,8 @@ import {
   Trophy
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
+import { useSidebar } from "./SidebarContext";
 
 const NAV_ITEMS = [
   { group: "Studio", items: [
@@ -48,35 +50,71 @@ const NAV_ITEMS = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { collapsed } = useSidebar();
 
   return (
-    <aside className="w-64 border-r border-white/10 bg-black/50 backdrop-blur-xl hidden md:flex flex-col h-full shrink-0">
-      <div className="h-14 flex items-center px-4 border-b border-white/10 font-bold text-lg text-white">
-        ASCON <span className="text-blue-500 ml-1">Studio</span>
+    <motion.aside
+      animate={{ width: collapsed ? 56 : 256 }}
+      transition={{ duration: 0.25, ease: "easeInOut" }}
+      className="border-r border-white/10 bg-black/50 backdrop-blur-xl hidden md:flex flex-col h-full shrink-0 overflow-hidden"
+    >
+      {/* Logo / brand — shows full name or icon-only */}
+      <div className="h-14 flex items-center justify-center border-b border-white/10 font-bold text-lg text-white overflow-hidden shrink-0">
+        <motion.span
+          animate={{ opacity: collapsed ? 0 : 1, width: collapsed ? 0 : "auto" }}
+          transition={{ duration: 0.2 }}
+          className="whitespace-nowrap overflow-hidden"
+        >
+          ASCON <span className="text-blue-500">Studio</span>
+        </motion.span>
+        {collapsed && (
+          <motion.span
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1 }}
+            className="text-blue-500 font-black text-xl"
+          >
+            A
+          </motion.span>
+        )}
       </div>
 
+      {/* Nav Items */}
       <div className="flex-1 overflow-y-auto py-4 scrollbar-hide">
         {NAV_ITEMS.map((group, i) => (
-          <div key={i} className="mb-6 px-3">
-            <h4 className="px-2 mb-2 text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+          <div key={i} className="mb-4">
+            {/* Group label — only when expanded */}
+            <motion.h4
+              animate={{ opacity: collapsed ? 0 : 1, height: collapsed ? 0 : "auto" }}
+              transition={{ duration: 0.2 }}
+              className="px-5 mb-1 text-xs font-semibold text-zinc-500 uppercase tracking-wider overflow-hidden"
+            >
               {group.group}
-            </h4>
-            <div className="space-y-1">
+            </motion.h4>
+            <div className="space-y-0.5 px-2">
               {group.items.map((item) => {
                 const isActive = pathname === item.href;
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
+                    title={collapsed ? item.name : undefined}
                     className={cn(
-                      "flex items-center gap-3 rounded-lg px-2 py-2 text-sm font-medium transition-colors",
-                      isActive 
-                        ? "bg-blue-500/10 text-blue-400" 
+                      "flex items-center rounded-lg px-2 py-2 text-sm font-medium transition-colors",
+                      collapsed ? "justify-center gap-0" : "gap-3",
+                      isActive
+                        ? "bg-blue-500/10 text-blue-400"
                         : "text-zinc-400 hover:bg-white/5 hover:text-white"
                     )}
                   >
-                    <item.icon className={cn("w-4 h-4", isActive ? "text-blue-400" : "text-zinc-500")} />
-                    {item.name}
+                    <item.icon className={cn("w-4 h-4 shrink-0", isActive ? "text-blue-400" : "text-zinc-500")} />
+                    <motion.span
+                      animate={{ opacity: collapsed ? 0 : 1, width: collapsed ? 0 : "auto" }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden whitespace-nowrap"
+                    >
+                      {item.name}
+                    </motion.span>
                   </Link>
                 );
               })}
@@ -85,15 +123,26 @@ export function Sidebar() {
         ))}
       </div>
 
-      <div className="p-3 border-t border-white/10">
+      {/* Settings at bottom */}
+      <div className="p-2 border-t border-white/10 shrink-0">
         <Link
           href="/studio/settings"
-          className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm font-medium text-zinc-400 hover:bg-white/5 hover:text-white transition-colors"
+          title={collapsed ? "Settings" : undefined}
+          className={cn(
+            "flex items-center rounded-lg px-2 py-2 text-sm font-medium text-zinc-400 hover:bg-white/5 hover:text-white transition-colors",
+            collapsed ? "justify-center" : "gap-3"
+          )}
         >
-          <Settings className="w-4 h-4 text-zinc-500" />
-          Settings
+          <Settings className="w-4 h-4 text-zinc-500 shrink-0" />
+          <motion.span
+            animate={{ opacity: collapsed ? 0 : 1, width: collapsed ? 0 : "auto" }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden whitespace-nowrap"
+          >
+            Settings
+          </motion.span>
         </Link>
       </div>
-    </aside>
+    </motion.aside>
   );
 }

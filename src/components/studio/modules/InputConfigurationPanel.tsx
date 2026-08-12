@@ -1,133 +1,329 @@
+"use client";
+
 import { useAsconStore } from "@/store/useAsconStore";
 import { motion, AnimatePresence } from "framer-motion";
-import { Database, Binary, Key, Baseline, Wifi } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { Key, Hash, Fingerprint, ChevronRight, Binary, Wifi, WifiOff } from "lucide-react";
+
+type Scene = "text" | "bytes" | "params";
+
+// ─── Derive character breakdown from any live string ────────────────────────
+function buildCharItems(text: string) {
+  return Array.from(text).map((char) => {
+    const cp = char.codePointAt(0) ?? 0;
+    return {
+      char: char === " " ? "·" : char,
+      dec: cp,
+      hex: cp.toString(16).toUpperCase().padStart(2, "0"),
+      bin: cp.toString(2).padStart(8, "0").slice(0, 8), // show first 8 bits (1 byte)
+    };
+  });
+}
+
+// Build hex block string from plaintext
+function toHexBlocks(text: string): string {
+  const bytes = Array.from(text).map((c) =>
+    (c.codePointAt(0) ?? 0).toString(16).toUpperCase().padStart(2, "0")
+  );
+  const block1 = bytes.slice(0, 8).join(" ");
+  const block2 = bytes.slice(8, 16).join(" ") || "--";
+  return `${block1} | ${block2 !== "--" ? block2 : "80 00 00 00 00 00 00 00"}`;
+}
 
 export function InputConfigurationPanel() {
-  const { plaintext, setPlaintext, key, setKey, nonce, setNonce, associatedData, setAssociatedData } = useAsconStore();
-  const [activeTab, setActiveTab] = useState<"plaintext" | "key" | "nonce" | "ad">("plaintext");
+  const { session, plaintext } = useAsconStore();
 
-  // A quick helper to demo string to hex/binary translation mapping for visuals
-  const stringToDisplayMap = (str: string) => {
-    return str.split('').map((char, idx) => {
-      const code = char.charCodeAt(0);
-      return {
-        id: idx,
-        char,
-        hex: code.toString(16).padStart(2, '0').toUpperCase(),
-        bin: code.toString(2).padStart(8, '0')
-      };
-    });
-  };
+  // Live values from store — falls back to session values if plaintext state var is empty
+  const livePlaintext    = (plaintext || session?.plaintext || "27.4 °C").trim();
+  const liveKey          = session?.key          || "000102030405060708090A0B0C0D0E0F";
+  const liveNonce        = session?.nonce         || "000102030405060708090A0B0C0D0E0F";
+  const liveAssocData    = session?.associatedData || "ESP32-STATION-1";
+  const liveDevice       = session?.deviceId       || "ESP32-01";
 
-  const getActiveValue = () => {
-    switch (activeTab) {
-      case "plaintext": return plaintext;
-      case "key": return key;
-      case "nonce": return nonce;
-      case "ad": return associatedData;
-    }
-  };
-  
-  const activeMappedData = stringToDisplayMap(getActiveValue());
-  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  // Derived character items — recomputed whenever plaintext changes
+  const charItems = useMemo(() => buildCharItems(livePlaintext), [livePlaintext]);
+
+  const [scene, setScene] = useState<Scene>("text");
+  const [typedCount, setTypedCount] = useState(0);
+  const [visibleByteCount, setVisibleByteCount] = useState(0);
+
+  // Re-run typewriter whenever live plaintext changes (new ESP32 packet)
+  useEffect(() => {
+    if (scene !== "text") return;
+    setTypedCount(0);
+    const interval = setInterval(() => {
+      setTypedCount((c) => {
+        if (c >= charItems.length) { clearInterval(interval); return c; }
+        return c + 1;
+      });
+    }, 100);
+    return () => clearInterval(interval);
+  }, [scene, charItems]);
+
+  // Staggered byte reveal
+  useEffect(() => {
+    if (scene !== "bytes") return;
+    setVisibleByteCount(0);
+    const interval = setInterval(() => {
+      setVisibleByteCount((c) => {
+        if (c >= charItems.length) { clearInterval(interval); return c; }
+        return c + 1;
+      });
+    }, 130);
+    return () => clearInterval(interval);
+  }, [scene, charItems]);
+
+  const isLive = !!(plaintext && plaintext !== "27.4 °C");
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center space-y-8 max-w-4xl mx-auto p-4">
-      
-      {/* Top Config Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
-        <button onClick={() => setActiveTab("plaintext")} className={`p-4 rounded-2xl border text-left transition-all ${activeTab === 'plaintext' ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}>
-          <Baseline className="w-5 h-5 text-blue-400 mb-2" />
-          <div className="text-xs text-zinc-500 uppercase font-bold">Plaintext</div>
-          <div className="text-sm text-zinc-300 font-mono truncate">{plaintext || "Empty"}</div>
-        </button>
-        <button onClick={() => setActiveTab("key")} className={`p-4 rounded-2xl border text-left transition-all ${activeTab === 'key' ? 'border-amber-500 bg-amber-500/10' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}>
-          <Key className="w-5 h-5 text-amber-400 mb-2" />
-          <div className="text-xs text-zinc-500 uppercase font-bold">Secret Key</div>
-          <div className="text-sm text-zinc-300 font-mono truncate">{key || "Empty"}</div>
-        </button>
-        <button onClick={() => setActiveTab("nonce")} className={`p-4 rounded-2xl border text-left transition-all ${activeTab === 'nonce' ? 'border-rose-500 bg-rose-500/10' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}>
-          <Database className="w-5 h-5 text-rose-400 mb-2" />
-          <div className="text-xs text-zinc-500 uppercase font-bold">Nonce</div>
-          <div className="text-sm text-zinc-300 font-mono truncate">{nonce || "Empty"}</div>
-        </button>
-        <button onClick={() => setActiveTab("ad")} className={`p-4 rounded-2xl border text-left transition-all ${activeTab === 'ad' ? 'border-emerald-500 bg-emerald-500/10' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}>
-          <Baseline className="w-5 h-5 text-emerald-400 mb-2" />
-          <div className="text-xs text-zinc-500 uppercase font-bold">Assoc Data</div>
-          <div className="text-sm text-zinc-300 font-mono truncate">{associatedData || "Empty"}</div>
-        </button>
+    <div className="w-full h-full flex flex-col items-center justify-start p-4 md:p-6 max-w-4xl mx-auto gap-4 overflow-y-auto custom-scrollbar">
+
+      {/* Live source badge */}
+      <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-bold shrink-0 ${
+        isLive
+          ? "bg-emerald-950/40 border-emerald-500/40 text-emerald-400"
+          : "bg-zinc-900 border-zinc-700 text-zinc-500"
+      }`}>
+        {isLive
+          ? <><Wifi className="w-3 h-3" /> Live ESP32 data — {liveDevice}</>
+          : <><WifiOff className="w-3 h-3" /> Demo fallback — connect ESP32 for live data</>
+        }
       </div>
 
-      <div className="flex gap-4 w-full">
-         <button className="flex-1 py-3 items-center justify-center flex gap-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-blue-500 transition-colors text-sm font-semibold">
-           <Database className="w-4 h-4 text-blue-400" /> Use Sample Data
-         </button>
-         <button className="flex-1 py-3 items-center justify-center flex gap-2 rounded-xl bg-purple-500/10 border border-purple-500/30 hover:bg-purple-500/20 transition-colors text-sm font-semibold text-purple-300">
-           <Wifi className="w-4 h-4 animate-pulse" /> Live ESP32 Mode
-         </button>
+      {/* Scene Tabs */}
+      <div className="flex items-center gap-1.5 bg-black/60 border border-white/10 p-1.5 rounded-2xl w-full max-w-lg shrink-0">
+        {(["text", "bytes", "params"] as Scene[]).map((s) => {
+          const labels: Record<Scene, string> = {
+            text:   "① Raw Input",
+            bytes:  "② Byte Encoding",
+            params: "③ Crypto Params",
+          };
+          return (
+            <button
+              key={s}
+              onClick={() => setScene(s)}
+              className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
+                scene === s
+                  ? "bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]"
+                  : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              {labels[s]}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Main Cascade Visualization */}
-      <div className="flex-1 w-full flex flex-col items-center justify-center gap-6 relative">
-      
-         {/* Edit Field */}
-         <div className="w-full flex justify-center pb-8 border-b border-white/5 relative">
-            <input 
-               type="text" 
-               value={getActiveValue()} 
-               onChange={(e) => {
-                  const v = e.target.value;
-                  if (activeTab === "plaintext") setPlaintext(v);
-                  if (activeTab === "key") setKey(v);
-                  if (activeTab === "nonce") setNonce(v);
-                  if (activeTab === "ad") setAssociatedData(v);
-               }}
-               className="bg-transparent text-center text-4xl w-full max-w-xl text-white font-mono focus:outline-none border-b-2 border-transparent focus:border-blue-500 transition-colors"
-               placeholder="Enter data..."
-            />
-         </div>
+      <AnimatePresence mode="wait">
 
-         {/* Hex / Binary Transformation Map */}
-         <div className="w-full flex-1 flex flex-col gap-2 overflow-y-auto max-h-64 custom-scrollbar">
-            <AnimatePresence>
-               {activeMappedData.map((item) => (
-                  <motion.div 
-                     key={item.id}
-                     initial={{ opacity: 0, x: -20 }}
-                     animate={{ opacity: 1, x: 0 }}
-                     exit={{ opacity: 0 }}
-                     onHoverStart={() => setHoveredIdx(item.id)}
-                     onHoverEnd={() => setHoveredIdx(null)}
-                     className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${hoveredIdx === item.id ? 'bg-blue-500/10 border-blue-500/30' : 'bg-black border-white/5'}`}
-                  >
-                     <div className="text-xl font-bold font-mono w-16 text-center text-zinc-300">{item.char}</div>
-                     <motion.div animate={{ opacity: hoveredIdx === item.id ? 1 : 0.5 }} className="px-4 py-1 rounded bg-white/5 text-zinc-400 font-mono text-sm border border-white/10">0x{item.hex}</motion.div>
-                     <div className="flex-1 px-8 flex justify-end">
-                       <motion.div 
-                         className="flex gap-1"
-                       >
-                         {item.bin.split('').map((bit, bIdx) => (
-                            <motion.span 
-                               key={bIdx}
-                               animate={{ 
-                                 scale: hoveredIdx === item.id ? 1.1 : 1, 
-                                 color: hoveredIdx === item.id ? (bit === '1' ? '#3b82f6' : '#94a3b8') : '#52525b',
-                                 textShadow: hoveredIdx === item.id && bit === '1' ? '0 0 10px rgba(59,130,246,0.5)' : 'none'
-                               }}
-                               className="font-mono text-lg transition-colors"
-                            >
-                               {bit}
-                            </motion.span>
-                         ))}
-                       </motion.div>
-                     </div>
-                  </motion.div>
-               ))}
-            </AnimatePresence>
-         </div>
+        {/* ─── Scene 1: Text Input ─────────────────────────────────── */}
+        {scene === "text" && (
+          <motion.div
+            key="text"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="flex flex-col items-center w-full gap-6"
+          >
+            <div className="text-center">
+              <p className="text-zinc-500 text-xs uppercase tracking-widest font-bold mb-2">
+                Sensor reading arriving from {liveDevice}
+              </p>
+              <div className="flex items-center justify-center gap-1 min-h-[72px]">
+                <span className="text-5xl font-black text-white font-mono tracking-widest drop-shadow-[0_0_30px_rgba(255,255,255,0.15)]">
+                  {Array.from(livePlaintext).slice(0, typedCount).join("")}
+                </span>
+                <motion.span
+                  animate={{ opacity: [1, 0, 1] }}
+                  transition={{ repeat: Infinity, duration: 0.8 }}
+                  className={`text-5xl font-black text-blue-500 ${typedCount >= charItems.length ? "opacity-0" : ""}`}
+                >
+                  |
+                </motion.span>
+              </div>
+            </div>
 
-      </div>
+            {/* Character breakdown strip */}
+            <div className="flex gap-2 flex-wrap justify-center">
+              {charItems.map((c, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, scale: 0.5, y: 20 }}
+                  animate={i < typedCount ? { opacity: 1, scale: 1, y: 0 } : { opacity: 0, scale: 0.5, y: 20 }}
+                  transition={{ delay: 0.05 * i, type: "spring", stiffness: 300, damping: 20 }}
+                  className="flex flex-col items-center gap-1 bg-white/5 border border-white/10 rounded-2xl p-2.5 min-w-[48px]"
+                >
+                  <span className="text-xl font-black text-white font-mono">{c.char}</span>
+                  <span className="text-[10px] text-zinc-500 font-mono">#{c.dec}</span>
+                </motion.div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setScene("bytes")}
+              className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-full transition-all shadow-[0_0_15px_rgba(37,99,235,0.4)] hover:scale-105 active:scale-95 text-sm"
+            >
+              See byte encoding <ChevronRight className="w-4 h-4" />
+            </button>
+          </motion.div>
+        )}
+
+        {/* ─── Scene 2: Byte Encoding ──────────────────────────────── */}
+        {scene === "bytes" && (
+          <motion.div
+            key="bytes"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="flex flex-col items-center w-full gap-4"
+          >
+            <div className="text-center">
+              <p className="text-zinc-500 text-xs uppercase tracking-widest font-bold mb-1">
+                ASCII / UTF-8 Encoding — each character → 1 byte
+              </p>
+              <p className="text-zinc-600 text-xs max-w-md">
+                Cryptographic algorithms operate on <em>bytes</em>, not characters. Every character maps to a unique 8-bit pattern.
+              </p>
+            </div>
+
+            {/* Byte Grid */}
+            <div className="w-full space-y-1.5 overflow-y-auto max-h-[320px] custom-scrollbar pr-1">
+              {charItems.map((item, i) => (
+                <motion.div
+                  key={`${i}-${item.char}`}
+                  initial={{ opacity: 0, x: -30 }}
+                  animate={i < visibleByteCount ? { opacity: 1, x: 0 } : { opacity: 0, x: -30 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 22 }}
+                  className="flex items-center gap-2.5 px-3 py-2.5 bg-white/[0.03] border border-white/5 rounded-xl"
+                >
+                  {/* Char */}
+                  <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-300 font-black text-lg font-mono shrink-0">
+                    {item.char}
+                  </div>
+
+                  <ChevronRight className="w-3 h-3 text-zinc-700 shrink-0" />
+
+                  {/* Hex */}
+                  <div className="w-12 text-center px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 font-mono text-amber-300 font-bold text-xs shrink-0">
+                    0x{item.hex}
+                  </div>
+
+                  <ChevronRight className="w-3 h-3 text-zinc-700 shrink-0" />
+
+                  {/* Binary */}
+                  <div className="flex gap-0.5 flex-1">
+                    {item.bin.split("").map((bit, bIdx) => (
+                      <motion.span
+                        key={bIdx}
+                        initial={{ opacity: 0 }}
+                        animate={i < visibleByteCount ? { opacity: 1 } : { opacity: 0 }}
+                        transition={{ delay: bIdx * 0.04 }}
+                        className={`flex-1 h-6 flex items-center justify-center rounded text-xs font-mono font-bold ${
+                          bit === "1"
+                            ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                            : "bg-zinc-900 text-zinc-600 border border-zinc-800"
+                        }`}
+                      >
+                        {bit}
+                      </motion.span>
+                    ))}
+                  </div>
+
+                  {/* Dec */}
+                  <div className="text-[10px] text-zinc-600 font-mono shrink-0 w-7 text-right">
+                    {item.dec}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* 64-bit block assembly indicator */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: visibleByteCount >= charItems.length ? 1 : 0 }}
+              transition={{ delay: 0.3 }}
+              className="w-full bg-blue-950/30 border border-blue-500/20 rounded-2xl p-3 text-center"
+            >
+              <div className="text-[10px] text-blue-400 uppercase tracking-widest font-bold mb-1.5">
+                <Binary className="w-3 h-3 inline mr-1" /> Assembled into 64-bit Blocks
+              </div>
+              <div className="font-mono text-sm text-zinc-300 tracking-widest break-all">
+                {toHexBlocks(livePlaintext)}
+              </div>
+              <div className="text-[10px] text-zinc-600 mt-1">
+                Block 1 (8 bytes) | Block 2 {charItems.length > 8 ? "(continued)" : "(padded with 0x80...)"}
+              </div>
+            </motion.div>
+
+            <button
+              onClick={() => setScene("params")}
+              className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-full transition-all shadow-[0_0_15px_rgba(37,99,235,0.4)] hover:scale-105 active:scale-95 text-sm"
+            >
+              Load cryptographic params <ChevronRight className="w-4 h-4" />
+            </button>
+          </motion.div>
+        )}
+
+        {/* ─── Scene 3: Crypto Params ──────────────────────────────── */}
+        {scene === "params" && (
+          <motion.div
+            key="params"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="flex flex-col w-full gap-3"
+          >
+            <p className="text-zinc-500 text-xs uppercase tracking-widest font-bold text-center mb-1">
+              Three values required for ASCON-128 encryption
+            </p>
+
+            {/* Key */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 }}
+              className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20 relative overflow-hidden"
+            >
+              <div className="absolute right-3 top-3 opacity-10"><Key className="w-12 h-12 text-amber-400" /></div>
+              <div className="flex items-center gap-2 mb-1.5">
+                <Key className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-[10px] text-amber-400 uppercase tracking-widest font-bold">128-bit Secret Key</span>
+                <span className="ml-auto text-[10px] bg-red-900/40 text-red-400 px-2 py-0.5 rounded-full font-bold border border-red-500/20">NEVER share</span>
+              </div>
+              <div className="font-mono text-amber-200 tracking-[0.15em] text-sm break-all">{liveKey}</div>
+              <p className="text-[11px] text-zinc-500 mt-1.5">Secret shared between sender and receiver. Core of cipher security.</p>
+            </motion.div>
+
+            {/* Nonce */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.12 }}
+              className="p-4 rounded-2xl bg-rose-500/5 border border-rose-500/20 relative overflow-hidden"
+            >
+              <div className="absolute right-3 top-3 opacity-10"><Hash className="w-12 h-12 text-rose-400" /></div>
+              <div className="flex items-center gap-2 mb-1.5">
+                <Hash className="w-3.5 h-3.5 text-rose-400" />
+                <span className="text-[10px] text-rose-400 uppercase tracking-widest font-bold">128-bit Nonce (used once)</span>
+                <span className="ml-auto text-[10px] bg-rose-900/40 text-rose-400 px-2 py-0.5 rounded-full font-bold border border-rose-500/20">Never reuse!</span>
+              </div>
+              <div className="font-mono text-rose-200 tracking-[0.15em] text-sm break-all">{liveNonce}</div>
+              <p className="text-[11px] text-zinc-500 mt-1.5">Ensures each message is unique even with the same key.</p>
+            </motion.div>
+
+            {/* Associated Data */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}
+              className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 relative overflow-hidden"
+            >
+              <div className="absolute right-3 top-3 opacity-10"><Fingerprint className="w-12 h-12 text-emerald-400" /></div>
+              <div className="flex items-center gap-2 mb-1.5">
+                <Fingerprint className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="text-[10px] text-emerald-400 uppercase tracking-widest font-bold">Associated Data (AD)</span>
+                <span className="ml-auto text-[10px] bg-emerald-900/40 text-emerald-400 px-2 py-0.5 rounded-full font-bold border border-emerald-500/20">Public, Authenticated</span>
+              </div>
+              <div className="font-mono text-emerald-200 text-base">{liveAssocData}</div>
+              <p className="text-[11px] text-zinc-500 mt-1.5">Travels publicly but is cryptographically bound. Tampering breaks tag verification.</p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

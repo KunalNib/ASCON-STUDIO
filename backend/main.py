@@ -1,5 +1,7 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+import asyncio
+import serial
 import json
 from pymongo.database import Database
 from pydantic import BaseModel
@@ -74,8 +76,34 @@ class ConnectionManager:
 
     async def send_message(self, message: str, websocket: WebSocket):
         await websocket.send_text(message)
+        
+    async def broadcast(self, message: str):
+        for connection in self.active_connections:
+            try:
+                await connection.send_text(message)
+            except Exception:
+                pass
 
 manager = ConnectionManager()
+hardware_manager = ConnectionManager()
+
+class HardwareData(BaseModel):
+    power: float
+    log: str
+
+@app.post("/hardware/data")
+async def post_hardware_data(data: HardwareData):
+    await hardware_manager.broadcast(json.dumps({"power": data.power, "log": data.log}))
+    return {"status": "success"}
+
+@app.websocket("/ws/hardware")
+async def hardware_websocket_endpoint(websocket: WebSocket):
+    await hardware_manager.connect(websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        hardware_manager.disconnect(websocket)
 
 @app.websocket("/ws/ai-tutor")
 async def ai_tutor_endpoint(websocket: WebSocket):
@@ -98,6 +126,36 @@ async def ai_tutor_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
+def _read_serial_line(ser):
+    if ser.in_waiting > 0:
+        return ser.readline()
+    return None
+
+async def serial_reader_task():
+    try:
+        ser = serial.Serial("/dev/ttyUSB0", 115200, timeout=0.1)
+        print("Connected to USB Serial /dev/ttyUSB0")
+        while True:
+            line = await asyncio.to_thread(_read_serial_line, ser)
+            if line:
+                try:
+                    text = line.decode('utf-8').strip()
+                    if text.startswith('{'):
+                         await hardware_manager.broadcast(text)
+                    else:
+                         await hardware_manager.broadcast(json.dumps({"log": text}))
+                except Exception:
+                    pass
+            else:
+                await asyncio.sleep(0.01)
+    except Exception as e:
+        print(f"Could not connect to /dev/ttyUSB0: {e}")
+
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(serial_reader_task())
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+

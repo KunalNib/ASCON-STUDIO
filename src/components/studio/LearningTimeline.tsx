@@ -25,7 +25,7 @@ export function LearningTimeline() {
   };
 
   return (
-    <div className="flex flex-col gap-2 select-none relative h-full">
+    <div id="tour-timeline" className="flex flex-col gap-2 select-none relative h-full">
       <div className="absolute left-[13px] top-6 bottom-6 w-[2px] bg-white/10 z-0"></div>
       
       {steps.map((stepStr, sIdx) => {

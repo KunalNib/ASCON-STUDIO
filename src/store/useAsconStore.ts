@@ -97,9 +97,13 @@ interface AsconState {
   setStep: (index: number) => void;
   
   setPlaybackState: (state: "playing" | "paused" | "idle") => void;
+  setAnimationSpeed: (speed: number) => void;
   startFullDemo: () => void; 
   
   reset: () => void;
+  
+  token: string | null;
+  setToken: (token: string | null) => void;
 }
 
 // Generate the initial deterministic session matching the required parameters
@@ -175,8 +179,13 @@ export const useAsconStore = create<AsconState>()(
       associatedData: "AUTH_DATA",
       activeExplorerTab: "init",
       modeType: "guided",
+      token: null,
       
-      setPlaintext: () => {},
+      setToken: (t: string | null) => set({ token: t }),
+      setPlaintext: (pt: string) => set((state) => ({ 
+        plaintext: pt,
+        session: { ...state.session, plaintext: pt, sensorReading: pt }
+      })),
       setKey: () => {},
       setNonce: () => {},
       setAssociatedData: () => {},
@@ -212,6 +221,7 @@ export const useAsconStore = create<AsconState>()(
       }),
       
       setPlaybackState: (st) => set({ playbackState: st }),
+      setAnimationSpeed: (speed) => set({ animationSpeed: speed }),
       
       startFullDemo: () => set({
         currentStepIndex: 0,
@@ -226,7 +236,24 @@ export const useAsconStore = create<AsconState>()(
       })
     }),
     {
-      name: 'ascon-auth-storage'
+      name: 'ascon-auth-storage',
+      version: 2,
+      migrate: (persistedState: any, version: number) => {
+        const state = persistedState as AsconState;
+        const validStage = defaultSteps.includes(state?.session?.currentStage as any)
+          ? state.session.currentStage
+          : defaultSteps[0];
+        
+        return {
+          ...state,
+          steps: defaultSteps,
+          session: {
+            ...state?.session,
+            currentStage: validStage
+          },
+          currentStepIndex: defaultSteps.indexOf(validStage) !== -1 ? defaultSteps.indexOf(validStage) : 0
+        } as AsconState;
+      }
     }
   )
 );

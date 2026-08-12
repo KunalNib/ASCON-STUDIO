@@ -19,16 +19,14 @@ export function RoboExplainer({ text, onBack }: RoboExplainerProps) {
     
     // Very fast typewriter rate (~15ms per character) for good UX
     const intervalId = setInterval(() => {
-      setDisplayedText((prev) => {
-        if (index >= text.length) {
-          clearInterval(intervalId);
-          setIsTyping(false);
-          return prev;
-        }
-        const nextChar = text[index];
-        index++;
-        return prev + nextChar;
-      });
+      if (index >= text.length) {
+        clearInterval(intervalId);
+        setIsTyping(false);
+        return;
+      }
+      const nextChar = text[index];
+      index++;
+      setDisplayedText((prev) => prev + nextChar);
     }, 15);
 
     return () => clearInterval(intervalId);
