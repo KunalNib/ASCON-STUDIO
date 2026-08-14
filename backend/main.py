@@ -48,7 +48,9 @@ def login(user: UserCreate, db: Database = Depends(database.get_db)):
 
 @app.get("/quiz/generate")
 def generate_quiz():
-    return rag_engine.generate_quiz()
+    questions = rag_engine.generate_quiz_set(count=10)
+    return {"questions": questions}
+
 
 class QuizSubmit(BaseModel):
     earned_xp: int
