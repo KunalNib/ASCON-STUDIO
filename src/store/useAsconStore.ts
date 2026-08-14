@@ -69,9 +69,9 @@ interface AsconState {
   // View Control
   playbackState: "playing" | "paused" | "idle";
   animationSpeed: number;
-  demoMode: boolean; // Tells UI to show exactly: DEMO MODE
+  demoMode: boolean;
 
-  // Helper flags avoiding TS issues in existing code (mocked)
+  // Helper flags
   learningMode: "beginner" | "intermediate" | "research";
   plaintext: string;
   key: string;
@@ -79,6 +79,18 @@ interface AsconState {
   associatedData: string;
   activeExplorerTab: string;
   modeType: string;
+
+  // ── Gamification ──────────────────────────────────────────
+  /** Global XP shared with the Quiz arena */
+  xp: number;
+  addXp: (amount: number) => void;
+  /** XP earned exclusively inside the Encryption lab */
+  encryptionXp: number;
+  addEncryptionXp: (amount: number) => void;
+  /** Steps where the challenge has been completed (gates progression) */
+  completedSteps: NarrativeStep[];
+  markStepComplete: (step: NarrativeStep) => void;
+  // ──────────────────────────────────────────────────────────
 
   setPlaintext: (pt: string) => void;
   setKey: (k: string) => void;
@@ -180,6 +192,12 @@ export const useAsconStore = create<AsconState>()(
       activeExplorerTab: "init",
       modeType: "guided",
       token: null,
+
+      // ── Gamification initial state ────────────────────────
+      xp: 0,
+      encryptionXp: 0,
+      completedSteps: [],
+      // ─────────────────────────────────────────────────────
       
       setToken: (t: string | null) => set({ token: t }),
       setPlaintext: (pt: string) => set((state) => ({ 
@@ -195,6 +213,16 @@ export const useAsconStore = create<AsconState>()(
       setActiveFlippedBit: () => {},
       setHoveredOperation: () => {},
       encrypt: () => {},
+
+      addXp: (amount: number) => set((state) => ({ xp: Math.max(0, state.xp + amount) })),
+      addEncryptionXp: (amount: number) => set((state) => ({
+        encryptionXp: Math.max(0, state.encryptionXp + amount)
+      })),
+      markStepComplete: (step: NarrativeStep) => set((state) => ({
+        completedSteps: state.completedSteps.includes(step)
+          ? state.completedSteps
+          : [...state.completedSteps, step]
+      })),
       
       nextStep: () => set((state) => {
         const nextIndex = Math.min(state.currentStepIndex + 1, state.steps.length - 1);
@@ -232,12 +260,14 @@ export const useAsconStore = create<AsconState>()(
       reset: () => set({
         session: initialDemoSession(),
         currentStepIndex: 0,
-        playbackState: "idle"
+        playbackState: "idle",
+        encryptionXp: 0,
+        completedSteps: [],
       })
     }),
     {
       name: 'ascon-auth-storage',
-      version: 2,
+      version: 3,
       migrate: (persistedState: any, version: number) => {
         const state = persistedState as AsconState;
         const validStage = defaultSteps.includes(state?.session?.currentStage as any)
@@ -251,7 +281,11 @@ export const useAsconStore = create<AsconState>()(
             ...state?.session,
             currentStage: validStage
           },
-          currentStepIndex: defaultSteps.indexOf(validStage) !== -1 ? defaultSteps.indexOf(validStage) : 0
+          currentStepIndex: defaultSteps.indexOf(validStage) !== -1 ? defaultSteps.indexOf(validStage) : 0,
+          // Ensure new gamification fields exist after migration
+          xp: state?.xp ?? 0,
+          encryptionXp: state?.encryptionXp ?? 0,
+          completedSteps: state?.completedSteps ?? [],
         } as AsconState;
       }
     }
