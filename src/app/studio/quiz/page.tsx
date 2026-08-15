@@ -51,13 +51,22 @@ export default function QuizGamification() {
     setShowResult(false);
     setShowConfetti(false);
 
+    // Mistral can take 1-3 minutes on first run; give it plenty of time
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3 * 60 * 1000); // 3 min
+
     try {
-      const res = await fetch("http://localhost:8000/quiz/generate");
+      const res = await fetch("http://127.0.0.1:8000/quiz/generate", {
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      if (!res.ok) throw new Error(`Server error: ${res.status}`);
       const data = await res.json();
       setQuestions(data.questions ?? []);
       setPhase("active");
     } catch (e) {
-      console.error(e);
+      clearTimeout(timeoutId);
+      console.error("Quiz generation failed:", e);
       setPhase("idle");
     }
   };
@@ -77,7 +86,7 @@ export default function QuizGamification() {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 3000);
 
-      await fetch("http://localhost:8000/quiz/submit", {
+      await fetch("http://127.0.0.1:8000/quiz/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ earned_xp: XP_PER_QUESTION }),

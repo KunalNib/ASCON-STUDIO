@@ -205,3 +205,55 @@ class AssistantRAG:
         except Exception as e:
             print(f"Quiz Set Generation Error: {e}. Using fallback questions.")
             return fallback_questions[:count]
+
+    async def agenerate_quiz_set(self, count: int = 5):
+        """
+        Async version of generate_quiz_set with a strict timeout.
+        """
+        fallback_questions = self.generate_quiz_set.__defaults__[0] if hasattr(self.generate_quiz_set, '__defaults__') else []
+        # Re-define fallback questions just in case, or we can just call self.generate_quiz_set without LLM
+        # To avoid duplication, let's temporarily unset self.llm and call the sync method for the fallback.
+        
+        if not self.llm:
+            return self.generate_quiz_set(count)
+
+        prompt = (
+            f"You are a Cryptography professor testing a student on ASCON lightweight authenticated encryption. "
+            f"Generate exactly {count} multiple-choice questions that cover different aspects of ASCON "
+            f"(e.g., state structure, permutation layers, sponge construction, security properties, NIST selection). "
+            f"Return EXACTLY AND ONLY a valid JSON array of {count} objects. "
+            f"Each object must have these keys: "
+            f"'question' (string), 'options' (array of exactly 4 strings), 'correct_index' (integer 0-3), 'explanation' (string). "
+            f"Do NOT include markdown tags like ```json, numbering, or any other surrounding text."
+        )
+
+        try:
+            import asyncio
+            # Strict 25 second timeout to prevent browser NetworkErrors
+            response = await asyncio.wait_for(self.llm.ainvoke(prompt), timeout=25.0)
+            cleaned = response.replace("```json", "").replace("```", "").strip()
+            start = cleaned.find("[")
+            end = cleaned.rfind("]") + 1
+            if start == -1 or end == 0:
+                raise ValueError("No JSON array found in LLM response")
+            import json
+            questions = json.loads(cleaned[start:end])
+            valid = [q for q in questions if all(k in q for k in ("question", "options", "correct_index", "explanation"))]
+            if len(valid) < 3:
+                raise ValueError(f"Too few valid questions returned: {len(valid)}")
+            return valid[:count]
+        except asyncio.TimeoutError:
+            print("Quiz generation timed out (took > 25s). Serving fallback questions.")
+            # Disable LLM temporarily to get fallback questions easily
+            temp_llm = self.llm
+            self.llm = None
+            questions = self.generate_quiz_set(count)
+            self.llm = temp_llm
+            return questions
+        except Exception as e:
+            print(f"Async Quiz Set Generation Error: {e}. Using fallback questions.")
+            temp_llm = self.llm
+            self.llm = None
+            questions = self.generate_quiz_set(count)
+            self.llm = temp_llm
+            return questions

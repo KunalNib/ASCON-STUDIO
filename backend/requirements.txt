@@ -32,7 +32,7 @@ httpx==0.28.1
 httpx-sse==0.4.3
 huggingface_hub==1.26.0
 idna==3.18
-importlib_resources==7.1.0
+importlib_ranesources==7.1.0
 jsonpatch==1.33
 jsonpointer==3.1.1
 jsonschema==4.26.0

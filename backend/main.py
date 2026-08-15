@@ -47,8 +47,8 @@ def login(user: UserCreate, db: Database = Depends(database.get_db)):
     return {"access_token": access_token, "token_type": "bearer"}
 
 @app.get("/quiz/generate")
-def generate_quiz():
-    questions = rag_engine.generate_quiz_set(count=10)
+async def generate_quiz():
+    questions = await rag_engine.agenerate_quiz_set(count=10)
     return {"questions": questions}
 
 

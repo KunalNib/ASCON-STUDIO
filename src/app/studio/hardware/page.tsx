@@ -18,7 +18,7 @@ export default function HardwareDashboard() {
     let isMounted = true;
     
     const connectWS = () => {
-      ws = new WebSocket("ws://localhost:8000/ws/hardware");
+      ws = new WebSocket("ws://127.0.0.1:8000/ws/hardware");
       
       ws.onmessage = (event) => {
         if (!isMounted) return;

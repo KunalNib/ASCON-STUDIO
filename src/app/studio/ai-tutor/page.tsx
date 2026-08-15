@@ -33,7 +33,7 @@ export default function AITutor() {
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
 
   const connectWebSocket = () => {
-    ws.current = new WebSocket("ws://localhost:8000/ws/ai-tutor");
+    ws.current = new WebSocket("ws://127.0.0.1:8000/ws/ai-tutor");
     
     ws.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
