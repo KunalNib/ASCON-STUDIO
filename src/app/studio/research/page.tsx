@@ -235,7 +235,7 @@ function SecurityContent() {
             <div className="w-2 h-2 rounded-full bg-green-500" /> Forgery Attacks
           </h4>
           <p className="text-sm text-zinc-400 leading-relaxed">
-            Operating as a sponge-based AEAD cipher, forgery implies recovering the inner state or guessing the authentication tag. With a capacity of 256 bits, the probability of a successful forgery is bound by \( 2^{{-128}} \), adhering perfectly to the 128-bit security target.
+            Operating as a sponge-based AEAD cipher, forgery implies recovering the inner state or guessing the authentication tag. With a capacity of 256 bits, the probability of a successful forgery is bound by 2^-128, adhering perfectly to the 128-bit security target.
           </p>
         </div>
 
