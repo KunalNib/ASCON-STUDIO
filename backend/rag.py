@@ -75,11 +75,11 @@ class AssistantRAG:
 
     def generate_quiz_set(self, count: int = 10):
         """
-        Uses Ollama to generate a JSON array of `count` cryptography questions.
-        Falls back to a hardcoded set of 10 diverse ASCON questions if the LLM
-        is offline or fails to return valid JSON.
+        Returns a random sample of `count` cryptography questions from a large pre-defined pool.
+        This provides instantaneous, diverse quizzes without the heavy latency of local LLM generation.
         """
-        fallback_questions = [
+        import random
+        pool = [
             {
                 "question": "In the ASCON permutation, what is the primary purpose of the Addition of Constants (pc) layer?",
                 "options": [
@@ -179,89 +179,100 @@ class AssistantRAG:
                 ],
                 "correct_index": 1,
                 "explanation": "The capacity (320 − rate bits) is kept hidden — it is never directly XORed with external data. Its size determines the security level: 256 bits for ASCON-128."
+            },
+            {
+                "question": "How many words make up the ASCON 320-bit state?",
+                "options": ["Three 106-bit words", "Four 80-bit words", "Five 64-bit words", "Ten 32-bit words"],
+                "correct_index": 2,
+                "explanation": "The 320-bit state is elegantly divided into five 64-bit words (x0, x1, x2, x3, x4), which maps perfectly to modern 64-bit processor registers."
+            },
+            {
+                "question": "What is the size of the Authentication Tag produced by ASCON-128?",
+                "options": ["64 bits", "128 bits", "256 bits", "320 bits"],
+                "correct_index": 1,
+                "explanation": "ASCON-128 produces a 128-bit authentication tag to ensure the integrity and authenticity of the message."
+            },
+            {
+                "question": "In the ASCON Substitution Layer (ps), how many bits does each S-box process at a time?",
+                "options": ["4 bits", "5 bits", "8 bits", "16 bits"],
+                "correct_index": 1,
+                "explanation": "The Substitution layer operates on 5-bit columns across the five 64-bit words, applying a highly optimized 5-bit S-box."
+            },
+            {
+                "question": "Which phase of ASCON processes the Associated Data (AD)?",
+                "options": ["Initialization", "Data Processing (before plaintext)", "Data Processing (after plaintext)", "Finalization"],
+                "correct_index": 1,
+                "explanation": "Associated Data (AD) is absorbed into the state right after Initialization and before the plaintext is processed."
+            },
+            {
+                "question": "During plaintext encryption in ASCON-128, how many rounds of permutation (pb) are applied after each 64-bit block is absorbed?",
+                "options": ["4 rounds", "6 rounds", "8 rounds", "12 rounds"],
+                "correct_index": 1,
+                "explanation": "ASCON-128 applies pb = 6 rounds of permutation between each 64-bit block of plaintext."
+            },
+            {
+                "question": "What happens if the Authentication Tag verification fails during decryption?",
+                "options": [
+                    "The plaintext is returned with a warning flag",
+                    "The cipher attempts to decrypt using a backup key",
+                    "The decryption immediately aborts and the plaintext is discarded",
+                    "Only the associated data is rejected"
+                ],
+                "correct_index": 2,
+                "explanation": "If the computed tag does not match the received tag, the algorithm aborts and outputs an error to prevent the release of unauthenticated, potentially malicious plaintext."
+            },
+            {
+                "question": "What role does the IV (Initialization Vector) play in ASCON?",
+                "options": [
+                    "It acts as a secondary secret key",
+                    "It defines the algorithm variant (e.g. ASCON-128 vs ASCON-128a) and parameters",
+                    "It is used exclusively as padding for the final message block",
+                    "It replaces the nonce in IoT environments"
+                ],
+                "correct_index": 1,
+                "explanation": "The IV is a public constant that specifies the algorithm variant, including key size, rate, and the number of permutation rounds (pa and pb)."
+            },
+            {
+                "question": "How does ASCON protect against length extension attacks?",
+                "options": [
+                    "By appending the message length to the plaintext before encryption",
+                    "By using a 5-bit S-box instead of a 4-bit S-box",
+                    "By injecting the secret key into the state again during the Finalization phase",
+                    "By reversing the order of the state words"
+                ],
+                "correct_index": 2,
+                "explanation": "Injecting the secret key into the capacity portion of the state during Finalization ensures that an attacker cannot append data to a valid ciphertext without knowing the key."
+            },
+            {
+                "question": "Why is the Addition of Constants (pc) layer placed first in each ASCON permutation round?",
+                "options": [
+                    "To initialize the 5-bit S-box",
+                    "To break the structural symmetry between rounds and state words",
+                    "To compress the 128-bit key into 64-bit words",
+                    "To finalize the tag generation"
+                ],
+                "correct_index": 1,
+                "explanation": "Adding asymmetric round constants breaks the symmetry of the state, preventing attacks that rely on identical round functions, like slide and rotational attacks."
+            },
+            {
+                "question": "What makes ASCON suitable for hardware implementation?",
+                "options": [
+                    "It uses highly complex, mathematically dense S-boxes",
+                    "It relies entirely on public key infrastructure",
+                    "Its operations are limited to simple bitwise AND, NOT, XOR, and rotations",
+                    "It requires a minimum of 4GB of RAM"
+                ],
+                "correct_index": 2,
+                "explanation": "ASCON is designed with simple bitwise operations (AND, NOT, XOR, ROT) that require very few logic gates in hardware, making it exceptionally lightweight and fast."
             }
         ]
-
-        if not self.llm:
-            return fallback_questions[:count]
-
-        prompt = (
-            f"You are a Cryptography professor testing a student on ASCON lightweight authenticated encryption. "
-            f"Generate exactly {count} multiple-choice questions that cover different aspects of ASCON "
-            f"(e.g., state structure, permutation layers, sponge construction, security properties, NIST selection, "
-            f"ASCON variants, initialization, finalization, associated data handling). "
-            f"Return EXACTLY AND ONLY a valid JSON array of {count} objects. "
-            f"Each object must have these keys: "
-            f"'question' (string), 'options' (array of exactly 4 strings), 'correct_index' (integer 0–3), 'explanation' (string). "
-            f"Do NOT include markdown tags like ```json, numbering, or any other surrounding text."
-        )
-
-        try:
-            response = self.llm.invoke(prompt)
-            cleaned = response.replace("```json", "").replace("```", "").strip()
-            # Find the JSON array bounds in case the LLM prepends text
-            start = cleaned.find("[")
-            end = cleaned.rfind("]") + 1
-            if start == -1 or end == 0:
-                raise ValueError("No JSON array found in LLM response")
-            questions = json.loads(cleaned[start:end])
-            # Validate and trim/pad to desired count
-            valid = [q for q in questions if all(k in q for k in ("question", "options", "correct_index", "explanation"))]
-            if len(valid) < 3:
-                raise ValueError(f"Too few valid questions returned: {len(valid)}")
-            return valid[:count]
-        except Exception as e:
-            print(f"Quiz Set Generation Error: {e}. Using fallback questions.")
-            return fallback_questions[:count]
-
-    async def agenerate_quiz_set(self, count: int = 5):
-        """
-        Async version of generate_quiz_set with a strict timeout.
-        """
-        fallback_questions = self.generate_quiz_set.__defaults__[0] if hasattr(self.generate_quiz_set, '__defaults__') else []
-        # Re-define fallback questions just in case, or we can just call self.generate_quiz_set without LLM
-        # To avoid duplication, let's temporarily unset self.llm and call the sync method for the fallback.
         
-        if not self.llm:
-            return self.generate_quiz_set(count)
+        # Ensure we don't request more than we have
+        count = min(count, len(pool))
+        return random.sample(pool, count)
 
-        prompt = (
-            f"You are a Cryptography professor testing a student on ASCON lightweight authenticated encryption. "
-            f"Generate exactly {count} multiple-choice questions that cover different aspects of ASCON "
-            f"(e.g., state structure, permutation layers, sponge construction, security properties, NIST selection). "
-            f"Return EXACTLY AND ONLY a valid JSON array of {count} objects. "
-            f"Each object must have these keys: "
-            f"'question' (string), 'options' (array of exactly 4 strings), 'correct_index' (integer 0-3), 'explanation' (string). "
-            f"Do NOT include markdown tags like ```json, numbering, or any other surrounding text."
-        )
-
-        try:
-            import asyncio
-            # Strict 25 second timeout to prevent browser NetworkErrors
-            response = await asyncio.wait_for(self.llm.ainvoke(prompt), timeout=25.0)
-            cleaned = response.replace("```json", "").replace("```", "").strip()
-            start = cleaned.find("[")
-            end = cleaned.rfind("]") + 1
-            if start == -1 or end == 0:
-                raise ValueError("No JSON array found in LLM response")
-            import json
-            questions = json.loads(cleaned[start:end])
-            valid = [q for q in questions if all(k in q for k in ("question", "options", "correct_index", "explanation"))]
-            if len(valid) < 3:
-                raise ValueError(f"Too few valid questions returned: {len(valid)}")
-            return valid[:count]
-        except asyncio.TimeoutError:
-            print("Quiz generation timed out (took > 25s). Serving fallback questions.")
-            # Disable LLM temporarily to get fallback questions easily
-            temp_llm = self.llm
-            self.llm = None
-            questions = self.generate_quiz_set(count)
-            self.llm = temp_llm
-            return questions
-        except Exception as e:
-            print(f"Async Quiz Set Generation Error: {e}. Using fallback questions.")
-            temp_llm = self.llm
-            self.llm = None
-            questions = self.generate_quiz_set(count)
-            self.llm = temp_llm
-            return questions
+    async def agenerate_quiz_set(self, count: int = 10):
+        """
+        Async wrapper for generate_quiz_set.
+        """
+        return self.generate_quiz_set(count)
