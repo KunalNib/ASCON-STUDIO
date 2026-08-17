@@ -1,17 +1,37 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Bot, Send, User, Link as LinkIcon, RefreshCcw, Mic, Square } from "lucide-react";
+import { Bot, Send, User, Link as LinkIcon, RefreshCcw, Mic, Square, Image as ImageIcon, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PermutationVisualizer } from "@/components/studio/PermutationVisualizer";
 import { SecurityVisualizer } from "@/components/studio/SecurityVisualizer";
 import { InteractiveStateGrid } from "@/components/studio/InteractiveStateGrid";
 import { useAsconStore } from "@/store/useAsconStore";
 import { Expand, Shrink } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import mermaid from "mermaid";
+
+mermaid.initialize({ startOnLoad: false, theme: "dark" });
+
+const MermaidDiagram = ({ chart }: { chart: string }) => {
+  const [svg, setSvg] = useState<string>("");
+  const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
+
+  useEffect(() => {
+    mermaid.render(id, chart).then((result) => {
+      setSvg(result.svg);
+    }).catch(e => console.error(e));
+  }, [chart]);
+
+  if (!svg) return <div className="text-zinc-500 text-sm animate-pulse">Rendering diagram...</div>;
+  return <div dangerouslySetInnerHTML={{ __html: svg }} className="bg-white/5 p-4 rounded-xl overflow-x-auto w-full my-4 flex justify-center" />;
+};
 
 interface ChatMessage {
   role: "user" | "ai";
   content: string;
+  image?: string;
   sources?: string[];
   actions?: Record<string, any>;
   isStreaming?: boolean;
@@ -25,12 +45,23 @@ export default function AITutor() {
   const [isListening, setIsListening] = useState(false);
   const isListeningRef = useRef(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const currentStepIndex = useAsconStore(state => state.currentStepIndex);
   const learningMode = useAsconStore(state => state.learningMode);
   
   const ws = useRef<WebSocket | null>(null);
   const recognitionRef = useRef<any>(null);
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setSelectedImage(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
 
   const connectWebSocket = () => {
     ws.current = new WebSocket("ws://127.0.0.1:8000/ws/ai-tutor");
@@ -119,15 +150,17 @@ export default function AITutor() {
   }, [messages]);
 
   const handleSend = () => {
-    if (!input.trim() || !ws.current || ws.current.readyState !== WebSocket.OPEN) return;
+    if ((!input.trim() && !selectedImage) || !ws.current || ws.current.readyState !== WebSocket.OPEN) return;
     
-    setMessages((prev) => [...prev, { role: "user", content: input }]);
+    setMessages((prev) => [...prev, { role: "user", content: input, image: selectedImage || undefined }]);
     const payload = {
        text: input,
+       image: selectedImage || undefined,
        context: { step: currentStepIndex, mode: learningMode }
     };
     ws.current.send(JSON.stringify(payload));
     setInput("");
+    setSelectedImage(null);
   };
 
   const handleStop = () => {
@@ -193,27 +226,42 @@ export default function AITutor() {
                   {msg.role === 'user' ? <User className="w-4 h-4 text-white" /> : <Bot className="w-4 h-4 text-white" />}
                 </div>
                 <div className={`flex flex-col gap-2 max-w-[80%] ${msg.role === "user" ? "items-end" : "items-start"}`}>
-                  <div className={`p-4 rounded-2xl text-sm ${msg.role === "user" ? "bg-white/10 text-white rounded-tr-none px-5 py-3" : "bg-[#111116] text-zinc-300 border border-white/5 rounded-tl-none shadow-md"}`}>
-                    <div className="space-y-3 leading-relaxed max-w-[600px] overflow-x-auto whitespace-pre-wrap font-sans">
-                      {msg.content.split('```').map((block, index) => {
-                        if (index % 2 !== 0) {
-                          // Code block
-                          return (
-                            <pre key={index} className="bg-black border border-white/10 p-3 rounded-lg overflow-x-auto font-mono text-xs text-blue-300 my-2">
-                              <code>{block.replace(/^([a-z]+)\n/, '')}</code>
-                            </pre>
-                          );
-                        }
-                        // Text block with basic markdown
-                        const formattedText = block
-                          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                          .replace(/\*(.*?)\*/g, '<em class="text-zinc-100">$1</em>')
-                          .replace(/`(.*?)`/g, '<code class="bg-blue-500/10 text-blue-300 px-1 py-0.5 rounded font-mono text-xs border border-blue-500/20">$1</code>');
-                        
-                        return (
-                          <span key={index} dangerouslySetInnerHTML={{ __html: formattedText }} />
-                        );
-                      })}
+                  <div className={`p-4 rounded-2xl text-sm ${msg.role === "user" ? "bg-white/10 text-white rounded-tr-none px-5 py-3" : "bg-[#111116] text-zinc-300 border border-white/5 rounded-tl-none shadow-md max-w-full overflow-hidden"}`}>
+                    {msg.image && (
+                       <img src={msg.image} alt="Upload" className="max-w-full h-auto rounded-lg mb-3 border border-white/10" style={{ maxHeight: "200px" }} />
+                    )}
+                    <div className="space-y-3 leading-relaxed w-full overflow-x-auto font-sans">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          code({ node, inline, className, children, ...props }: any) {
+                            const match = /language-(\w+)/.exec(className || "");
+                            if (!inline && match && match[1] === "mermaid") {
+                              return <MermaidDiagram chart={String(children).replace(/\n$/, "")} />;
+                            }
+                            return !inline ? (
+                              <pre className="bg-black border border-white/10 p-3 rounded-lg overflow-x-auto font-mono text-xs text-blue-300 my-2">
+                                <code className={className} {...props}>
+                                  {children}
+                                </code>
+                              </pre>
+                            ) : (
+                              <code className="bg-blue-500/10 text-blue-300 px-1 py-0.5 rounded font-mono text-xs border border-blue-500/20" {...props}>
+                                {children}
+                              </code>
+                            );
+                          },
+                          table: ({node, ...props}: any) => <div className="overflow-x-auto w-full"><table className="w-full text-left border-collapse my-4" {...props} /></div>,
+                          th: ({node, ...props}: any) => <th className="border-b border-white/10 p-2 text-zinc-300 font-semibold" {...props} />,
+                          td: ({node, ...props}: any) => <td className="border-b border-white/5 p-2 text-zinc-400" {...props} />,
+                          p: ({node, ...props}: any) => <p className="mb-2 last:mb-0" {...props} />,
+                          a: ({node, ...props}: any) => <a className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
+                          ul: ({node, ...props}: any) => <ul className="list-disc pl-5 my-2 space-y-1" {...props} />,
+                          ol: ({node, ...props}: any) => <ol className="list-decimal pl-5 my-2 space-y-1" {...props} />
+                        }}
+                      >
+                        {msg.content}
+                      </ReactMarkdown>
                     </div>
                   </div>
 
@@ -237,10 +285,40 @@ export default function AITutor() {
         </div>
 
         <div className="p-4 border-t border-white/10 bg-black/50">
+          <AnimatePresence>
+            {selectedImage && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10, height: 0 }} animate={{ opacity: 1, y: 0, height: "auto" }} exit={{ opacity: 0, y: 10, height: 0 }}
+                className="mb-3 relative inline-block"
+              >
+                 <img src={selectedImage} alt="Preview" className="h-20 w-auto rounded-lg border border-white/20" />
+                 <button 
+                   onClick={() => setSelectedImage(null)} 
+                   className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow-lg transition-colors"
+                 >
+                   <X className="w-3 h-3" />
+                 </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
           <div className="flex gap-2">
             <button 
+              onClick={() => fileInputRef.current?.click()}
+              className="rounded-xl aspect-square w-12 flex items-center justify-center transition-colors border border-white/10 bg-white/5 hover:bg-white/10 text-white shrink-0"
+              title="Upload Image"
+            >
+              <ImageIcon className="w-4 h-4" />
+            </button>
+            <input 
+              type="file" 
+              accept="image/*" 
+              className="hidden" 
+              ref={fileInputRef} 
+              onChange={handleImageSelect}
+            />
+            <button 
               onClick={toggleListening}
-              className={`rounded-xl aspect-square w-12 flex items-center justify-center transition-colors border border-white/10 ${isListening ? "bg-red-500/20 text-red-500" : "bg-white/5 hover:bg-white/10 text-white"}`}
+              className={`rounded-xl aspect-square w-12 flex items-center justify-center transition-colors border border-white/10 shrink-0 ${isListening ? "bg-red-500/20 text-red-500" : "bg-white/5 hover:bg-white/10 text-white"}`}
               title="Voice Dictation"
             >
               <Mic className="w-4 h-4" />

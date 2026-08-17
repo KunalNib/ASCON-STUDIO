@@ -2,21 +2,14 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { Ascon128 } from "@/lib/ascon";
 
-// The 13 Narrative Steps described precisely by the user
+// The 5 Beginner-Friendly Narrative Steps
 export type NarrativeStep = 
-  | "INTRODUCTION"
-  | "SENSOR_DATA"
-  | "PREPARE_DATA"
-  | "CRYPTO_PARAMS"
-  | "INITIAL_STATE"
-  | "INITIALIZATION"
-  | "PERMUTATION"
-  | "SUBSTITUTION"
-  | "DIFFUSION"
-  | "PLAINTEXT_PROCESSING"
+  | "INPUT_PARAMETERS"
+  | "STATE_INITIALIZATION"
+  | "AD_PROCESSING"
+  | "PLAINTEXT_ENCRYPTION"
   | "FINALIZATION"
-  | "AUTH_TAG"
-  | "FINAL_RESULT";
+  | "AUTH_OUTPUT";
 
 export interface StateHistoryNode {
   stage: NarrativeStep;
@@ -140,7 +133,7 @@ const initialDemoSession = (): ExecutionSession => ({
     "0000000000000000"
   ], 
   
-  currentStage: "INTRODUCTION",
+  currentStage: "INPUT_PARAMETERS",
   currentRound: 0,
   currentOperation: "IDLE",
   
@@ -158,19 +151,12 @@ const initialDemoSession = (): ExecutionSession => ({
 });
 
 const defaultSteps: NarrativeStep[] = [
-  "INTRODUCTION",
-  "SENSOR_DATA",
-  "PREPARE_DATA",
-  "CRYPTO_PARAMS",
-  "INITIAL_STATE",
-  "INITIALIZATION",
-  "PERMUTATION",
-  "SUBSTITUTION",
-  "DIFFUSION",
-  "PLAINTEXT_PROCESSING",
+  "INPUT_PARAMETERS",
+  "STATE_INITIALIZATION",
+  "AD_PROCESSING",
+  "PLAINTEXT_ENCRYPTION",
   "FINALIZATION",
-  "AUTH_TAG",
-  "FINAL_RESULT"
+  "AUTH_OUTPUT"
 ];
 
 export const useAsconStore = create<AsconState>()(
@@ -254,7 +240,7 @@ export const useAsconStore = create<AsconState>()(
       startFullDemo: () => set({
         currentStepIndex: 0,
         playbackState: "playing",
-        session: { ...initialDemoSession(), currentStage: "INTRODUCTION" }
+        session: { ...initialDemoSession(), currentStage: "INPUT_PARAMETERS" }
       }),
       
       reset: () => set({
@@ -267,13 +253,15 @@ export const useAsconStore = create<AsconState>()(
     }),
     {
       name: 'ascon-auth-storage',
-      version: 3,
+      version: 4,
       migrate: (persistedState: any, version: number) => {
         const state = persistedState as AsconState;
         const validStage = defaultSteps.includes(state?.session?.currentStage as any)
           ? state.session.currentStage
           : defaultSteps[0];
         
+        const validCompleted = (state?.completedSteps || []).filter(s => defaultSteps.includes(s as any));
+
         return {
           ...state,
           steps: defaultSteps,
@@ -285,7 +273,7 @@ export const useAsconStore = create<AsconState>()(
           // Ensure new gamification fields exist after migration
           xp: state?.xp ?? 0,
           encryptionXp: state?.encryptionXp ?? 0,
-          completedSteps: state?.completedSteps ?? [],
+          completedSteps: validCompleted,
         } as AsconState;
       }
     }

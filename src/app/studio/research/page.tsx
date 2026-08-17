@@ -9,7 +9,7 @@ type TabId = "variants" | "journey" | "security";
 export default function ResearchModule() {
   const [activeTab, setActiveTab] = useState<TabId>("variants");
 
-  const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
+  const tabs: { id: TabId; label: string; icon: any }[] = [
     { id: "variants", label: "ASCON Variants", icon: GitBranch },
     { id: "journey", label: "NIST Journey", icon: History },
     { id: "security", label: "Security Analysis", icon: ShieldAlert },
@@ -58,7 +58,6 @@ export default function ResearchModule() {
               {tab.label}
               {isActive && (
                 <motion.div
-                  layoutId="research-active-tab"
                   className="absolute inset-0 bg-white/10 rounded-lg border border-white/10"
                   transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                 />

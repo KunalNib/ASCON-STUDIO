@@ -27,82 +27,40 @@ const COLOR_MAP: Record<GuideContent["color"], { border: string; glow: string; d
 };
 
 const GUIDE_CONTENT: Record<NarrativeStep, GuideContent> = {
-  INTRODUCTION: {
-    seeing:   "The launch screen — no cryptographic operation has happened yet.",
-    insight:  "ASCON is an AEAD cipher: one single pass simultaneously encrypts data AND produces a tamper-proof authentication tag.",
+  INPUT_PARAMETERS: {
+    seeing:   "The initial setup: sensor data, 128-bit Key, 128-bit Nonce, and Associated Data.",
+    insight:  "ASCON operates on binary data. Nonce reuse with the same Key is catastrophic. AD is authenticated but not encrypted.",
     watchFor: "The XP badge top-right of the canvas! Answer each step's challenge to earn up to 900 XP total.",
     color: "blue",
   },
-  SENSOR_DATA: {
-    seeing:   "Real-time temperature data from the ESP32 IoT sensor node, displayed as raw plaintext.",
-    insight:  "'Plaintext' means anyone on the same network can read it. A passive attacker intercepts exactly what you see here.",
-    watchFor: "The 'Unencrypted — Vulnerable' badge. After encryption, the ciphertext bears no resemblance to this value.",
-    color: "rose",
-  },
-  PREPARE_DATA: {
-    seeing:   "The ASCII string being tokenized byte-by-byte into hex pairs (e.g., '2' → 0x32, '7' → 0x37).",
-    insight:  "Cryptographic operations are pure math — they need binary numbers, not characters. This step bridges the gap.",
-    watchFor: "The degree symbol (°) encodes as TWO bytes: 0xC2 0xB0 — UTF-8 uses variable-length encoding for non-ASCII.",
-    color: "amber",
-  },
-  CRYPTO_PARAMS: {
-    seeing:   "Three cryptographic parameters loading: the 128-bit Secret Key, the 128-bit Nonce, and the Associated Data string.",
-    insight:  "The Nonce (Number used ONCE) can be public — it only prevents ciphertext re-use. Reusing it with the same Key is catastrophic.",
-    watchFor: "Associated Data is authenticated but NOT encrypted. It binds context (like device IDs) to the ciphertext without hiding them.",
-    color: "purple",
-  },
-  INITIAL_STATE: {
-    seeing:   "Five 64-bit words (x0–x4) forming the complete 320-bit ASCON internal state matrix, colour-coded by role.",
-    insight:  "This is the blank canvas. Hover any word to inspect its exact content and purpose. All mixing happens from this starting point.",
-    watchFor: "x0 (blue) = IV, x1–x2 (amber) = Key halves, x3–x4 (rose) = Nonce halves. The layout is fixed by the ASCON specification.",
-    color: "blue",
-  },
-  INITIALIZATION: {
-    seeing:   "The pa permutation (12 full rounds of pc + ps + pl) scrambling all 320 bits completely.",
+  STATE_INITIALIZATION: {
+    seeing:   "The 320-bit state (x0–x4) being formed from IV, Key, and Nonce, then scrambled by the 12-round pa permutation.",
     insight:  "After 12 rounds, the key and nonce are mathematically inseparable — fused into every bit of the state.",
     watchFor: "How drastically all 5 words change. Before: structured IV/Key/Nonce layout. After: completely indistinguishable scramble.",
     color: "emerald",
   },
-  PERMUTATION: {
-    seeing:   "One complete permutation round executing all three sub-layers in sequence: pc → ps → pl.",
-    insight:  "This exact triplet repeats 6 or 12 times per call. The fixed order and round-specific constants are defined in the ASCON spec.",
-    watchFor: "Round Constant Addition (pc) happens FIRST — it breaks any rotational symmetry before the non-linear S-box sees the state.",
+  AD_PROCESSING: {
+    seeing:   "Associated Data being absorbed into the state and processed with pb permutations.",
+    insight:  "This binds the context (like device IDs) cryptographically to the ciphertext without hiding them.",
+    watchFor: "Any change to AD will invalidate the final authentication tag, ensuring integrity.",
+    color: "amber",
+  },
+  PLAINTEXT_ENCRYPTION: {
+    seeing:   "Plaintext XORing into x0 to create ciphertext, followed by the core permutation (pc → ps → pl).",
+    insight:  "This is the heart of ASCON. Plaintext is encrypted, while simultaneously being absorbed into the state for authentication.",
+    watchFor: "The Avalanche Effect in linear diffusion (pl) and non-linearity in substitution (ps).",
     color: "cyan",
-  },
-  SUBSTITUTION: {
-    seeing:   "The 5-bit S-box being applied 64 times — once per vertical column across the five 64-bit words.",
-    insight:  "This is the ONLY non-linear operation in ASCON. Non-linearity is essential — linear ciphers can be broken with linear algebra.",
-    watchFor: "Each 5-bit input maps to a unique 5-bit output (bijective). No two distinct inputs produce the same output.",
-    color: "orange",
-  },
-  DIFFUSION: {
-    seeing:   "Each of the five words being XORed with two rotated copies of itself to spread bit influence across all positions.",
-    insight:  "Rotation constants differ per word: x0 uses (19, 28), x1 uses (61, 39), x2 uses (1, 6), x3 uses (10, 17), x4 uses (7, 41).",
-    watchFor: "The Avalanche Effect — changing one bit would affect ~32 of 64 positions after this layer. That's rapid diffusion.",
-    color: "violet",
-  },
-  PLAINTEXT_PROCESSING: {
-    seeing:   "Plaintext bytes being XORed into the rate word x0, yielding ciphertext. Then pb permutation updates the state.",
-    insight:  "XOR is its own inverse — decryption uses the identical operation. The same keystream that encrypts also decrypts.",
-    watchFor: "ONLY the rate word (x0) participates. The capacity words (x1–x4) never touch plaintext — they're the secret integrity engine.",
-    color: "blue",
   },
   FINALIZATION: {
     seeing:   "Key injected into the capacity words, pa runs 12 rounds, then the Key is injected a second time.",
-    insight:  "This 'key sandwich' (Key ⊕ → pa → ⊕ Key) prevents length-extension attacks — a known vulnerability in simpler hash constructions.",
+    insight:  "This 'key sandwich' (Key ⊕ → pa → ⊕ Key) prevents length-extension attacks.",
     watchFor: "The state transformation before and after pa. The final state's lower words (x3, x4) will become the authentication tag.",
     color: "rose",
   },
-  AUTH_TAG: {
-    seeing:   "State words x3 and x4 XORed with the secret key to produce the 128-bit Authentication Tag.",
+  AUTH_OUTPUT: {
+    seeing:   "State words x3 and x4 XORed with the secret key to produce the 128-bit Authentication Tag, alongside ciphertext.",
     insight:  "Change ANY bit of plaintext or Associated Data at any point — the tag changes completely and unpredictably.",
     watchFor: "Tag = (Key ⊕ x3) || (Key ⊕ x4). This 16-byte value travels alongside the ciphertext and is verified at decryption.",
-    color: "emerald",
-  },
-  FINAL_RESULT: {
-    seeing:   "Your fully encrypted and authenticated result — ciphertext plus a 128-bit authentication tag — ready for transmission.",
-    insight:  "You've just walked through the full ASCON-128 AEAD pipeline exactly as standardised by NIST in 2023!",
-    watchFor: "Your mission score. Higher XP means you engaged deeply with each concept. Perfect score = ASCON Master. 🏆",
     color: "yellow",
   },
 };
@@ -144,9 +102,9 @@ export function ProcessGuide({ step }: ProcessGuideProps) {
   const [isDismissed, setIsDismissed] = useState(false);
   const [isSpotlightOpen, setIsSpotlightOpen] = useState(false);
 
-  if (isDismissed) return null;
-
   const content = GUIDE_CONTENT[step];
+  if (isDismissed || !content) return null;
+
   const { border, glow, dot, badge } = COLOR_MAP[content.color];
   const hasSpotlight = !!(ANNOTATIONS as any)[step];
 
@@ -243,9 +201,7 @@ export function ProcessGuide({ step }: ProcessGuideProps) {
             {/* Step indicator dots */}
             <div className="flex items-center justify-between px-4 pb-3">
               <div className="flex items-center gap-1">
-                {(["INTRODUCTION","SENSOR_DATA","PREPARE_DATA","CRYPTO_PARAMS","INITIAL_STATE",
-                   "INITIALIZATION","PERMUTATION","SUBSTITUTION","DIFFUSION","PLAINTEXT_PROCESSING",
-                   "FINALIZATION","AUTH_TAG","FINAL_RESULT"] as NarrativeStep[]).map((s) => (
+                {(["INPUT_PARAMETERS","STATE_INITIALIZATION","AD_PROCESSING","PLAINTEXT_ENCRYPTION","FINALIZATION","AUTH_OUTPUT"] as NarrativeStep[]).map((s) => (
                   <div
                     key={s}
                     className={`rounded-full transition-all duration-300 ${

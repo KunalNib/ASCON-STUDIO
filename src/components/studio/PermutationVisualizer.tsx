@@ -1,19 +1,20 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CopyRight } from "lucide-react";
-import React from "react";
+import { Copyright } from "lucide-react";
+import React, { useState } from "react";
 import { useAsconStore } from "@/store/useAsconStore";
 
 export function PermutationVisualizer() {
-  const { currentStepIndex, steps, nextStep, prevStep, activeFlippedBit, setActiveFlippedBit } = useAsconStore();
+  const { currentStepIndex, steps, nextStep, prevStep } = useAsconStore();
+  const [activeFlippedBit, setActiveFlippedBit] = useState<number | null>(null);
   
   // A 5x64 mock grid represented as smaller simplified visual blocks
   const layers = Array.from({ length: 5 }, (_, i) => i);
   const blocks = Array.from({ length: 8 }, (_, i) => i); // Visual simplification of 64 bits
 
   const toggleBit = (blockIndex: number) => {
-    setActiveFlippedBit(blockIndex);
+    setActiveFlippedBit(activeFlippedBit === blockIndex ? null : blockIndex);
   };
 
   return (

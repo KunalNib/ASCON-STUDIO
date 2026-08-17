@@ -1,4 +1,4 @@
-import { useAsconStore, ExplorerTab } from "@/store/useAsconStore";
+import { useAsconStore } from "@/store/useAsconStore";
 import { motion, AnimatePresence } from "framer-motion";
 import { Cpu, Fingerprint, Activity, Box, ArrowRightLeft, Key, Code2, Bug } from "lucide-react";
 import { InteractiveStateGrid } from "@/components/studio/InteractiveStateGrid";
@@ -11,7 +11,7 @@ import { PlaintextProcessingFlow } from "@/components/studio/modules/PlaintextPr
 export function ExplorerLaboratory() {
   const { activeExplorerTab, setActiveExplorerTab } = useAsconStore();
 
-  const tabs: { id: ExplorerTab; label: string; icon: any }[] = [
+  const tabs: { id: string; label: string; icon: any }[] = [
     { id: "init", label: "Inputs", icon: Cpu },
     { id: "permutation", label: "Permutation", icon: Activity },
     { id: "ad", label: "Associated Data", icon: Fingerprint },

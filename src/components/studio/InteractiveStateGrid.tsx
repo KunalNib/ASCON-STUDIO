@@ -40,34 +40,27 @@ export function InteractiveStateGrid() {
   const [hoveredByteIdx, setHoveredByteIdx] = useState<string | null>(null);
 
   const currentStage = steps[currentStepIndex];
-  const isAfterInit = currentStepIndex >= steps.indexOf("INITIALIZATION");
+  const isAfterInit = currentStepIndex > steps.indexOf("STATE_INITIALIZATION");
 
   // Pick deterministic byte source — no Math.random() ever
   const byteSource = isAfterInit ? INITIALIZED_STATE_BYTES : INITIAL_STATE_BYTES;
 
   const tooltips: Record<string, Record<string, string>> = {
-    INITIAL_STATE: {
+    STATE_INITIALIZATION: {
       x0: "Initialization Vector (IV) — encodes algorithm variant, key size, rate, and capacity.",
       x1: "First 64 bits of the 128-bit Secret Key.",
       x2: "Last 64 bits of the 128-bit Secret Key.",
       x3: "First 64 bits of the Nonce — ensures this message is unique.",
       x4: "Last 64 bits of the Nonce — completes the 128-bit uniqueness guarantee.",
     },
-    INITIALIZATION: {
-      x0: "Word x0 is being scrambled in the p¹² permutation — all 12 rounds run now.",
-      x1: "x1 is mixing key material throughout all 320 bits via S-Box + diffusion.",
-      x2: "x2 absorbs round constants each round before the S-Box stage.",
-      x3: "x3 holds Nonce — after p¹² it is inseparable from key material.",
-      x4: "x4 completes the internal state — fully diffused after initialization.",
-    },
-    PLAINTEXT_PROCESSING: {
+    PLAINTEXT_ENCRYPTION: {
       x0: "⊕ XOR happening here: Plaintext block XORed into x0 → produces ciphertext.",
       x1: "Capacity word — never accessible to attacker. Hidden mixing zone.",
       x2: "Capacity word — deep state. No direct data leaks from here.",
       x3: "Capacity — feeds into authentication tag computation later.",
       x4: "Capacity — another secret reservoir for tag generation.",
     },
-    AUTH_TAG: {
+    AUTH_OUTPUT: {
       x0: "Rate word — discarded at tag generation.",
       x1: "Rate word — discarded at tag generation.",
       x2: "Capacity — discarded at tag phase.",

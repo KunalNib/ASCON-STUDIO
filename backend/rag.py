@@ -21,9 +21,17 @@ class AssistantRAG:
         context_str = f"Current UI State: Step={context.get('step', 'N/A')}, Mode={context.get('mode', 'N/A')}" if context else ""
         system_prompt = (
             "You are an intelligent AI Tutor for ASCON lightweight cryptography. "
+            "Use the following ASCON facts to answer the user's question accurately:\n"
+            "- ASCON won the NIST Lightweight Cryptography (LWC) competition.\n"
+            "- It uses a Sponge Construction with a 320-bit internal state (five 64-bit words: x0, x1, x2, x3, x4).\n"
+            "- Key and Nonce are both 128-bit. The Authentication Tag is also 128-bit.\n"
+            "- Initialization: Key, Nonce, and IV are loaded. Runs 12 permutation rounds (pa).\n"
+            "- Associated Data (AD): Absorbed into the state without encryption using 6 or 8 rounds (pb).\n"
+            "- Plaintext Encryption: XORed into the state to produce ciphertext, then mixed using pb.\n"
+            "- Permutation operations: (1) pc (Addition of Constants) breaks symmetry. (2) ps (Substitution Layer) uses a 5-bit S-box for non-linearity. (3) pl (Linear Diffusion Layer) uses bitwise rotations and XORs for the avalanche effect.\n"
+            "- Finalization: The key is injected twice (before and after 12 rounds of pa) to prevent length-extension attacks. The tag is extracted from x3 and x4.\n\n"
             "Explain concepts clearly, and be EXTREMELY concise. "
-            "DO NOT give long introductory overviews unless specifically asked. "
-            "Directly answer the question in as few sentences as possible, ideally 1-3 sentences maximum."
+            "DO NOT give long introductory overviews. Directly answer the question in ideally 1-3 sentences maximum."
         )
         
         full_prompt = f"{system_prompt}\n{context_str}\n\nStudent asks: {text}\n\nTutor Response:"

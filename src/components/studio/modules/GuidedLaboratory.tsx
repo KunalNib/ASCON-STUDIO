@@ -148,11 +148,9 @@ export function GuidedLaboratory() {
     }
   }, [encryptionXp]);
 
-  // Auto-complete FINAL_RESULT when reached
+  // No auto-completion for AUTH_OUTPUT because it has a challenge
   useEffect(() => {
-    if (currentStage === "FINAL_RESULT") {
-      markStepComplete("FINAL_RESULT");
-    }
+    // ... any other side-effects
   }, [currentStage, markStepComplete]);
 
   // Close challenge panel when step changes
@@ -213,7 +211,7 @@ export function GuidedLaboratory() {
   // ── Derived state ──
   const hasChallenge = !!STEP_CHALLENGES[currentStage];
   const isCurrentCompleted = completedSteps.includes(currentStage);
-  const isNextLocked = hasChallenge && !isCurrentCompleted && currentStage !== "FINAL_RESULT";
+  const isNextLocked = hasChallenge && !isCurrentCompleted;
   const completedChallengeableCount = completedSteps.filter((s) => STEP_CHALLENGES[s] !== undefined).length;
   const totalChallengeableCount = Object.keys(STEP_CHALLENGES).length;
 
@@ -231,114 +229,46 @@ export function GuidedLaboratory() {
   };
 
   const explanations: Record<NarrativeStep, { title: string; what: string; how: string; why: string; input: string; output: string; security: string }> = {
-    INTRODUCTION: {
-      title: "Preparation", what: "Awaiting execution sequence for the fixed session.", how: "The system prepares the narrative environment.", why: "Cryptography requires clear deterministic inputs to trace behavior.", input: "None", output: "None", security: "Establishes a baseline for tracing.",
+    INPUT_PARAMETERS: {
+      title: "Preparation & Crypto Params", what: "Loading Sensor Data, Key, Nonce, and Associated Data.", how: "Allocating 128-bit Key, 128-bit Nonce, and string AD into memory.", why: "Cryptography requires these inputs. Nonce ensures uniqueness.", input: "Sensor reading + Key/Nonce/AD", output: "Parameters loaded in memory", security: "Never reuse a Nonce with the same Key.",
     },
-    SENSOR_DATA: {
-      title: "Reading Sensor Data", what: "We received data directly from the ESP32 temperature sensor.", how: `The device (${session.deviceId}) transacted the reading "${session.sensorReading}" over its internal bus.`, why: "This data represents real-world information that must remain confidential.", input: "ESP32 Sensor Bus", output: session.sensorReading, security: "Raw data is vulnerable if intercepted here.",
+    STATE_INITIALIZATION: {
+      title: "State Initialization", what: "Populating and scrambling the central memory matrix.", how: "Formatting IV, Key, and Nonce into five 64-bit words, then running 12-round pa permutation.", why: "Distributes the key and nonce completely across all 320 bits.", input: "IV + Key + Nonce", output: "Mixed 320-bit State", security: "Achieves full diffusion before processing any AD or Plaintext.",
     },
-    PREPARE_DATA: {
-      title: "Data Representation", what: "Translating the human-readable string into bytes.", how: "Converting each character to standard ASCII/UTF-8 hex chunks.", why: "Cryptographic algorithms only operate on byte blocks, not text.", input: session.plaintext, output: session.plaintextBytes, security: "Standardized formatting prevents parsing attacks.",
+    AD_PROCESSING: {
+      title: "Associated Data Processing", what: "Absorbing context data into the state.", how: "XORing AD into the state and running pb permutations.", why: "Binds the AD to the state without encrypting it.", input: "Mixed State + AD", output: "Updated State", security: "Any tampering with AD invalidates the final tag.",
     },
-    CRYPTO_PARAMS: {
-      title: "Cryptographic Parameters", what: "Loading Key, Nonce, and Associated Data (AD).", how: "Allocating 128-bit Key, 128-bit Nonce, and arbitrary length AD into memory.", why: "Key provides secrecy. Nonce ensures uniqueness. AD provides authenticated context.", input: "Memory / Key Store", output: "Key + Nonce + AD loaded", security: "Never reuse a Nonce with the same Key.",
-    },
-    INITIAL_STATE: {
-      title: "320-bit State Loading", what: "Populating the central memory matrix.", how: "Formatting IV, Key, and Nonce into five 64-bit words (X0–X4).", why: "This state is the core engine for all subsequent mixing.", input: "IV + Key + Nonce", output: "X0, X1, X2, X3, X4", security: "Ensures the state is completely unpredictable to observers without the key.",
-    },
-    INITIALIZATION: {
-      title: "State Initialization", what: "Scrambling the initial state.", how: "Running the 12-round ASCON permutation over the state.", why: "Distributes the key and nonce completely across all 320 bits.", input: "Initial 320-bit State", output: "Mixed 320-bit State", security: "Achieves full diffusion before processing any AD or Plaintext.",
-    },
-    PERMUTATION: {
-      title: "Permutation Execution", what: "The core mixing function of ASCON.", how: "Repeatedly applies three sub-layers: constant addition, S-box, diffusion.", why: "Provides the non-linear properties and diffusion needed for security.", input: "State (Previous)", output: "State (Mixed)", security: "The heart of the cipher's resistance against analysis.",
-    },
-    SUBSTITUTION: {
-      title: "Substitution Layer (S-Box)", what: "Applying a non-linear look-up substitute.", how: "Each 5-bit column across the 5 words is replaced via the ASCON S-box.", why: "Adds confusion. It is the ONLY non-linear part of ASCON.", input: "5-bit slice", output: "5-bit substituted slice", security: "Prevents algebraic equation solving attacks.",
-    },
-    DIFFUSION: {
-      title: "Linear Diffusion", what: "Spreading bits horizontally.", how: "XORing shifted and rotated versions of each 64-bit word with itself.", why: "Ensures a single bit change affects many bits rapidly (Avalanche Effect).", input: "Xᵢ", output: "Xᵢ ⊕ (Xᵢ >>> a) ⊕ (Xᵢ >>> b)", security: "Defeats differential cryptanalysis.",
-    },
-    PLAINTEXT_PROCESSING: {
-      title: "Plaintext Processing", what: "Encrypting the sensor data.", how: "XORing the plaintext block with the highest bits of the state (X0), then updating the state.", why: "Extracts ciphertext while feeding plaintext back into the state for authentication.", input: "Plaintext block + State", output: "Ciphertext chunk + New State", security: "Provides both Confidentiality and Integrity tracking.",
+    PLAINTEXT_ENCRYPTION: {
+      title: "Plaintext Encryption & Permutation", what: "Encrypting the sensor data and mixing the state.", how: "XORing plaintext into X0 to get ciphertext, then running constant addition, S-box, and diffusion.", why: "Extracts ciphertext while feeding plaintext back into the state.", input: "Plaintext block + State", output: "Ciphertext chunk + New State", security: "Provides both Confidentiality and Integrity tracking.",
     },
     FINALIZATION: {
       title: "Finalization", what: "Preparing to generate the tag.", how: "XORing the key into the state again and running the permutation one last time.", why: "Ensures the tag securely depends on the key and the entire message history.", input: "Current State + Key", output: "Finalized State", security: "Prevents attackers from forging tags by exploiting internal state.",
     },
-    AUTH_TAG: {
-      title: "Authentication Tag Generation", what: "Extracting the final security footprint.", how: "Taking the lowest bits of the final state (X3, X4) and XORing with the Key.", why: "Produces a 128-bit tag attached to the message to verify integrity.", input: "Final State (X3, X4)", output: session.authenticationTag, security: "If 1 bit of plaintext/AD changes, this tag changes completely.",
-    },
-    FINAL_RESULT: {
-      title: "Complete Encryption", what: "The message is now fully protected.", how: "Ciphertext and Tag are bundled for transmission.", why: "Ready to be sent over the untrusted network.", input: "Plaintext", output: "Ciphertext + Tag", security: "Guarantees Confidentiality and Authenticity.",
+    AUTH_OUTPUT: {
+      title: "Authentication Tag & Output", what: "Extracting the final security footprint.", how: "Taking the lowest bits of the final state (X3, X4) and XORing with the Key.", why: "Produces a 128-bit tag attached to the message to verify integrity.", input: "Final State (X3, X4)", output: session.authenticationTag, security: "If 1 bit of plaintext/AD changes, this tag changes completely.",
     },
   };
 
-  const data = explanations[currentStage] || explanations["INTRODUCTION"];
+  const data = explanations[currentStage] || explanations["INPUT_PARAMETERS"];
 
   const renderActiveVisual = () => {
+    if (completedSteps.includes("AUTH_OUTPUT") && currentStage === "AUTH_OUTPUT") {
+      return <EncryptionSummaryScreen />;
+    }
+
     switch (currentStage) {
-      case "INTRODUCTION":
-        return (
-          <div className="text-center p-8 flex flex-col items-center max-w-2xl mx-auto h-full justify-center">
-            <div className="w-24 h-24 bg-blue-500/20 rounded-full flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(59,130,246,0.3)] border border-blue-500/30">
-              <svg className="w-12 h-12 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" />
-              </svg>
-            </div>
-            <h2 className="text-3xl font-bold text-white mb-4 leading-tight">
-              You are about to encrypt data generated by an IoT device.
-            </h2>
-            <p className="text-zinc-400 text-lg leading-relaxed mb-4">
-              This is a fully interactive gamified laboratory. Answer the challenge at each step to earn XP and unlock the next stage.
-            </p>
-            <div className="flex items-center gap-2 text-sm text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-2 mb-8">
-              <Gamepad2 className="w-4 h-4 shrink-0" />
-              <span>Complete all 12 challenges to earn up to <b>{MAX_ENCRYPTION_XP} XP</b></span>
-            </div>
-            <button
-              onClick={() => {
-                markStepComplete("INTRODUCTION");
-                addEncryptionXp(50);
-                nextStep();
-              }}
-              className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-full shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all hover:scale-105"
-            >
-              START ENCRYPTION JOURNEY → +50 XP
-            </button>
-          </div>
-        );
-      case "SENSOR_DATA":
-        return (
-          <div className="text-center p-8 flex flex-col items-center justify-center h-full">
-            <h3 className="text-zinc-500 uppercase tracking-widest font-bold text-sm mb-2">Original Information</h3>
-            <h2 className="text-[5rem] font-black text-white mb-6 drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]">
-              {session.sensorReading}
-            </h2>
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 w-96 text-left mb-6 relative overflow-hidden backdrop-blur-md">
-              <div className="absolute inset-0 bg-blue-500/5 mix-blend-overlay" />
-              <p className="text-zinc-400 text-sm mb-2 relative z-10"><span className="text-zinc-600 w-20 inline-block font-mono">Device:</span> <span className="text-white font-medium">{session.deviceId}</span></p>
-              <p className="text-zinc-400 text-sm mb-2 relative z-10"><span className="text-zinc-600 w-20 inline-block font-mono">Sensors:</span> <span className="text-white font-medium">Temp & Humid</span></p>
-              <p className="text-zinc-400 text-sm mb-2 relative z-10"><span className="text-zinc-600 w-20 inline-block font-mono">Status:</span> <span className="text-red-400 font-medium animate-pulse">⚠ Unencrypted — Vulnerable</span></p>
-            </div>
-          </div>
-        );
-      case "PREPARE_DATA":
-      case "CRYPTO_PARAMS":
+      case "INPUT_PARAMETERS":
         return <InputConfigurationPanel />;
-      case "INITIAL_STATE":
+      case "STATE_INITIALIZATION":
         return <div className="w-full h-full flex flex-col p-4"><InteractiveStateGrid /></div>;
-      case "INITIALIZATION":
+      case "AD_PROCESSING":
         return <AssociatedDataFlow />;
-      case "PERMUTATION":
-      case "SUBSTITUTION":
-      case "DIFFUSION":
+      case "PLAINTEXT_ENCRYPTION":
         return <PermutationExplorer />;
-      case "PLAINTEXT_PROCESSING":
-        return <PlaintextProcessingFlow />;
       case "FINALIZATION":
-      case "AUTH_TAG":
         return <FinalizationAndTag />;
-      case "FINAL_RESULT":
-        return <EncryptionSummaryScreen />;
+      case "AUTH_OUTPUT":
+        return <FinalizationAndTag />;
       default:
         return <div className="w-full h-full flex items-center justify-center"><InteractiveStateGrid /></div>;
     }
@@ -366,13 +296,11 @@ export function GuidedLaboratory() {
             </motion.div>
           </AnimatePresence>
 
-          {/* ── Floating Process Guide (bottom-left of canvas) ── */}
-          {currentStage !== "FINAL_RESULT" && (
+          {!(completedSteps.includes("AUTH_OUTPUT") && currentStage === "AUTH_OUTPUT") && (
             <ProcessGuide step={currentStage} />
           )}
 
-          {/* ── XP HUD (top-right of canvas) ── */}
-          {currentStage !== "FINAL_RESULT" && (
+          {!(completedSteps.includes("AUTH_OUTPUT") && currentStage === "AUTH_OUTPUT") && (
             <motion.div
               id="guide-xp-hud"
               key={`xp-hud-${xpKey}`}
@@ -471,8 +399,7 @@ export function GuidedLaboratory() {
                       <p className="text-sm text-emerald-100/90 leading-relaxed relative z-10">{data.security}</p>
                     </div>
 
-                    {/* ── Challenge CTA ── */}
-                    {currentStage !== "FINAL_RESULT" && (
+                    {!(completedSteps.includes("AUTH_OUTPUT") && currentStage === "AUTH_OUTPUT") && (
                       <div className="pt-2">
                         {isCurrentCompleted ? (
                           /* Completed badge */
@@ -630,10 +557,8 @@ export function GuidedLaboratory() {
         <div className="space-y-4">
           <p className="text-zinc-300">The functional equation applying to <b>{currentStage}</b> is typically represented as an algebraic structure operating over GF(2).</p>
           <div className="bg-black/50 p-4 rounded-xl border border-white/5 font-mono text-blue-400 overflow-x-auto text-sm">
-            {currentStage === "SUBSTITUTION"
+            {currentStage === "PLAINTEXT_ENCRYPTION"
               ? "x0 ^= x4; x4 ^= x3; x2 ^= x1;\nT0 = x0 ^ x1 ^ x2 ^ x3 ^ x4;\n// Bitslice Non-linearity Function"
-              : currentStage === "DIFFUSION"
-              ? "x0 ^= ROTR(x0, 19) ^ ROTR(x0, 28);\nx1 ^= ROTR(x1, 61) ^ ROTR(x1, 39);\nx2 ^= ROTR(x2,  1) ^ ROTR(x2,  6);"
               : "f_a(S) = p^a ( S ⊕ (C || 0^{320-c}) )"}
           </div>
           <p className="text-xs text-zinc-500">Mathematical models for ASCON rely heavily on the Sponge Construction and strict avalanche criterion parameters.</p>
@@ -644,7 +569,7 @@ export function GuidedLaboratory() {
         <div className="space-y-4">
           <p className="text-zinc-300">Below is the reference C implementation standard for this phase.</p>
           <div className="bg-[#050505] p-4 rounded-xl border border-white/10 font-mono text-emerald-400 overflow-x-auto text-xs">
-            <pre>{`void ascon_core_${currentStage.toLowerCase()}(ascon_state_t* s) {\n    // Stage: ${currentStage}\n    ${currentStage === "SUBSTITUTION" ? "s->x0 ^= s->x4;\n    s->x4 ^= s->x3;\n    s->x2 ^= s->x1;\n    /* Apply non-linear S-box */" : "/* Applying standard linear transformations */\n    apply_permutation(s);"}\n}`}</pre>
+            <pre>{`void ascon_core_${currentStage.toLowerCase()}(ascon_state_t* s) {\n    // Stage: ${currentStage}\n    ${currentStage === "PLAINTEXT_ENCRYPTION" ? "s->x0 ^= s->x4;\n    s->x4 ^= s->x3;\n    s->x2 ^= s->x1;\n    /* Apply non-linear S-box */" : "/* Applying standard linear transformations */\n    apply_permutation(s);"}\n}`}</pre>
           </div>
         </div>
       </Modal>

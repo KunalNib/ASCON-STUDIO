@@ -8,19 +8,12 @@ export function LearningTimeline() {
 
   const getStepDisplayName = (step: NarrativeStep) => {
     const titles: Record<NarrativeStep, string> = {
-      "INTRODUCTION":          "Introduction",
-      "SENSOR_DATA":           "1. Sensor Data",
-      "PREPARE_DATA":          "2. Preparing the Data",
-      "CRYPTO_PARAMS":         "3. Cryptographic Params",
-      "INITIAL_STATE":         "4. Initial 320-bit State",
-      "INITIALIZATION":        "5. Initialization",
-      "PERMUTATION":           "6. Permutation",
-      "SUBSTITUTION":          "7. Substitution Layer",
-      "DIFFUSION":             "8. Linear Diffusion",
-      "PLAINTEXT_PROCESSING":  "9. Plaintext Processing",
-      "FINALIZATION":          "10. Finalization",
-      "AUTH_TAG":              "11. Authentication Tag",
-      "FINAL_RESULT":          "12. Final Result",
+      "INPUT_PARAMETERS":      "1. Input & Parameters",
+      "STATE_INITIALIZATION":  "2. State Initialization",
+      "AD_PROCESSING":         "3. AD Processing",
+      "PLAINTEXT_ENCRYPTION":  "4. Plaintext Encryption",
+      "FINALIZATION":          "5. Finalization",
+      "AUTH_OUTPUT":           "6. Auth & Output",
     };
     return titles[step] || step;
   };

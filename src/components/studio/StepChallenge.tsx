@@ -39,54 +39,7 @@ export interface StepChallengeData {
 // ─── Challenge definitions (12 steps, max 900 XP total) ───────────────────────
 
 export const STEP_CHALLENGES: Partial<Record<NarrativeStep, StepChallengeData>> = {
-  INTRODUCTION: {
-    type: "MCQ",
-    question: "Before we begin — what category of cryptographic scheme is ASCON?",
-    options: [
-      { label: "A public-key encryption system like RSA", correct: false },
-      { label: "An Authenticated Encryption with Associated Data (AEAD) cipher", correct: true },
-      { label: "A one-way hash function like SHA-256", correct: false },
-      { label: "A block cipher operating in ECB mode", correct: false },
-    ],
-    xpReward: 50,
-    hint: "ASCON provides both confidentiality AND integrity in a single pass.",
-    explanation:
-      "ASCON is an AEAD (Authenticated Encryption with Associated Data) scheme — it simultaneously encrypts data for confidentiality AND generates an authentication tag for integrity. It was selected by NIST in 2023 as the lightweight cryptography standard.",
-    difficulty: "Easy",
-  },
-  SENSOR_DATA: {
-    type: "MCQ",
-    question:
-      "The sensor reading '27.4 °C' is displayed on screen right now. Is this data secure at this moment?",
-    options: [
-      { label: "Yes — the ESP32 encrypted it on the hardware bus", correct: false },
-      { label: "No — this is raw plaintext, fully readable by anyone", correct: true },
-      { label: "Partially — the temperature value is hidden but the unit is not", correct: false },
-      { label: "Yes — ASCON already hashed it during transmission", correct: false },
-    ],
-    xpReward: 50,
-    hint: "We haven't performed ANY cryptographic operation yet.",
-    explanation:
-      "Correct! This is raw, unprotected plaintext. Anyone intercepting this on the sensor bus or network can read it directly. This vulnerability is exactly why lightweight cryptography like ASCON exists.",
-    difficulty: "Easy",
-  },
-  PREPARE_DATA: {
-    type: "MCQ",
-    question:
-      "Why must '27.4 °C' be converted to bytes (hex: 32 37 2E 34...) before ASCON can encrypt it?",
-    options: [
-      { label: "To compress the data and reduce memory usage", correct: false },
-      { label: "Because ASCON's mathematical operations require binary byte arrays, not text strings", correct: true },
-      { label: "To make the plaintext harder to read visually", correct: false },
-      { label: "To pre-apply the S-box substitution layer", correct: false },
-    ],
-    xpReward: 50,
-    hint: "All cryptographic algorithms are, fundamentally, mathematical functions on numbers.",
-    explanation:
-      "Cryptographic algorithms work on binary data. The text '27.4 °C' must be encoded to its byte representation (UTF-8 / ASCII) so ASCON's permutation functions can apply their mathematical XOR and rotation operations.",
-    difficulty: "Easy",
-  },
-  CRYPTO_PARAMS: {
+  INPUT_PARAMETERS: {
     type: "MCQ",
     question:
       "What is the catastrophic consequence of encrypting two DIFFERENT messages with the exact same Key AND Nonce in ASCON-128?",
@@ -96,16 +49,16 @@ export const STEP_CHALLENGES: Partial<Record<NarrativeStep, StepChallengeData>> 
       { label: "An attacker can XOR the two ciphertexts to recover plaintext — a complete break", correct: true },
       { label: "The authentication tag doubles in length for extra safety", correct: false },
     ],
-    xpReward: 75,
+    xpReward: 225,
     hint: "Nonce means 'Number used ONCE'. XORing two stream-cipher outputs with the same keystream cancels it out.",
     explanation:
       "Nonce reuse is catastrophic: C1 ⊕ C2 = (P1 ⊕ KS) ⊕ (P2 ⊕ KS) = P1 ⊕ P2. The keystream cancels, giving the attacker plaintext XOR plaintext — enough to recover both messages. Never reuse (Key, Nonce) pairs.",
     difficulty: "Medium",
   },
-  INITIAL_STATE: {
+  STATE_INITIALIZATION: {
     type: "CLICK_CORRECT",
     question:
-      "The 320-bit ASCON state has 5 words: x0–x4. Select ALL words that contain Nonce bits.",
+      "The 320-bit ASCON state has 5 words: x0–x4. Select ALL words that contain Nonce bits during initialization.",
     options: [
       { label: "x0 — Initialization Vector (IV)", correct: false },
       { label: "x1 — Key[0:63] (lower 64 bits)", correct: false },
@@ -113,91 +66,43 @@ export const STEP_CHALLENGES: Partial<Record<NarrativeStep, StepChallengeData>> 
       { label: "x3 — Nonce[0:63] (lower 64 bits)", correct: true },
       { label: "x4 — Nonce[64:127] (upper 64 bits)", correct: true },
     ],
-    xpReward: 75,
+    xpReward: 150,
     hint: "The 128-bit nonce is too large for a single 64-bit word.",
     explanation:
-      "The 128-bit nonce is split across x3 (bits 0–63) and x4 (bits 64–127). x0 holds the IV, x1 and x2 hold the 128-bit key split similarly. This layout is defined in the ASCON specification.",
+      "The 128-bit nonce is split across x3 (bits 0–63) and x4 (bits 64–127). x0 holds the IV, x1 and x2 hold the 128-bit key split similarly. The pa (12 rounds) permutation then heavily scrambles this state.",
     difficulty: "Medium",
   },
-  INITIALIZATION: {
+  AD_PROCESSING: {
     type: "MCQ",
     question:
-      "ASCON-128 uses two permutation strengths: pa and pb. Which is used during Initialization, and how many rounds?",
+      "Why is Associated Data (AD) absorbed into the internal state before plaintext encryption?",
     options: [
-      { label: "pb — 6 rounds (fast mode for data processing)", correct: false },
-      { label: "pa — 12 rounds (maximum security for key setup)", correct: true },
-      { label: "pa — 8 rounds (a balanced trade-off)", correct: false },
-      { label: "Neither — Initialization uses a hardware AES core", correct: false },
+      { label: "To encrypt the AD alongside the plaintext", correct: false },
+      { label: "To cryptographically bind the AD to the state, ensuring any tampering invalidates the final authentication tag", correct: true },
+      { label: "To increase the length of the authentication tag", correct: false },
+      { label: "To provide initial randomness to the state", correct: false },
     ],
     xpReward: 75,
-    hint: "The initialization phase is the most security-critical step — it gets the strongest permutation.",
+    hint: "AD is never encrypted, but it still needs to be protected against modification.",
     explanation:
-      "pa = 12 rounds is used for Initialization and Finalization because these handle secret key material and must provide maximum diffusion. pb = 6 rounds is used for data absorption (faster, but the state is already well-mixed).",
+      "Associated Data is public (like routing headers) and remains unencrypted. Absorbing it into the state cryptographically binds it to the encryption process. If an attacker changes even one bit of the AD, the final authentication tag will completely fail to verify.",
     difficulty: "Medium",
   },
-  PERMUTATION: {
+  PLAINTEXT_ENCRYPTION: {
     type: "MCQ",
     question:
-      "The ASCON permutation executes exactly 3 sub-layers every round. What is their correct ORDER?",
-    options: [
-      { label: "Linear Diffusion (pl) → S-box (ps) → Constant Addition (pc)", correct: false },
-      { label: "Constant Addition (pc) → S-box Substitution (ps) → Linear Diffusion (pl)", correct: true },
-      { label: "S-box (ps) → Constant Addition (pc) → Linear Diffusion (pl)", correct: false },
-      { label: "Key Injection → S-box (ps) → Linear Shift (pl)", correct: false },
-    ],
-    xpReward: 100,
-    hint: "Round constants break symmetry BEFORE the non-linear S-box — this ordering is deliberate.",
-    explanation:
-      "Every ASCON round follows: ① pc adds a round constant (breaks symmetry), ② ps applies the 5-bit S-box non-linearly (confusion), ③ pl performs rotate-XOR diffusion (avalanche). This fixed order is what makes the cipher analyzable and provably secure.",
-    difficulty: "Hard",
-  },
-  SUBSTITUTION: {
-    type: "MCQ",
-    question:
-      "The ASCON S-box operates on a 5-bit 'column' — one bit from each of the 5 state words. How many S-box calls occur per permutation round?",
-    options: [
-      { label: "5 — one call per word", correct: false },
-      { label: "64 — one per bit-position column across all 5 words", correct: true },
-      { label: "320 — one per bit in the state", correct: false },
-      { label: "1 — the S-box takes the entire 320-bit state", correct: false },
-    ],
-    xpReward: 100,
-    hint: "Each 64-bit word has 64 bit positions, each forming a vertical 5-bit column with the other words.",
-    explanation:
-      "64 S-box calls happen per round. Each of the 64 bit positions forms a 5-bit column (one bit from each word x0–x4). The S-box substitutes each 5-bit column independently — this bit-sliced structure is the key to ASCON's efficiency.",
-    difficulty: "Hard",
-  },
-  DIFFUSION: {
-    type: "MCQ",
-    question:
-      "ASCON's linear diffusion computes: xᵢ ← xᵢ ⊕ (xᵢ >>> a) ⊕ (xᵢ >>> b). What cryptographic property does this guarantee?",
+      "During the core Permutation, ASCON's linear diffusion computes: xᵢ ← xᵢ ⊕ (xᵢ >>> a) ⊕ (xᵢ >>> b). What cryptographic property does this guarantee?",
     options: [
       { label: "Key independence — diffusion does not touch the secret key", correct: false },
       { label: "Avalanche effect — a single changed bit spreads across all 64 positions of the word", correct: true },
       { label: "Compression — two 64-bit words merge into one output", correct: false },
       { label: "Non-linearity — it thwarts linear cryptanalysis alone", correct: false },
     ],
-    xpReward: 100,
+    xpReward: 300,
     hint: "Think about what XORing a value with two different rotations of itself does to a single flipped bit.",
     explanation:
-      "The rotate-XOR ensures any single changed bit influences every other bit position within that word. This is the Avalanche Effect — xᵢ ← xᵢ ⊕ (xᵢ >>> 19) ⊕ (xᵢ >>> 28) for x0, with different rotation constants per word to maximise mixing.",
+      "The rotate-XOR ensures any single changed bit influences every other bit position within that word. This is the Avalanche Effect. Combined with the S-box substitution across words, ASCON achieves full state diffusion rapidly.",
     difficulty: "Hard",
-  },
-  PLAINTEXT_PROCESSING: {
-    type: "MCQ",
-    question:
-      "ASCON XORs plaintext into the rate (x0) to produce ciphertext. What ALSO happens to provide message integrity?",
-    options: [
-      { label: "The state is reset to zero after each block", correct: false },
-      { label: "The plaintext enters the state and future permutations mix it into the capacity (authentication)", correct: true },
-      { label: "The ciphertext is separately hashed and appended", correct: false },
-      { label: "Nothing extra — XOR alone provides integrity", correct: false },
-    ],
-    xpReward: 75,
-    hint: "How does one XOR operation achieve both confidentiality AND integrity?",
-    explanation:
-      "XORing plaintext into x0 produces ciphertext (confidentiality). Simultaneously, the plaintext is now inside the state. Subsequent permutation rounds spread it into the capacity words, which ultimately feed into the authentication tag — binding both confidentiality and integrity in one operation.",
-    difficulty: "Medium",
   },
   FINALIZATION: {
     type: "MCQ",
@@ -215,10 +120,10 @@ export const STEP_CHALLENGES: Partial<Record<NarrativeStep, StepChallengeData>> 
       "Finalization: ① Key ⊕ state (capacity words), ② pa permutation (12 rounds), ③ Key ⊕ final words → tag. This double key injection ensures that without the secret key, computing the state trajectory leading to the tag is computationally infeasible.",
     difficulty: "Medium",
   },
-  AUTH_TAG: {
+  AUTH_OUTPUT: {
     type: "CLICK_CORRECT",
     question:
-      "The 128-bit Authentication Tag is XOR-extracted from specific state words after the final key injection. Select ALL words that form the tag.",
+      "The 128-bit Authentication Tag is extracted from specific state words. Select ALL words that form the tag.",
     options: [
       { label: "x0 — Rate word (public)", correct: false },
       { label: "x1 — Rate word (public)", correct: false },
@@ -229,7 +134,7 @@ export const STEP_CHALLENGES: Partial<Record<NarrativeStep, StepChallengeData>> 
     xpReward: 75,
     hint: "The tag comes from the secret capacity portion — words never directly exposed to external data.",
     explanation:
-      "Tag = (Key ⊕ x3) ‖ (Key ⊕ x4). The tag is extracted from x3 and x4 (the capacity words) XORed with the key. Because capacity words are never directly exposed to plaintext/ciphertext, they remain secret even to an observer who sees all inputs and outputs.",
+      "Tag = (Key ⊕ x3) ‖ (Key ⊕ x4). The tag is extracted from x3 and x4 (the capacity words) XORed with the key. Because capacity words are never directly exposed to plaintext/ciphertext, they remain secret.",
     difficulty: "Medium",
   },
 };

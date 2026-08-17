@@ -429,11 +429,9 @@ export function PermutationExplorer() {
   const [activeLayer, setActiveLayer] = useState<Layer>("constant");
   const [layerKey, setLayerKey] = useState(0); // forces re-mount and replay
 
-  // Sync layer with narrative stage
+  // Reset layer to constant when the stage changes
   useEffect(() => {
-    if (session?.currentStage === "SUBSTITUTION")   setActiveLayer("sbox");
-    else if (session?.currentStage === "DIFFUSION") setActiveLayer("diffusion");
-    else                                            setActiveLayer("constant");
+    setActiveLayer("constant");
     setLayerKey((k) => k + 1);
   }, [session?.currentStage]);
 

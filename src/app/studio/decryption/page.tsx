@@ -6,7 +6,9 @@ import { Unlock, ShieldCheck, Key, Play } from "lucide-react";
 import { useAsconStore } from "@/store/useAsconStore";
 
 export default function DecryptionModule() {
-  const { ciphertext, tag, key, nonce, associatedData } = useAsconStore();
+  const { session, key, nonce, associatedData } = useAsconStore();
+  const ciphertext = session?.ciphertext;
+  const tag = session?.authenticationTag;
   const [decryptionStage, setDecryptionStage] = useState<string | null>(null);
   
   const stages = [

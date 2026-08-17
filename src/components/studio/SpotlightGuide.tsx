@@ -17,171 +17,53 @@ interface Annotation {
 }
 
 export const ANNOTATIONS: Partial<Record<NarrativeStep, Annotation[]>> = {
-  INTRODUCTION: [
+  INPUT_PARAMETERS: [
     {
       targetId: "guide-mission-banner",
       title: "🎯 Mission Progress Bar",
-      description: "Tracks your journey across all 12 ASCON steps and total XP earned (max 900). Complete every challenge for the Master badge 🏆.",
+      description: "Tracks your journey across all 6 high-level ASCON steps and total XP earned (max 900). Complete every challenge for the Master badge 🏆.",
       calloutSide: "bottom",
     },
     {
-      targetId: "tour-timeline",
-      title: "📋 Step Timeline",
-      description: "Every step in ASCON encryption is listed here in order. Green ✓ = challenge done. Grey circles with XP badges = challenges waiting.",
-      calloutSide: "right",
-    },
-    {
-      targetId: "tour-narrative",
-      title: "📖 Stage Guide Panel",
-      description: "Each step gets a full explanation — WHAT changed, HOW it works, WHY it's necessary. The pulsing blue button is your challenge — answer it to earn XP and unlock the next step.",
-      calloutSide: "left",
-    },
-    {
-      targetId: "tour-controls",
-      title: "▶ Playback Controls",
-      description: "Play/pause to auto-advance. The 🔒 lock means you must clear the challenge first. The '+ XP Challenge' button opens it directly — no hunting required.",
-      calloutSide: "top",
-    },
-  ],
-  SENSOR_DATA: [
-    {
       targetId: "tour-visualizer",
-      title: "🌡️ Raw Plaintext",
-      description: "This temperature reading from the ESP32 is completely unprotected — anyone on the network can read it verbatim. This is your starting point before any cryptography.",
+      title: "🔑 Cryptographic Inputs",
+      description: "We are preparing Sensor Data (Plaintext), a 128-bit Secret Key, a 128-bit Nonce, and Associated Data. These form the inputs to the AEAD cipher.",
       calloutSide: "right",
     },
-    {
-      targetId: "guide-xp-hud",
-      title: "⚡ XP Counter",
-      description: "Every correct challenge answer increments this. Max is 900 XP across all 12 steps. The X/12 badge shows how many step challenges you've completed.",
-      calloutSide: "bottom",
-    },
   ],
-  PREPARE_DATA: [
-    {
-      targetId: "tour-visualizer",
-      title: "🔢 Byte Encoding in Action",
-      description:
-        "Watch each character map to its UTF-8 byte value: '2'→0x32, '7'→0x37, '.'→0x2E. The degree symbol '°' is special — it takes TWO bytes (0xC2 0xB0) because UTF-8 is variable-length.",
-      calloutSide: "right",
-    },
-    {
-      targetId: "tour-narrative",
-      title: "💡 Why Convert to Bytes?",
-      description:
-        "ASCON's XOR and rotation operations are binary mathematics — they work on bits, not characters. This conversion is the bridge between human-readable data and cryptographic input.",
-      calloutSide: "left",
-    },
-  ],
-  CRYPTO_PARAMS: [
-    {
-      targetId: "tour-visualizer",
-      title: "🔑 Three Crypto Inputs",
-      description:
-        "Three values define this session: the 128-bit Secret Key (stays secret forever), the 128-bit Nonce (unique per message), and Associated Data (authenticated but NOT encrypted).",
-      calloutSide: "right",
-    },
-    {
-      targetId: "tour-narrative",
-      title: "⚠️ Nonce Reuse = Catastrophe",
-      description:
-        "If you encrypt two different messages with the same Key AND Nonce, an attacker XORs the ciphertexts together to cancel the keystream — recovering both plaintexts completely. The Nonce must ALWAYS be unique.",
-      calloutSide: "left",
-    },
-  ],
-  INITIAL_STATE: [
+  STATE_INITIALIZATION: [
     {
       targetId: "tour-visualizer",
       title: "🔲 The 320-bit State Matrix",
-      description:
-        "Five 64-bit words (x0–x4) forming ASCON's entire working memory. Hover any word to inspect its exact role. Blue=IV, Amber=Key halves, Rose=Nonce halves.",
-      calloutSide: "right",
-    },
-    {
-      targetId: "guide-xp-hud",
-      title: "📐 Fixed State Layout",
-      description:
-        "x0 = 80-bit IV (encodes variant). x1–x2 = 128-bit Key (split into two 64-bit halves). x3–x4 = 128-bit Nonce (also split). This exact ordering is mandated by the ASCON specification.",
-      calloutSide: "bottom",
-    },
-  ],
-  INITIALIZATION: [
-    {
-      targetId: "tour-visualizer",
-      title: "🌀 pa — 12-Round Permutation",
-      description:
-        "All 12 rounds of the full-strength permutation run right now: each round applies constant addition → S-box substitution → linear diffusion. After this, the Key and Nonce are mathematically inseparable.",
+      description: "Five 64-bit words (x0–x4) form ASCON's entire working memory. They are initialized with the IV, Key, and Nonce, and then heavily scrambled using 12 rounds of the 'pa' permutation.",
       calloutSide: "right",
     },
     {
       targetId: "tour-narrative",
       title: "🔐 Why 12 Rounds?",
-      description:
-        "12 rounds guarantees that a single flipped input bit changes approximately 160 of 320 output bits — 'full diffusion'. Any fewer rounds would leave exploitable correlations. Fewer = pb = faster data phase.",
+      description: "12 rounds guarantees full diffusion — a single flipped input bit changes approximately 160 of 320 output bits. This makes the key and nonce mathematically inseparable.",
       calloutSide: "left",
     },
   ],
-  PERMUTATION: [
+  AD_PROCESSING: [
     {
       targetId: "tour-visualizer",
-      title: "⚙️ The 3 Sub-Layers Every Round",
-      description:
-        "① pc — XOR a unique round constant into x2 (breaks rotational symmetry). ② ps — apply the 5-bit S-box to every column (non-linearity). ③ pl — rotate-XOR each word (diffusion). This triplet repeats every round.",
+      title: "🔗 Binding Context",
+      description: "Associated Data (like routing headers) is absorbed into the state using 'pb' permutations. It is not encrypted, but any tampering will invalidate the final tag.",
+      calloutSide: "right",
+    }
+  ],
+  PLAINTEXT_ENCRYPTION: [
+    {
+      targetId: "tour-visualizer",
+      title: "⚙️ Plaintext processing & Permutations",
+      description: "Plaintext is XORed into the rate (x0) to produce ciphertext. Then the state runs through the 'pb' permutation: Constant Addition (pc) → S-box Substitution (ps) → Linear Diffusion (pl).",
       calloutSide: "right",
     },
     {
       targetId: "tour-narrative",
-      title: "🔄 Round Constants Change Everything",
-      description:
-        "Constants for rounds 0–11 are: 0xf0, 0xe1, 0xd2, 0xc3, 0xb4, 0xa5, 0x96, 0x87, 0x78, 0x69, 0x5a, 0x4b. Each round is mathematically unique — this kills slide and rotational attacks.",
-      calloutSide: "left",
-    },
-  ],
-  SUBSTITUTION: [
-    {
-      targetId: "tour-visualizer",
-      title: "🧩 The 5-bit S-Box",
-      description:
-        "Take 1 bit from each of the 5 words at the same position → that's a 5-bit column. The S-box maps it to a new 5-bit value. This happens 64 times per round (one per bit position). It's the ONLY non-linear step in ASCON.",
-      calloutSide: "right",
-    },
-    {
-      targetId: "tour-narrative",
-      title: "🎯 Why Non-linearITY Matters",
-      description:
-        "Linear functions can be broken with Gaussian elimination in polynomial time. Non-linearity makes the cipher impossible to model as a system of linear equations — it's the cryptographic wall that protects the key.",
-      calloutSide: "left",
-    },
-  ],
-  DIFFUSION: [
-    {
-      targetId: "tour-visualizer",
-      title: "↔️ Rotate-XOR Diffusion",
-      description:
-        "Formula: xᵢ ← xᵢ ⊕ (xᵢ >>> a) ⊕ (xᵢ >>> b). Each word XORs with two rotated copies of itself — spreading every bit's influence across the full 64 positions. Rotation constants: x0(19,28), x1(61,39), x2(1,6), x3(10,17), x4(7,41).",
-      calloutSide: "right",
-    },
-    {
-      targetId: "tour-narrative",
-      title: "🌊 The Avalanche Effect",
-      description:
-        "After this layer, changing one input bit flips approximately 32 of the 64 output positions — a 50% change rate. This rapid propagation is the Avalanche Effect, which defeats differential cryptanalysis attacks.",
-      calloutSide: "left",
-    },
-  ],
-  PLAINTEXT_PROCESSING: [
-    {
-      targetId: "tour-visualizer",
-      title: "🔀 XOR → Ciphertext",
-      description:
-        "Plaintext bytes XOR into x0 (the rate) producing ciphertext — that's the encryption. Simultaneously, the plaintext enters the state and future permutations mix it into the capacity words, building up the authentication tag.",
-      calloutSide: "right",
-    },
-    {
-      targetId: "tour-narrative",
-      title: "🛡️ Rate vs Capacity",
-      description:
-        "Rate (x0) = the 'public' lane: touches plaintext and ciphertext directly. Capacity (x1–x4) = the 'secret' lane: never touches external data. This asymmetry is the sponge construction's security guarantee.",
+      title: "🌊 Avalanche Effect",
+      description: "The non-linear S-box (ps) mixed with the Rotate-XOR linear diffusion (pl) ensures that a single bit change rapidly propagates across the entire 320-bit state.",
       calloutSide: "left",
     },
   ],
@@ -189,41 +71,22 @@ export const ANNOTATIONS: Partial<Record<NarrativeStep, Annotation[]>> = {
     {
       targetId: "tour-visualizer",
       title: "🔏 The Key Sandwich",
-      description:
-        "Structure: ① Key ⊕ state (capacity words) → ② pa (full 12 rounds) → ③ Key ⊕ state again. This double injection binds the authentication tag cryptographically to the secret key — you cannot forge it without knowing the key.",
+      description: "Structure: ① Key ⊕ state → ② pa (full 12 rounds) → ③ Key ⊕ state again. This double injection binds the authentication tag to the secret key, preventing length-extension attacks.",
+      calloutSide: "right",
+    }
+  ],
+  AUTH_OUTPUT: [
+    {
+      targetId: "tour-visualizer",
+      title: "🏷️ Tag Extraction & Output",
+      description: "Authentication Tag = (Key ⊕ x3) ‖ (Key ⊕ x4). These capacity words have processed the entire message. Any tampering anywhere in the pipeline changes this 128-bit tag completely.",
       calloutSide: "right",
     },
     {
       targetId: "tour-narrative",
-      title: "🛡️ Prevents Length Extension",
-      description:
-        "Without double key injection, ASCON would be vulnerable to length-extension attacks: an attacker appends data to a message and forges a new valid tag using the previous tag as a starting state. The key sandwich seals this off.",
-      calloutSide: "left",
-    },
-  ],
-  AUTH_TAG: [
-    {
-      targetId: "tour-visualizer",
-      title: "🏷️ Tag Extraction",
-      description:
-        "Authentication Tag = (Key ⊕ x3) ‖ (Key ⊕ x4). These two capacity words have processed the entire message history. Change ANY bit of plaintext or Associated Data — anywhere in the pipeline — and this 128-bit tag changes completely.",
-      calloutSide: "right",
-    },
-    {
-      targetId: "tour-narrative",
-      title: "🔍 Integrity = 100% Detection",
-      description:
-        "The receiver decrypts → recomputes the tag → compares. Any tampering (even 1 bit) produces a completely different 128-bit tag. The probability of an undetected forgery is 2⁻¹²⁸ — computationally impossible.",
-      calloutSide: "left",
-    },
-  ],
-  FINAL_RESULT: [
-    {
-      targetId: "tour-visualizer",
       title: "🏆 Mission Complete!",
-      description:
-        "You've traced the full ASCON-128 AEAD pipeline as standardised by NIST in 2023. Your ciphertext is indistinguishable from random bits, and your authentication tag makes any tampering immediately detectable.",
-      calloutSide: "bottom",
+      description: "You've traced the full ASCON-128 AEAD pipeline! The receiver decrypts and recomputes the tag to verify integrity.",
+      calloutSide: "left",
     },
   ],
 };
