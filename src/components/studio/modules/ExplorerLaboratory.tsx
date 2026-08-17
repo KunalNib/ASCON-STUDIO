@@ -24,15 +24,15 @@ export function ExplorerLaboratory() {
     <div className="flex flex-col h-full relative space-y-6">
       
       {/* Explorer Navigation */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-4 border-b border-white/10 custom-scrollbar mask-gradient-right">
+      <div className="flex items-center gap-2 overflow-x-auto pb-4 border-b border-zinc-200 dark:border-white/10 custom-scrollbar mask-gradient-right">
          {tabs.map((tab) => (
            <button
              key={tab.id}
              onClick={() => setActiveExplorerTab(tab.id)}
              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all ${
                activeExplorerTab === tab.id 
-                 ? "bg-purple-600/20 text-purple-400 border border-purple-500/50 shadow-inner" 
-                 : "bg-[#09090b] text-zinc-500 border border-white/5 hover:text-zinc-300 hover:bg-white/5"
+                 ? "bg-purple-50 dark:bg-purple-600/20 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-500/50 shadow-sm dark:shadow-inner" 
+                 : "bg-white dark:bg-[#09090b] text-zinc-500 dark:text-zinc-500 border border-zinc-200 dark:border-white/5 hover:text-zinc-900 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/5"
              }`}
            >
              <tab.icon className="w-4 h-4" />
@@ -42,7 +42,7 @@ export function ExplorerLaboratory() {
       </div>
 
       {/* Explorer Content Area */}
-      <div className="flex-1 min-h-0 relative bg-[#09090b] rounded-2xl border border-white/5 overflow-hidden flex flex-col">
+      <div className="flex-1 min-h-0 relative bg-zinc-50 dark:bg-[#09090b] rounded-2xl border border-zinc-200 dark:border-white/5 overflow-hidden flex flex-col">
          <AnimatePresence mode="wait">
            <motion.div
              key={activeExplorerTab}
@@ -59,7 +59,7 @@ export function ExplorerLaboratory() {
              {activeExplorerTab === "tag" && <FinalizationAndTag />}
              {activeExplorerTab === "debugger" && (
                 <div className="flex-1 flex flex-col w-full p-6">
-                   <h3 className="text-zinc-400 mb-4 font-mono text-sm self-start">320-BIT TRACE DEBUGGER</h3>
+                   <h3 className="text-zinc-600 dark:text-zinc-400 mb-4 font-mono text-sm self-start">320-BIT TRACE DEBUGGER</h3>
                    <InteractiveStateGrid />
                 </div>
              )}

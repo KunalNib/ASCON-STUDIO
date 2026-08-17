@@ -169,9 +169,9 @@ export default function LearnModule() {
       level: "Expert",
       title: "Attacking ASCON",
       description: "Analyze rotational cryptanalysis and evaluate the strict avalanche criterion bounds.",
-      status: "locked",
+      status: "available",
       modules: [
-        { title: "Bit-Flip Attacks", icon: Fingerprint, shortAnswer: "Locked until intermediate modules are completed.", context: "Locked until intermediate modules verify XP bounds." }
+        { title: "Bit-Flip Attacks", icon: Fingerprint, shortAnswer: "This module demonstrates theoretical vulnerabilities in lightweight cryptography.", context: "Although ASCON is secure against bit-flip attacks due to its authenticated encryption, analyzing such attacks helps understand the importance of the authentication tag." }
       ]
     }
   ];
@@ -179,11 +179,11 @@ export default function LearnModule() {
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8 flex flex-col min-h-[calc(100vh-4rem)]">
       <header>
-        <h1 className="text-3xl font-bold tracking-tight text-white mb-2 flex items-center gap-3">
-           <GraduationCap className="w-8 h-8 text-purple-400" />
+        <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white mb-2 flex items-center gap-3">
+           <GraduationCap className="w-8 h-8 text-purple-600 dark:text-purple-400" />
            Interactive Learning Curriculum
         </h1>
-        <p className="text-zinc-400">Deep, structural explanations governing ASCON cryptographic parameters.</p>
+        <p className="text-zinc-600 dark:text-zinc-400">Deep, structural explanations governing ASCON cryptographic parameters.</p>
       </header>
 
       <div className="flex flex-col md:flex-row gap-8 flex-1">
@@ -199,49 +199,49 @@ export default function LearnModule() {
                   setExpandedModule(null);
                 }
               }}
-              className={`p-5 rounded-2xl border transition-all ${activeCourse === idx ? 'bg-purple-900/20 border-purple-500 shadow-[0_0_25px_rgba(168,85,247,0.15)] overflow-hidden' : 'bg-[#09090b] border-white/10 hover:bg-white/5'} ${course.status === "locked" ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              className={`p-5 rounded-2xl border transition-all ${activeCourse === idx ? 'bg-purple-100 dark:bg-purple-900/20 border-purple-500 shadow-[0_0_25px_rgba(168,85,247,0.15)] overflow-hidden' : 'bg-white dark:bg-[#09090b] border-zinc-200 dark:border-white/10 hover:bg-zinc-50 dark:hover:bg-white/5'} ${course.status === "locked" ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
             >
               <div className="flex items-start justify-between mb-2">
-                <span className={`text-xs font-bold uppercase tracking-wider ${activeCourse === idx ? 'text-purple-400' : 'text-zinc-500'}`}>
+                <span className={`text-xs font-bold uppercase tracking-wider ${activeCourse === idx ? 'text-purple-600 dark:text-purple-400' : 'text-zinc-500'}`}>
                   {course.level}
                 </span>
                 {course.status === "completed" && <CheckCircle className="w-5 h-5 text-green-500" />}
                 {course.status === "in-progress" && <span className="w-5 h-5 flex items-center justify-center rounded-full border-2 border-purple-500"><div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" /></span>}
-                {course.status === "locked" && <Lock className="w-4 h-4 text-zinc-600" />}
+                {course.status === "locked" && <Lock className="w-4 h-4 text-zinc-400 dark:text-zinc-600" />}
               </div>
-              <h3 className="font-bold text-white mb-1">{course.title}</h3>
-              <p className="text-xs text-zinc-400 leading-relaxed line-clamp-2">{course.description}</p>
+              <h3 className="font-bold text-zinc-900 dark:text-white mb-1">{course.title}</h3>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed line-clamp-2">{course.description}</p>
             </div>
           ))}
         </div>
 
         {/* Active Course View */}
-        <div className="w-full md:w-2/3 bg-[#0d0d0d] border border-white/10 rounded-3xl p-6 flex flex-col shadow-2xl relative overflow-hidden">
+        <div className="w-full md:w-2/3 bg-white dark:bg-[#0d0d0d] border border-zinc-200 dark:border-white/10 rounded-3xl p-6 flex flex-col shadow-xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 blur-[100px] rounded-full pointer-events-none" />
           
           <div className="mb-6">
-            <span className="text-purple-400 text-sm font-semibold uppercase tracking-widest">{courses[activeCourse].level} Reading</span>
-            <h2 className="text-3xl font-extrabold text-white mt-1">{courses[activeCourse].title}</h2>
+            <span className="text-purple-600 dark:text-purple-400 text-sm font-semibold uppercase tracking-widest">{courses[activeCourse].level} Reading</span>
+            <h2 className="text-3xl font-extrabold text-zinc-900 dark:text-white mt-1">{courses[activeCourse].title}</h2>
           </div>
 
           <div className="space-y-3 flex-1 overflow-y-auto pr-2">
             {!activeLessonContext ? (
                <>
-                 <h4 className="text-zinc-300 font-medium mb-2 flex items-center gap-2"><BookOpen className="w-4 h-4"/> Select a specialized module</h4>
+                 <h4 className="text-zinc-700 dark:text-zinc-300 font-medium mb-2 flex items-center gap-2"><BookOpen className="w-4 h-4"/> Select a specialized module</h4>
                  {courses[activeCourse].modules.map((mod, i) => (
                     <motion.div 
                       key={i}
-                      className={`group flex flex-col justify-center p-5 rounded-xl bg-black border transition-all relative overflow-hidden ${expandedModule === i ? 'border-purple-500/50' : 'border-white/10 hover:border-white/20'}`}
+                      className={`group flex flex-col justify-center p-5 rounded-xl bg-zinc-50 dark:bg-black border transition-all relative overflow-hidden ${expandedModule === i ? 'border-purple-500/50' : 'border-zinc-200 dark:border-white/10 hover:border-zinc-300 dark:hover:border-white/20'}`}
                     >
                       <div 
                         className="flex items-center gap-4 relative z-10 cursor-pointer"
                         onClick={() => setExpandedModule(expandedModule === i ? null : i)}
                       >
-                        <div className="w-10 h-10 rounded-full bg-purple-900/30 flex items-center justify-center border border-purple-500/20 text-purple-400 shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center border border-purple-200 dark:border-purple-500/20 text-purple-600 dark:text-purple-400 shrink-0">
                            <mod.icon className="w-5 h-5" />
                         </div>
-                        <span className="text-lg text-zinc-200 font-bold group-hover:text-purple-300 transition-colors">{mod.title}</span>
-                        <ChevronRight className={`w-5 h-5 text-zinc-600 ml-auto group-hover:text-purple-400 transition-all ${expandedModule === i ? 'rotate-90' : 'group-hover:translate-x-1'}`} />
+                        <span className="text-lg text-zinc-800 dark:text-zinc-200 font-bold group-hover:text-purple-600 dark:group-hover:text-purple-300 transition-colors">{mod.title}</span>
+                        <ChevronRight className={`w-5 h-5 text-zinc-400 dark:text-zinc-600 ml-auto group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-all ${expandedModule === i ? 'rotate-90' : 'group-hover:translate-x-1'}`} />
                       </div>
                       <AnimatePresence>
                         {expandedModule === i && (
@@ -251,14 +251,14 @@ export default function LearnModule() {
                             exit={{ height: 0, opacity: 0 }}
                             className="overflow-hidden"
                           >
-                            <div className="ml-14 mt-4 text-base text-zinc-300 leading-relaxed border-t border-white/5 pt-4">
+                            <div className="ml-14 mt-4 text-base text-zinc-600 dark:text-zinc-300 leading-relaxed border-t border-zinc-200 dark:border-white/5 pt-4">
                               <p className="mb-4">{mod.shortAnswer}</p>
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setActiveLessonContext(mod.context);
                                 }}
-                                className="flex items-center gap-2 text-base font-semibold text-purple-400 hover:text-purple-300 bg-purple-500/10 hover:bg-purple-500/20 px-3 py-1.5 rounded-lg transition-colors w-fit"
+                                className="flex items-center gap-2 text-base font-semibold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 bg-purple-100 dark:bg-purple-500/10 hover:bg-purple-200 dark:hover:bg-purple-500/20 px-3 py-1.5 rounded-lg transition-colors w-fit"
                               >
                                 <Play className="w-4 h-4 fill-current" /> Deep Dive
                               </button>

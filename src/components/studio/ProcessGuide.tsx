@@ -85,7 +85,7 @@ function GuideRow({ icon, label, text, delay }: RowProps) {
       <div className="w-5 h-5 shrink-0 mt-0.5 text-zinc-400">{icon}</div>
       <div>
         <div className="text-[9px] text-zinc-600 uppercase tracking-widest font-bold mb-0.5">{label}</div>
-        <p className="text-[11px] text-zinc-300 leading-snug">{text}</p>
+        <p className="text-[11px] text-zinc-700 dark:text-zinc-300 leading-snug">{text}</p>
       </div>
     </motion.div>
   );
@@ -120,7 +120,7 @@ export function ProcessGuide({ step }: ProcessGuideProps) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.97 }}
             transition={{ type: "spring", stiffness: 300, damping: 28 }}
-            className={`bg-[#0a0a0e]/90 backdrop-blur-xl border ${border} rounded-2xl overflow-hidden ${glow}`}
+            className={`bg-white/90 dark:bg-[#0a0a0e]/90 backdrop-blur-xl border ${border} rounded-2xl overflow-hidden ${glow}`}
           >
             {/* Thin color bar */}
             <div className={`h-0.5 w-full ${dot.replace("bg-", "bg-")}`} />
@@ -154,13 +154,13 @@ export function ProcessGuide({ step }: ProcessGuideProps) {
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setIsExpanded(false)}
-                  className="p-1 rounded-lg hover:bg-white/10 text-zinc-600 hover:text-zinc-300 transition-colors"
+                  className="p-1 rounded-lg hover:bg-zinc-200 dark:hover:bg-white/10 text-zinc-500 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-zinc-300 transition-colors"
                 >
                   <ChevronDown className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => setIsDismissed(true)}
-                  className="p-1 rounded-lg hover:bg-white/10 text-zinc-600 hover:text-zinc-300 transition-colors"
+                  className="p-1 rounded-lg hover:bg-zinc-200 dark:hover:bg-white/10 text-zinc-500 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-zinc-300 transition-colors"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -175,7 +175,7 @@ export function ProcessGuide({ step }: ProcessGuideProps) {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="px-4 pb-4 space-y-3 border-t border-white/5 pt-3"
+                className="px-4 pb-4 space-y-3 border-t border-zinc-200 dark:border-white/5 pt-3"
               >
                 <GuideRow
                   icon={<Eye className="w-full h-full" />}
@@ -207,7 +207,7 @@ export function ProcessGuide({ step }: ProcessGuideProps) {
                     className={`rounded-full transition-all duration-300 ${
                       s === step
                         ? `w-4 h-1.5 ${dot}`
-                        : "w-1.5 h-1.5 bg-zinc-700"
+                        : "w-1.5 h-1.5 bg-zinc-300 dark:bg-zinc-700"
                     }`}
                   />
                 ))}
@@ -235,7 +235,7 @@ export function ProcessGuide({ step }: ProcessGuideProps) {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
             onClick={() => setIsExpanded(true)}
-            className={`flex items-center gap-2 px-3 py-2 bg-[#0a0a0e]/90 backdrop-blur-xl border ${border} rounded-xl ${glow} hover:bg-white/5 transition-all group`}
+            className={`flex items-center gap-2 px-3 py-2 bg-white/90 dark:bg-[#0a0a0e]/90 backdrop-blur-xl border ${border} rounded-xl ${glow} hover:bg-zinc-100 dark:hover:bg-white/5 transition-all group`}
           >
             <motion.div
               animate={{ scale: [1, 1.2, 1] }}
@@ -244,10 +244,10 @@ export function ProcessGuide({ step }: ProcessGuideProps) {
             >
               <Bot className="w-3 h-3 text-blue-400" />
             </motion.div>
-            <span className="text-[11px] text-zinc-400 font-bold group-hover:text-white transition-colors">
+            <span className="text-[11px] text-zinc-500 dark:text-zinc-400 font-bold group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">
               Visual Guide
             </span>
-            <ChevronUp className="w-3.5 h-3.5 text-zinc-600 group-hover:text-zinc-300 transition-colors" />
+            <ChevronUp className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-900 dark:group-hover:text-zinc-300 transition-colors" />
           </motion.button>
         )}
       </AnimatePresence>

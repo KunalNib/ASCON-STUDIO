@@ -11,7 +11,7 @@ class AssistantRAG:
             print(f"Warning: Could not initialize Ollama. Make sure it is running. Error: {e}")
             self.llm = None
         
-    async def query_stream(self, text: str, context: dict = None):
+    async def query_stream(self, text: str, context: dict = None, image: str = None):
         """
         Process the physical LLM query via Ollama if available. 
         Will return standard responses with simulated visual UI triggers logic appended.
@@ -31,7 +31,8 @@ class AssistantRAG:
             "- Permutation operations: (1) pc (Addition of Constants) breaks symmetry. (2) ps (Substitution Layer) uses a 5-bit S-box for non-linearity. (3) pl (Linear Diffusion Layer) uses bitwise rotations and XORs for the avalanche effect.\n"
             "- Finalization: The key is injected twice (before and after 12 rounds of pa) to prevent length-extension attacks. The tag is extracted from x3 and x4.\n\n"
             "Explain concepts clearly, and be EXTREMELY concise. "
-            "DO NOT give long introductory overviews. Directly answer the question in ideally 1-3 sentences maximum."
+            "DO NOT give long introductory overviews. Directly answer the question in ideally 1-3 sentences maximum. "
+            "When appropriate, answer the question in graphical form (using mermaid diagrams), table form, or diagrammatic form."
         )
         
         full_prompt = f"{system_prompt}\n{context_str}\n\nStudent asks: {text}\n\nTutor Response:"
@@ -53,18 +54,40 @@ class AssistantRAG:
             actions = {"highlight": "permutation-view", "step_to": 2, "open_side_panel": True}
             sources = ["Ollama LLM"]
             
-        from langchain_ollama import OllamaLLM
+        from langchain_ollama import OllamaLLM, ChatOllama
+        from langchain_core.messages import HumanMessage, SystemMessage
         try:
-            # Yield an initial indicator so the UI responds immediately!
-            yield {"type": "chunk", "message": "*(Booting up Mistral LLM - this may take up to 60 seconds on first run...)*\n\n"}
-            
-            llm = OllamaLLM(model="mistral")
-            # LLM execution via async stream generator
-            async for chunk in llm.astream(full_prompt):
-                yield {"type": "chunk", "message": chunk}
+            if image:
+                yield {"type": "chunk", "message": "*(Analyzing image with LLaVA multimodal model...)*\n\n"}
+                llm = ChatOllama(model="llava")
+                
+                # Image comes as 'data:image/jpeg;base64,...'
+                base64_data = image.split(',')[1] if ',' in image else image
+                
+                messages = [
+                    SystemMessage(content=system_prompt),
+                    HumanMessage(content=[
+                        {"type": "text", "text": f"{context_str}\n\nStudent asks: {text}"},
+                        {
+                            "type": "image_url", 
+                            "image_url": {"url": f"data:image/jpeg;base64,{base64_data}"}
+                        }
+                    ])
+                ]
+                
+                async for chunk in llm.astream(messages):
+                    yield {"type": "chunk", "message": chunk.content}
+            else:
+                # Yield an initial indicator so the UI responds immediately!
+                yield {"type": "chunk", "message": "*(Booting up Mistral LLM - this may take up to 60 seconds on first run...)*\n\n"}
+                
+                llm = OllamaLLM(model="mistral")
+                # LLM execution via async stream generator
+                async for chunk in llm.astream(full_prompt):
+                    yield {"type": "chunk", "message": chunk}
         except Exception as e:
-            # Mistral isn't loaded or network error
-            msg = f"Ollama execution failed (could not load mistral). Error: {str(e)}."
+            # Mistral/llava isn't loaded or network error
+            msg = f"Ollama execution failed. Error: {str(e)}."
             yield {"type": "chunk", "message": msg}
             
         yield {

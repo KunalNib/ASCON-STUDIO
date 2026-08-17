@@ -28,13 +28,13 @@ export default function ThreeDimensionalView() {
     <div className="flex flex-col h-[calc(100vh-4rem)] p-4 md:p-6 w-full">
       <header className="mb-4 flex items-center justify-between shrink-0">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white mb-1">3D Topology Matrix</h1>
-          <p className="text-zinc-400 text-sm">Spatial visualization of the 320-bit internal state.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white mb-1">3D Topology Matrix</h1>
+          <p className="text-zinc-600 dark:text-zinc-400 text-sm">Spatial visualization of the 320-bit internal state.</p>
         </div>
         <div className="flex gap-2">
           <button 
             onClick={() => setIsPlaying(!isPlaying)}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
           >
              <RefreshCcw className="w-4 h-4" />
              {isPlaying ? "Pause Flow" : "Stream Data"}
@@ -42,27 +42,27 @@ export default function ThreeDimensionalView() {
         </div>
       </header>
 
-      <div className="flex-1 min-h-0 relative bg-[#09090b] rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
+      <div className="flex-1 min-h-0 relative bg-white dark:bg-[#09090b] rounded-2xl border border-zinc-200 dark:border-white/10 overflow-hidden shadow-sm dark:shadow-2xl">
         <ThreeCube bitData={activeBits} />
         
         {/* Overlay UI elements */}
         <div className="absolute inset-x-0 bottom-0 p-6 pointer-events-none">
           <div className="flex items-end justify-between">
-            <div className="bg-black/50 backdrop-blur-xl border border-white/10 p-4 rounded-xl max-w-sm pointer-events-auto">
-              <h3 className="text-white font-semibold flex items-center gap-2 mb-2">
-                <Camera className="w-4 h-4 text-blue-400" />
+            <div className="bg-zinc-50 dark:bg-black/50 backdrop-blur-xl border border-zinc-200 dark:border-white/10 p-4 rounded-xl max-w-sm pointer-events-auto">
+              <h3 className="text-zinc-900 dark:text-white font-semibold flex items-center gap-2 mb-2">
+                <Camera className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 Viewport Controls
               </h3>
-              <p className="text-xs text-zinc-400 mb-3 leading-relaxed">
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-3 leading-relaxed">
                 ASCON's state spans 5 layers (x0 to x4). Drag to rotate around the 320-block matrix. Scrolling zooms the camera lens.
               </p>
               <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-zinc-500">Active Bits</span>
-                <span className="text-blue-400">{activeBits.length} / 320</span>
+                <span className="text-zinc-500 dark:text-zinc-500">Active Bits</span>
+                <span className="text-blue-600 dark:text-blue-400">{activeBits.length} / 320</span>
               </div>
             </div>
             
-            <div className="text-zinc-600 font-mono text-[10px] hidden md:block">
+            <div className="text-zinc-400 dark:text-zinc-600 font-mono text-[10px] hidden md:block">
               RENDER: WEBGL2  |  ENGINE: THREE.JS
             </div>
           </div>

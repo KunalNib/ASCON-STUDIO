@@ -27,12 +27,12 @@ export default function EncryptionModule() {
       {/* ── Mission Banner ── */}
       <div
         id="guide-mission-banner"
-        className="shrink-0 bg-[#09090b] border border-white/8 rounded-2xl px-4 py-2.5 flex items-center gap-4 shadow-lg"
+        className="shrink-0 bg-white dark:bg-[#09090b] border border-zinc-200 dark:border-white/10 rounded-2xl px-4 py-2.5 flex items-center gap-4 shadow-sm dark:shadow-lg transition-colors"
       >
         {/* Title */}
         <div className="flex items-center gap-2 shrink-0">
           <Trophy className="w-4 h-4 text-yellow-500" />
-          <span className="text-[11px] font-black uppercase tracking-widest text-zinc-400">
+          <span className="text-[11px] font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
             Encryption Mission
           </span>
         </div>
@@ -42,7 +42,7 @@ export default function EncryptionModule() {
           <span className="text-[10px] text-zinc-500 font-mono shrink-0">
             {completedCount}/{totalChallenges} Steps
           </span>
-          <div className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+          <div className="flex-1 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
             <motion.div
               className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"
               animate={{ width: `${progressPct}%` }}
@@ -54,16 +54,16 @@ export default function EncryptionModule() {
         {/* XP bar */}
         <div className="flex items-center gap-2 shrink-0">
           <Zap className="w-3.5 h-3.5 text-yellow-400" />
-          <div className="w-20 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+          <div className="w-20 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
             <motion.div
               className="h-full bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full"
               animate={{ width: `${xpPct}%` }}
               transition={{ type: "spring", stiffness: 80 }}
             />
           </div>
-          <span className="text-[11px] font-bold text-yellow-400 font-mono">
+          <span className="text-[11px] font-bold text-yellow-500 dark:text-yellow-400 font-mono">
             {encryptionXp}
-            <span className="text-zinc-600 font-normal"> / {MAX_ENCRYPTION_XP} XP</span>
+            <span className="text-zinc-500 dark:text-zinc-600 font-normal"> / {MAX_ENCRYPTION_XP} XP</span>
           </span>
         </div>
       </div>
@@ -72,14 +72,14 @@ export default function EncryptionModule() {
       <header className="flex items-center gap-3 shrink-0 px-1">
         <button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="p-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-zinc-400 hover:text-white transition-all hidden md:flex items-center justify-center"
+          className="p-1.5 bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 border border-zinc-200 dark:border-white/10 rounded-lg text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all hidden md:flex items-center justify-center"
           title={isSidebarOpen ? "Collapse Timeline" : "Expand Timeline"}
         >
           {isSidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeft className="w-4 h-4" />}
         </button>
-        <Lock className="w-4 h-4 text-blue-500 shrink-0" />
-        <h1 className="text-sm font-bold tracking-tight text-white">Interactive Execution Laboratory</h1>
-        <span className="text-zinc-600 text-xs hidden lg:inline">— ASCON step-by-step walkthrough</span>
+        <Lock className="w-4 h-4 text-blue-600 dark:text-blue-500 shrink-0" />
+        <h1 className="text-sm font-bold tracking-tight text-zinc-900 dark:text-white">Interactive Execution Laboratory</h1>
+        <span className="text-zinc-500 dark:text-zinc-600 text-xs hidden lg:inline">— ASCON step-by-step walkthrough</span>
       </header>
 
       {/* ── Main layout ── */}
@@ -87,13 +87,13 @@ export default function EncryptionModule() {
 
         {/* Timeline sidebar */}
         {isSidebarOpen && (
-          <div className="hidden md:flex w-56 shrink-0 bg-[#09090b] rounded-2xl border border-white/5 p-3 shadow-xl overflow-y-auto custom-scrollbar transition-all duration-300">
+          <div className="hidden md:flex w-56 shrink-0 bg-white dark:bg-[#09090b] rounded-2xl border border-zinc-200 dark:border-white/5 p-3 shadow-sm dark:shadow-xl overflow-y-auto custom-scrollbar transition-all duration-300">
             <LearningTimeline />
           </div>
         )}
 
         {/* Main visualization engine */}
-        <div className="flex-1 min-w-0 bg-black border border-white/10 rounded-2xl flex flex-col relative overflow-hidden shadow-2xl p-0 transition-all duration-300">
+        <div className="flex-1 min-w-0 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-white/10 rounded-2xl flex flex-col relative overflow-hidden shadow-sm dark:shadow-2xl p-0 transition-all duration-300">
           <GuidedLaboratory />
         </div>
 

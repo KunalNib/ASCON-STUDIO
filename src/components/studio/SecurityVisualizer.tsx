@@ -8,14 +8,14 @@ export function SecurityVisualizer() {
   const nodes = Array.from({ length: 15 }, (_, i) => i);
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center p-8 bg-[#050000] text-red-100 font-mono relative overflow-hidden">
+    <div className="w-full h-full flex flex-col items-center justify-center p-8 bg-rose-50 dark:bg-[#050000] text-rose-900 dark:text-red-100 font-mono relative overflow-hidden">
       
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-red-900/20 via-[#050000] to-[#050000]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-rose-200 dark:from-red-900/20 via-transparent dark:via-[#050000] to-transparent dark:to-[#050000]" />
       
       <div className="text-center z-10 mb-12">
-        <ShieldAlert className="w-12 h-12 text-red-500 mx-auto mb-4 animate-pulse" />
-        <h3 className="text-xl font-bold text-red-500 mb-2">Avalanche Effect</h3>
-        <p className="text-xs text-red-400/60 max-w-sm">
+        <ShieldAlert className="w-12 h-12 text-rose-600 dark:text-red-500 mx-auto mb-4 animate-pulse" />
+        <h3 className="text-xl font-bold text-rose-700 dark:text-red-500 mb-2">Avalanche Effect</h3>
+        <p className="text-xs text-rose-600 dark:text-red-400/60 max-w-sm">
           A single bit flip in the initialization vector propagates through the ASCON core, causing pseudo-random chaos.
         </p>
       </div>

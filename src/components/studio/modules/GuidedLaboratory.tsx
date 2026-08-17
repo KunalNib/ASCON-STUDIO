@@ -55,11 +55,11 @@ function EncryptionSummaryScreen() {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className="text-3xl font-black text-white mb-2"
+        className="text-3xl font-black text-zinc-900 dark:text-white mb-2"
       >
         Encryption Complete!
       </motion.h2>
-      <p className="text-zinc-500 mb-8 text-sm">You've walked through the full ASCON cipher pipeline.</p>
+      <p className="text-zinc-600 dark:text-zinc-500 mb-8 text-sm">You've walked through the full ASCON cipher pipeline.</p>
 
       {/* Stats */}
       <motion.div
@@ -68,16 +68,16 @@ function EncryptionSummaryScreen() {
         transition={{ delay: 0.3 }}
         className="grid grid-cols-3 gap-4 w-full max-w-md mb-8"
       >
-        <div className="bg-[#0d0d0d] border border-white/10 rounded-2xl p-4">
-          <div className="text-2xl font-black text-yellow-400">{encryptionXp}</div>
+        <div className="bg-zinc-50 dark:bg-[#0d0d0d] border border-zinc-200 dark:border-white/10 rounded-2xl p-4">
+          <div className="text-2xl font-black text-yellow-500 dark:text-yellow-400">{encryptionXp}</div>
           <div className="text-[10px] text-zinc-500 uppercase tracking-wider mt-1">/ {MAX_ENCRYPTION_XP} XP</div>
         </div>
-        <div className="bg-[#0d0d0d] border border-white/10 rounded-2xl p-4">
-          <div className="text-2xl font-black text-blue-400">{completedCount}</div>
+        <div className="bg-zinc-50 dark:bg-[#0d0d0d] border border-zinc-200 dark:border-white/10 rounded-2xl p-4">
+          <div className="text-2xl font-black text-blue-600 dark:text-blue-400">{completedCount}</div>
           <div className="text-[10px] text-zinc-500 uppercase tracking-wider mt-1">/ {challengeableCount} Steps</div>
         </div>
-        <div className="bg-[#0d0d0d] border border-white/10 rounded-2xl p-4">
-          <div className="text-2xl font-black text-purple-400">{pct}%</div>
+        <div className="bg-zinc-50 dark:bg-[#0d0d0d] border border-zinc-200 dark:border-white/10 rounded-2xl p-4">
+          <div className="text-2xl font-black text-purple-600 dark:text-purple-400">{pct}%</div>
           <div className="text-[10px] text-zinc-500 uppercase tracking-wider mt-1">XP Score</div>
         </div>
       </motion.div>
@@ -93,7 +93,7 @@ function EncryptionSummaryScreen() {
           <Star
             key={i}
             className={`w-7 h-7 transition-all ${
-              i < stars ? "text-yellow-400 fill-yellow-400 scale-110" : "text-zinc-700"
+              i < stars ? "text-yellow-400 fill-yellow-400 scale-110" : "text-zinc-300 dark:text-zinc-700"
             }`}
           />
         ))}
@@ -107,7 +107,7 @@ function EncryptionSummaryScreen() {
       >
         <button
           onClick={reset}
-          className="flex items-center gap-2 bg-white hover:bg-zinc-100 text-black font-bold px-6 py-3 rounded-full transition-all hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.15)]"
+          className="flex items-center gap-2 bg-zinc-900 dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-100 text-white dark:text-black font-bold px-6 py-3 rounded-full transition-all hover:scale-105 active:scale-95 shadow-md dark:shadow-[0_0_20px_rgba(255,255,255,0.15)]"
         >
           <RotateCcw className="w-4 h-4" /> Play Again
         </button>
@@ -281,7 +281,7 @@ export function GuidedLaboratory() {
         {/* ── Visualization Canvas ── */}
         <div
           id="tour-visualizer"
-          className="flex-1 relative bg-black/40 border border-white/5 rounded-3xl overflow-hidden shadow-inner flex items-center justify-center"
+          className="flex-1 relative bg-zinc-100 dark:bg-black/40 border border-zinc-200 dark:border-white/5 rounded-3xl overflow-hidden shadow-inner flex items-center justify-center"
         >
           <AnimatePresence mode="wait">
             <motion.div
@@ -307,13 +307,13 @@ export function GuidedLaboratory() {
               initial={{ scale: 1.3, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              className="absolute top-3 right-3 z-20 flex items-center gap-2 bg-black/70 backdrop-blur-sm border border-yellow-500/20 rounded-xl px-3 py-1.5 shadow-lg"
+              className="absolute top-3 right-3 z-20 flex items-center gap-2 bg-white/90 dark:bg-black/70 backdrop-blur-sm border border-yellow-500/20 rounded-xl px-3 py-1.5 shadow-sm dark:shadow-lg"
             >
-              <Zap className="w-3.5 h-3.5 text-yellow-400" />
-              <span className="text-yellow-400 font-bold font-mono text-sm">{encryptionXp}</span>
-              <span className="text-zinc-600 text-xs">/ {MAX_ENCRYPTION_XP} XP</span>
-              <span className="text-zinc-700 text-xs">·</span>
-              <span className="text-zinc-500 text-xs">{completedChallengeableCount}/{totalChallengeableCount}</span>
+              <Zap className="w-3.5 h-3.5 text-yellow-500 dark:text-yellow-400" />
+              <span className="text-yellow-600 dark:text-yellow-400 font-bold font-mono text-sm">{encryptionXp}</span>
+              <span className="text-zinc-500 dark:text-zinc-600 text-xs">/ {MAX_ENCRYPTION_XP} XP</span>
+              <span className="text-zinc-400 dark:text-zinc-700 text-xs">·</span>
+              <span className="text-zinc-600 dark:text-zinc-500 text-xs">{completedChallengeableCount}/{totalChallengeableCount}</span>
             </motion.div>
           )}
 
@@ -338,17 +338,17 @@ export function GuidedLaboratory() {
               animate={{ opacity: 1, width: "380px" }}
               exit={{ opacity: 0, width: 0 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="w-full lg:w-[380px] shrink-0 bg-white/[0.02] border border-white/10 rounded-3xl p-6 flex flex-col shadow-2xl overflow-hidden backdrop-blur-xl"
+              className="w-full lg:w-[380px] shrink-0 bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 rounded-3xl p-6 flex flex-col shadow-2xl overflow-hidden backdrop-blur-xl"
             >
               {/* Panel header */}
-              <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4 shrink-0">
-                <h2 className="text-lg font-bold text-white flex items-center gap-2.5 tracking-tight whitespace-nowrap">
-                  <HelpCircle className="text-blue-500 w-5 h-5" />
+              <div className="flex items-center justify-between border-b border-zinc-200 dark:border-white/10 pb-4 mb-4 shrink-0">
+                <h2 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2.5 tracking-tight whitespace-nowrap">
+                  <HelpCircle className="text-blue-600 dark:text-blue-500 w-5 h-5" />
                   What is happening?
                 </h2>
                 <button
                   onClick={() => setShowNarrative(false)}
-                  className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-500 hover:text-white transition-all"
+                  className="p-1.5 rounded-lg bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 border border-zinc-200 dark:border-white/10 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all"
                 >
                   <PanelRightClose className="w-4 h-4" />
                 </button>
@@ -364,50 +364,50 @@ export function GuidedLaboratory() {
                     transition={{ duration: 0.3 }}
                     className="space-y-5 pb-6"
                   >
-                    <div className="text-2xl font-bold text-white leading-tight">{data.title}</div>
+                    <div className="text-2xl font-bold text-zinc-900 dark:text-white leading-tight">{data.title}</div>
 
-                    <div className="bg-white/5 p-4 rounded-xl border border-white/5 relative overflow-hidden shadow-sm">
+                    <div className="bg-zinc-50 dark:bg-white/5 p-4 rounded-xl border border-zinc-200 dark:border-white/5 relative overflow-hidden shadow-sm">
                       <div className="absolute top-0 left-0 w-1 h-full bg-blue-500" />
-                      <h3 className="text-[11px] text-blue-400 uppercase font-bold mb-2 tracking-wider ml-2">What changed?</h3>
-                      <p className="text-sm text-zinc-200 leading-relaxed ml-2">{data.what}</p>
+                      <h3 className="text-[11px] text-blue-600 dark:text-blue-400 uppercase font-bold mb-2 tracking-wider ml-2">What changed?</h3>
+                      <p className="text-sm text-zinc-700 dark:text-zinc-200 leading-relaxed ml-2">{data.what}</p>
                     </div>
 
                     <div>
                       <h3 className="text-[11px] text-zinc-500 uppercase font-bold mb-2 tracking-wider">How does it work?</h3>
-                      <p className="text-sm text-zinc-400 leading-relaxed">{data.how}</p>
+                      <p className="text-sm text-zinc-700 dark:text-zinc-400 leading-relaxed">{data.how}</p>
                     </div>
 
                     <div>
                       <h3 className="text-[11px] text-zinc-500 uppercase font-bold mb-2 tracking-wider">Why is it necessary?</h3>
-                      <p className="text-sm text-zinc-400 leading-relaxed">{data.why}</p>
+                      <p className="text-sm text-zinc-700 dark:text-zinc-400 leading-relaxed">{data.why}</p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 bg-black/40 p-4 rounded-xl border border-white/5 shadow-inner">
+                    <div className="grid grid-cols-2 gap-4 bg-zinc-100 dark:bg-black/40 p-4 rounded-xl border border-zinc-200 dark:border-white/5 shadow-inner">
                       <div>
                         <h3 className="text-[10px] text-zinc-500 uppercase font-bold mb-2 tracking-wider">Input</h3>
-                        <p className="text-xs text-zinc-300 font-mono break-words">{data.input}</p>
+                        <p className="text-xs text-zinc-700 dark:text-zinc-300 font-mono break-words">{data.input}</p>
                       </div>
                       <div>
                         <h3 className="text-[10px] text-zinc-500 uppercase font-bold mb-2 tracking-wider">Output</h3>
-                        <p className="text-xs text-zinc-300 font-mono break-words">{data.output}</p>
+                        <p className="text-xs text-zinc-700 dark:text-zinc-300 font-mono break-words">{data.output}</p>
                       </div>
                     </div>
 
-                    <div className="bg-emerald-900/10 border border-emerald-500/20 p-5 rounded-xl relative overflow-hidden">
+                    <div className="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-500/20 p-5 rounded-xl relative overflow-hidden">
                       <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rotate-45 transform translate-x-12 -translate-y-12 blur-xl" />
-                      <h3 className="text-[11px] text-emerald-500 uppercase font-bold mb-2 tracking-wider">Security Purpose</h3>
-                      <p className="text-sm text-emerald-100/90 leading-relaxed relative z-10">{data.security}</p>
+                      <h3 className="text-[11px] text-emerald-600 dark:text-emerald-500 uppercase font-bold mb-2 tracking-wider">Security Purpose</h3>
+                      <p className="text-sm text-emerald-700 dark:text-emerald-100/90 leading-relaxed relative z-10">{data.security}</p>
                     </div>
 
                     {!(completedSteps.includes("AUTH_OUTPUT") && currentStage === "AUTH_OUTPUT") && (
                       <div className="pt-2">
                         {isCurrentCompleted ? (
                           /* Completed badge */
-                          <div className="flex items-center gap-3 p-3 bg-emerald-900/20 border border-emerald-500/25 rounded-xl">
-                            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                          <div className="flex items-center gap-3 p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-500/25 rounded-xl">
+                            <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                             <div>
-                              <div className="text-emerald-300 font-bold text-sm">Challenge Complete!</div>
-                              <div className="text-emerald-700 text-xs">XP earned for this step</div>
+                              <div className="text-emerald-700 dark:text-emerald-300 font-bold text-sm">Challenge Complete!</div>
+                              <div className="text-emerald-600 dark:text-emerald-700 text-xs">XP earned for this step</div>
                             </div>
                           </div>
                         ) : hasChallenge ? (
@@ -419,32 +419,32 @@ export function GuidedLaboratory() {
                             whileTap={{ scale: 0.98 }}
                             animate={{ boxShadow: ["0 0 0px rgba(59,130,246,0)", "0 0 20px rgba(59,130,246,0.4)", "0 0 0px rgba(59,130,246,0)"] }}
                             transition={{ boxShadow: { repeat: Infinity, duration: 2.5 } }}
-                            className="w-full flex items-center gap-3 p-4 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/40 rounded-xl hover:from-blue-600/30 hover:to-purple-600/30 transition-all group"
+                            className="w-full flex items-center gap-3 p-4 bg-gradient-to-r from-blue-50 dark:from-blue-600/20 to-purple-50 dark:to-purple-600/20 border border-blue-200 dark:border-blue-500/40 rounded-xl hover:from-blue-100 dark:hover:from-blue-600/30 hover:to-purple-100 dark:hover:to-purple-600/30 transition-all group"
                           >
-                            <div className="w-9 h-9 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center group-hover:bg-blue-500/30 transition-colors shrink-0">
-                              <Target className="w-4 h-4 text-blue-400" />
+                            <div className="w-9 h-9 rounded-xl bg-blue-100 dark:bg-blue-500/20 border border-blue-200 dark:border-blue-500/30 flex items-center justify-center group-hover:bg-blue-200 dark:group-hover:bg-blue-500/30 transition-colors shrink-0">
+                              <Target className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                             </div>
                             <div className="text-left flex-1">
-                              <div className="text-white font-bold text-sm">Take Challenge</div>
-                              <div className="text-blue-400 text-xs">
+                              <div className="text-zinc-900 dark:text-white font-bold text-sm">Take Challenge</div>
+                              <div className="text-blue-600 dark:text-blue-400 text-xs">
                                 +{STEP_CHALLENGES[currentStage]?.xpReward} XP · {STEP_CHALLENGES[currentStage]?.difficulty}
                               </div>
                             </div>
-                            <Zap className="w-4 h-4 text-yellow-400 shrink-0" />
+                            <Zap className="w-4 h-4 text-yellow-500 dark:text-yellow-400 shrink-0" />
                           </motion.button>
                         ) : null}
                       </div>
                     )}
 
                     {/* Secondary action buttons */}
-                    <div className="pt-2 border-t border-white/10 grid grid-cols-3 gap-3">
-                      <button onClick={() => setIsMathModalOpen(true)} className="flex flex-col items-center justify-center p-3 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors text-xs gap-2 font-medium">
+                    <div className="pt-2 border-t border-zinc-200 dark:border-white/10 grid grid-cols-3 gap-3">
+                      <button onClick={() => setIsMathModalOpen(true)} className="flex flex-col items-center justify-center p-3 rounded-xl bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors text-xs gap-2 font-medium">
                         <Calculator className="w-5 h-5" /> Math
                       </button>
-                      <button onClick={() => setIsCodeModalOpen(true)} className="flex flex-col items-center justify-center p-3 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors text-xs gap-2 font-medium">
+                      <button onClick={() => setIsCodeModalOpen(true)} className="flex flex-col items-center justify-center p-3 rounded-xl bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors text-xs gap-2 font-medium">
                         <Code className="w-5 h-5" /> Code
                       </button>
-                      <button onClick={() => router.push("/studio/ai-tutor")} className="flex flex-col items-center justify-center p-3 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 hover:text-purple-300 border border-purple-500/20 transition-colors text-xs gap-2 font-bold shadow-[0_0_15px_rgba(168,85,247,0.15)]">
+                      <button onClick={() => router.push("/studio/ai-tutor")} className="flex flex-col items-center justify-center p-3 rounded-xl bg-purple-50 dark:bg-purple-500/10 hover:bg-purple-100 dark:hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 border border-purple-200 dark:border-purple-500/20 transition-colors text-xs gap-2 font-bold shadow-none dark:shadow-[0_0_15px_rgba(168,85,247,0.15)]">
                         <Bot className="w-5 h-5" /> Ask AI
                       </button>
                     </div>
@@ -463,11 +463,11 @@ export function GuidedLaboratory() {
             >
               <button
                 onClick={() => setShowNarrative(true)}
-                className="flex flex-col items-center gap-2 h-full w-10 rounded-2xl bg-white/[0.02] border border-white/10 hover:bg-white/[0.05] hover:border-blue-500/30 transition-all group"
+                className="flex flex-col items-center gap-2 h-full w-10 rounded-2xl bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/10 hover:bg-zinc-100 dark:hover:bg-white/[0.05] hover:border-blue-400 dark:hover:border-blue-500/30 transition-all group shadow-sm dark:shadow-none"
               >
                 <div className="flex-1 flex flex-col items-center justify-center gap-3">
-                  <PanelRightOpen className="w-4 h-4 text-zinc-500 group-hover:text-blue-400 transition-colors" />
-                  <div className="[writing-mode:vertical-lr] rotate-180 text-[10px] text-zinc-600 font-bold uppercase tracking-widest group-hover:text-zinc-400 transition-colors select-none">
+                  <PanelRightOpen className="w-4 h-4 text-zinc-500 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors" />
+                  <div className="[writing-mode:vertical-lr] rotate-180 text-[10px] text-zinc-500 dark:text-zinc-600 font-bold uppercase tracking-widest group-hover:text-zinc-600 dark:group-hover:text-zinc-400 transition-colors select-none">
                     Stage Guide
                   </div>
                 </div>
@@ -478,17 +478,17 @@ export function GuidedLaboratory() {
       </div>
 
       {/* ── Controls bar ── */}
-      <div id="tour-controls" className="mt-2 pt-2 border-t border-white/10 flex items-center gap-3 shrink-0 overflow-x-auto custom-scrollbar pb-1">
+      <div id="tour-controls" className="mt-2 pt-2 border-t border-zinc-200 dark:border-white/10 flex items-center gap-3 shrink-0 overflow-x-auto custom-scrollbar pb-1">
 
-        <button onClick={() => setIsSettingsModalOpen(true)} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-zinc-400 hover:text-white transition-colors shrink-0">
+        <button onClick={() => setIsSettingsModalOpen(true)} className="p-2 bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors shrink-0">
           <Settings className="w-4 h-4" />
         </button>
-        <button onClick={() => setIsMasterGuideOpen(true)} className="px-3 py-1.5 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/40 rounded-lg text-purple-400 hover:text-purple-300 transition-colors font-bold text-[10px] uppercase tracking-widest whitespace-nowrap shrink-0">
+        <button onClick={() => setIsMasterGuideOpen(true)} className="px-3 py-1.5 bg-purple-50 dark:bg-purple-600/20 hover:bg-purple-100 dark:hover:bg-purple-600/40 border border-purple-200 dark:border-purple-500/40 rounded-lg text-purple-700 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 transition-colors font-bold text-[10px] uppercase tracking-widest whitespace-nowrap shrink-0">
           Guide
         </button>
 
-        <span className="text-[10px] text-zinc-600 font-mono shrink-0">{currentStepIndex}/{steps.length - 1}</span>
-        <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden relative shadow-inner min-w-[60px]">
+        <span className="text-[10px] text-zinc-500 dark:text-zinc-600 font-mono shrink-0">{currentStepIndex}/{steps.length - 1}</span>
+        <div className="flex-1 h-1.5 bg-zinc-200 dark:bg-white/5 rounded-full overflow-hidden relative shadow-inner min-w-[60px]">
           <motion.div
             className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"
             initial={{ width: 0 }}
@@ -498,8 +498,8 @@ export function GuidedLaboratory() {
         </div>
 
         {/* Playback controls */}
-        <div className="flex items-center gap-2 bg-[#09090b] px-4 py-1.5 rounded-full border border-white/10 shadow-xl shrink-0">
-          <button onClick={prevStep} disabled={currentStepIndex === 0} className="p-1.5 text-zinc-400 hover:text-blue-400 transition-colors disabled:opacity-20">
+        <div className="flex items-center gap-2 bg-white dark:bg-[#09090b] px-4 py-1.5 rounded-full border border-zinc-200 dark:border-white/10 shadow-md dark:shadow-xl shrink-0">
+          <button onClick={prevStep} disabled={currentStepIndex === 0} className="p-1.5 text-zinc-500 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors disabled:opacity-20">
             <SkipBack className="w-4 h-4 fill-current" />
           </button>
           <button
@@ -516,8 +516,8 @@ export function GuidedLaboratory() {
               title={isNextLocked ? "Complete the challenge to unlock the next step" : "Next step"}
               className={`p-1.5 transition-colors ${
                 isNextLocked
-                  ? "text-zinc-600 cursor-not-allowed"
-                  : "text-zinc-400 hover:text-blue-400"
+                  ? "text-zinc-400 dark:text-zinc-600 cursor-not-allowed"
+                  : "text-zinc-500 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400"
               }`}
             >
               {isNextLocked
@@ -535,7 +535,7 @@ export function GuidedLaboratory() {
         </div>
 
         {/* Speed */}
-        <button onClick={toggleSpeed} className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-zinc-400 hover:text-white transition-colors text-[10px] font-bold tracking-wider shrink-0">
+        <button onClick={toggleSpeed} className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors text-[10px] font-bold tracking-wider shrink-0">
           <FastForward className="w-3.5 h-3.5" /> {animationSpeed}x
         </button>
 
@@ -545,7 +545,7 @@ export function GuidedLaboratory() {
             onClick={() => setIsChallengeOpen(true)}
             initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/40 rounded-lg text-blue-400 hover:text-blue-300 transition-all text-[10px] font-bold tracking-wider whitespace-nowrap shrink-0"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-600/20 hover:bg-blue-100 dark:hover:bg-blue-600/40 border border-blue-200 dark:border-blue-500/40 rounded-lg text-blue-700 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-all text-[10px] font-bold tracking-wider whitespace-nowrap shrink-0"
           >
             <Target className="w-3.5 h-3.5" /> + {STEP_CHALLENGES[currentStage]?.xpReward} XP Challenge
           </motion.button>

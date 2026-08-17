@@ -63,6 +63,7 @@ interface AsconState {
   playbackState: "playing" | "paused" | "idle";
   animationSpeed: number;
   demoMode: boolean;
+  isHardwareConnected: boolean;
 
   // Helper flags
   learningMode: "beginner" | "intermediate" | "research";
@@ -95,6 +96,7 @@ interface AsconState {
   setActiveFlippedBit: (index: number | null) => void;
   setHoveredOperation: (op: string | null) => void;
   encrypt: () => void;
+  setHardwareConnected: (status: boolean) => void;
 
   // Actions
   nextStep: () => void;
@@ -170,6 +172,7 @@ export const useAsconStore = create<AsconState>()(
       playbackState: "idle",
       animationSpeed: 1.0,
       demoMode: true,
+      isHardwareConnected: false,
       learningMode: "beginner",
       plaintext: "27.4 °C",
       key: "000102030405060708090A0B0C0D0E0F",
@@ -199,6 +202,7 @@ export const useAsconStore = create<AsconState>()(
       setActiveFlippedBit: () => {},
       setHoveredOperation: () => {},
       encrypt: () => {},
+      setHardwareConnected: (status: boolean) => set({ isHardwareConnected: status }),
 
       addXp: (amount: number) => set((state) => ({ xp: Math.max(0, state.xp + amount) })),
       addEncryptionXp: (amount: number) => set((state) => ({

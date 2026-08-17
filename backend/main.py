@@ -118,12 +118,14 @@ async def ai_tutor_endpoint(websocket: WebSocket):
                 data = json.loads(raw_data)
                 context = data.get("context", {})
                 message_text = data.get("text", "")
+                image_data = data.get("image")
             except json.JSONDecodeError:
                 context = {}
                 message_text = raw_data
+                image_data = None
             
             # For demonstration, we simulate an intelligent tutor response via streaming
-            async for chunk in rag_engine.query_stream(message_text, context=context):
+            async for chunk in rag_engine.query_stream(message_text, context=context, image=image_data):
                 await manager.send_message(json.dumps(chunk), websocket)
     except WebSocketDisconnect:
         manager.disconnect(websocket)

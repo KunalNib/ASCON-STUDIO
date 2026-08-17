@@ -27,12 +27,12 @@ export default function StudioLayout({ children }: { children: React.ReactNode }
   }, [token, router, isHydrated]);
 
   if (!isHydrated || !token) {
-    return <div className="min-h-screen bg-black flex items-center justify-center text-white font-mono text-sm">Verifying Session...</div>;
+    return <div className="min-h-screen bg-zinc-50 dark:bg-black flex items-center justify-center text-zinc-900 dark:text-white font-mono text-sm">Verifying Session...</div>;
   }
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen w-full bg-black text-zinc-100 overflow-hidden font-sans">
+      <div className="flex h-screen w-full bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-100 overflow-hidden font-sans transition-colors duration-300">
         <GuidedTour />
         <Sidebar />
         <div className="flex flex-col flex-1 min-w-0">

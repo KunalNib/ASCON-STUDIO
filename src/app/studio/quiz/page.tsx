@@ -125,16 +125,16 @@ export default function QuizGamification() {
       {/* Header */}
       <header className="flex items-center justify-between mb-8 shrink-0">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white mb-2 flex items-center gap-3">
+          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white mb-2 flex items-center gap-3">
             <Gamepad2 className="w-8 h-8 text-yellow-500" /> Cryptography Arena
           </h1>
-          <p className="text-zinc-400">
+          <p className="text-zinc-600 dark:text-zinc-400">
             Put your ASCON knowledge to the test against the Llama 3 LLM.
           </p>
         </div>
 
         {/* XP Card */}
-        <div className="bg-[#09090b] border border-white/10 rounded-2xl p-4 flex items-center gap-6 min-w-[250px] shadow-lg">
+        <div className="bg-white dark:bg-[#09090b] border border-zinc-200 dark:border-white/10 rounded-2xl p-4 flex items-center gap-6 min-w-[250px] shadow-sm dark:shadow-lg transition-colors">
           <div>
             <div className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-1">
               Rank
@@ -145,10 +145,10 @@ export default function QuizGamification() {
           </div>
           <div className="flex-1">
             <div className="flex justify-between text-xs mb-2">
-              <span className="text-zinc-400">XP Progress</span>
-              <span className="text-yellow-500 font-mono">{xp} XP</span>
+              <span className="text-zinc-500 dark:text-zinc-400">XP Progress</span>
+              <span className="text-yellow-600 dark:text-yellow-500 font-mono">{xp} XP</span>
             </div>
-            <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+            <div className="h-2 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
               <motion.div
                 className="h-full bg-gradient-to-r from-yellow-500 to-orange-500"
                 initial={{ width: 0 }}
@@ -172,16 +172,16 @@ export default function QuizGamification() {
               exit={{ opacity: 0, y: -20 }}
               className="text-center"
             >
-              <BrainCircuit className="w-24 h-24 text-zinc-700 mx-auto mb-6" />
-              <h2 className="text-2xl font-bold text-white mb-2">
+              <BrainCircuit className="w-24 h-24 text-zinc-300 dark:text-zinc-700 mx-auto mb-6" />
+              <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">
                 Ready to test your limits?
               </h2>
-              <p className="text-zinc-500 mb-8 text-sm">
+              <p className="text-zinc-600 dark:text-zinc-500 mb-8 text-sm">
                 10 unique ASCON questions · +{XP_PER_QUESTION} XP per correct answer
               </p>
               <button
                 onClick={fetchQuizSet}
-                className="bg-white hover:bg-zinc-200 text-black px-8 py-3 rounded-full font-bold transition-transform hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.2)]"
+                className="bg-zinc-900 dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-black px-8 py-3 rounded-full font-bold transition-transform hover:scale-105 active:scale-95 shadow-lg dark:shadow-[0_0_30px_rgba(255,255,255,0.2)]"
               >
                 Generate AI Challenge
               </button>
@@ -197,8 +197,8 @@ export default function QuizGamification() {
               exit={{ opacity: 0 }}
               className="text-center flex flex-col items-center"
             >
-              <Loader2 className="w-16 h-16 text-blue-500 animate-spin mb-4" />
-              <p className="text-zinc-400 font-mono animate-pulse">
+              <Loader2 className="w-16 h-16 text-blue-600 dark:text-blue-500 animate-spin mb-4" />
+              <p className="text-zinc-600 dark:text-zinc-400 font-mono animate-pulse">
                 Llama 3 is constructing 10 cryptographic challenges…
               </p>
             </motion.div>
@@ -217,16 +217,16 @@ export default function QuizGamification() {
               {/* Progress bar + counter */}
               <div className="mb-6">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-xs font-mono text-zinc-500 uppercase tracking-wider">
+                  <span className="text-xs font-mono text-zinc-600 dark:text-zinc-500 uppercase tracking-wider">
                     Question {currentIndex + 1} of {totalQ}
                   </span>
-                  <span className="text-xs font-mono text-zinc-500">
+                  <span className="text-xs font-mono text-zinc-600 dark:text-zinc-500">
                     Score:{" "}
-                    <span className="text-green-400 font-bold">{score}</span> /{" "}
+                    <span className="text-green-600 dark:text-green-400 font-bold">{score}</span> /{" "}
                     {currentIndex + (showResult ? 1 : 0)}
                   </span>
                 </div>
-                <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
                   <motion.div
                     className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
                     animate={{ width: `${progressPct}%` }}
@@ -236,12 +236,12 @@ export default function QuizGamification() {
               </div>
 
               {/* Question card */}
-              <div className="bg-[#0d0d0d] border border-white/10 p-8 rounded-3xl shadow-2xl">
+              <div className="bg-white dark:bg-[#0d0d0d] border border-zinc-200 dark:border-white/10 p-8 rounded-3xl shadow-sm dark:shadow-2xl">
                 <div className="mb-8">
-                  <span className="inline-block px-3 py-1 rounded bg-blue-500/10 text-blue-400 font-mono text-xs mb-4 border border-blue-500/20">
+                  <span className="inline-block px-3 py-1 rounded bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 font-mono text-xs mb-4 border border-blue-200 dark:border-blue-500/20">
                     Challenge Active · Q{currentIndex + 1}
                   </span>
-                  <h2 className="text-xl font-semibold text-white leading-relaxed">
+                  <h2 className="text-xl font-semibold text-zinc-900 dark:text-white leading-relaxed">
                     {currentQ.question}
                   </h2>
                 </div>
@@ -256,15 +256,15 @@ export default function QuizGamification() {
                       showResult && isSelected && !isCorrect;
 
                     let styles =
-                      "bg-white/5 border-white/10 hover:bg-white/10 text-zinc-300 cursor-pointer";
+                      "bg-zinc-50 dark:bg-white/5 border-zinc-200 dark:border-white/10 hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-700 dark:text-zinc-300 cursor-pointer";
                     if (isWinner)
                       styles =
-                        "bg-green-500/20 border-green-500 text-green-300 shadow-[0_0_20px_rgba(16,185,129,0.2)]";
+                        "bg-green-100 dark:bg-green-500/20 border-green-500 text-green-700 dark:text-green-300 shadow-none dark:shadow-[0_0_20px_rgba(16,185,129,0.2)]";
                     else if (isLoser)
                       styles =
-                        "bg-red-500/20 border-red-500 text-red-300";
+                        "bg-red-100 dark:bg-red-500/20 border-red-500 text-red-700 dark:text-red-300";
                     else if (showResult)
-                      styles = "bg-white/5 border-white/10 text-zinc-500 cursor-default opacity-60";
+                      styles = "bg-zinc-50 dark:bg-white/5 border-zinc-200 dark:border-white/10 text-zinc-400 dark:text-zinc-500 cursor-default opacity-60";
 
                     return (
                       <button
@@ -301,8 +301,8 @@ export default function QuizGamification() {
                       <div
                         className={`p-4 rounded-xl border ${
                           isCorrect
-                            ? "bg-green-500/10 border-green-500/20 text-green-400"
-                            : "bg-zinc-900 border-zinc-800 text-zinc-400"
+                            ? "bg-green-100 dark:bg-green-500/10 border-green-200 dark:border-green-500/20 text-green-700 dark:text-green-400"
+                            : "bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400"
                         }`}
                       >
                         <h4 className="font-bold mb-1 text-sm">
@@ -314,7 +314,7 @@ export default function QuizGamification() {
                       </div>
                       <button
                         onClick={handleNext}
-                        className="mt-4 w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white p-4 rounded-xl font-bold transition-all"
+                        className="mt-4 w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white p-4 rounded-xl font-bold transition-all shadow-sm"
                       >
                         {currentIndex + 1 < totalQ ? (
                           <>
@@ -355,17 +355,17 @@ export default function QuizGamification() {
                 <div className="w-28 h-28 mx-auto bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-full flex items-center justify-center border border-yellow-500/30 mb-6">
                   <Trophy className="w-14 h-14 text-yellow-400" />
                 </div>
-                <h2 className="text-4xl font-black text-white mb-2">
+                <h2 className="text-4xl font-black text-zinc-900 dark:text-white mb-2">
                   Quiz Complete!
                 </h2>
-                <p className="text-zinc-400">Here&apos;s how you did:</p>
+                <p className="text-zinc-600 dark:text-zinc-400">Here&apos;s how you did:</p>
               </div>
 
               {/* Score card */}
-              <div className="bg-[#0d0d0d] border border-white/10 rounded-3xl p-8 mb-8 shadow-2xl">
+              <div className="bg-white dark:bg-[#0d0d0d] border border-zinc-200 dark:border-white/10 rounded-3xl p-8 mb-8 shadow-sm dark:shadow-2xl">
                 <div className="grid grid-cols-3 gap-6 mb-8">
                   <div className="space-y-1">
-                    <div className="text-3xl font-black text-white">
+                    <div className="text-3xl font-black text-zinc-900 dark:text-white">
                       {score}/{totalQ}
                     </div>
                     <div className="text-xs text-zinc-500 uppercase tracking-wider">
@@ -403,7 +403,7 @@ export default function QuizGamification() {
                     />
                   ))}
                 </div>
-                <p className="text-zinc-400 text-sm">
+                <p className="text-zinc-600 dark:text-zinc-400 text-sm">
                   {score === totalQ
                     ? "🏆 Perfect Score! You're an ASCON master!"
                     : score >= totalQ * 0.8
@@ -416,7 +416,7 @@ export default function QuizGamification() {
 
               <button
                 onClick={fetchQuizSet}
-                className="flex items-center justify-center gap-2 mx-auto bg-white hover:bg-zinc-200 text-black px-8 py-3 rounded-full font-bold transition-transform hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.2)]"
+                className="flex items-center justify-center gap-2 mx-auto bg-zinc-900 dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-200 text-white dark:text-black px-8 py-3 rounded-full font-bold transition-transform hover:scale-105 active:scale-95 shadow-lg dark:shadow-[0_0_30px_rgba(255,255,255,0.2)]"
               >
                 <RotateCcw className="w-5 h-5" /> Play Again
               </button>

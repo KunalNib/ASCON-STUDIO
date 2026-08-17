@@ -56,10 +56,10 @@ export function Sidebar() {
     <motion.aside
       animate={{ width: collapsed ? 56 : 256 }}
       transition={{ duration: 0.25, ease: "easeInOut" }}
-      className="border-r border-white/10 bg-black/50 backdrop-blur-xl hidden md:flex flex-col h-full shrink-0 overflow-hidden"
+      className="border-r border-zinc-200 dark:border-white/10 bg-white/80 dark:bg-black/50 backdrop-blur-xl hidden md:flex flex-col h-full shrink-0 overflow-hidden transition-colors"
     >
       {/* Logo / brand — shows full name or icon-only */}
-      <div className="h-14 flex items-center justify-center border-b border-white/10 font-bold text-lg text-white overflow-hidden shrink-0">
+      <div className="h-14 flex items-center justify-center border-b border-zinc-200 dark:border-white/10 font-bold text-lg text-black dark:text-white overflow-hidden shrink-0">
         <motion.span
           animate={{ opacity: collapsed ? 0 : 1, width: collapsed ? 0 : "auto" }}
           transition={{ duration: 0.2 }}
@@ -103,11 +103,11 @@ export function Sidebar() {
                       "flex items-center rounded-lg px-2 py-2 text-sm font-medium transition-colors",
                       collapsed ? "justify-center gap-0" : "gap-3",
                       isActive
-                        ? "bg-blue-500/10 text-blue-400"
-                        : "text-zinc-400 hover:bg-white/5 hover:text-white"
+                        ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                        : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white"
                     )}
                   >
-                    <item.icon className={cn("w-4 h-4 shrink-0", isActive ? "text-blue-400" : "text-zinc-500")} />
+                    <item.icon className={cn("w-4 h-4 shrink-0", isActive ? "text-blue-600 dark:text-blue-400" : "text-zinc-500")} />
                     <motion.span
                       animate={{ opacity: collapsed ? 0 : 1, width: collapsed ? 0 : "auto" }}
                       transition={{ duration: 0.2 }}
@@ -124,12 +124,12 @@ export function Sidebar() {
       </div>
 
       {/* Settings at bottom */}
-      <div className="p-2 border-t border-white/10 shrink-0">
+      <div className="p-2 border-t border-zinc-200 dark:border-white/10 shrink-0">
         <Link
           href="/studio/settings"
           title={collapsed ? "Settings" : undefined}
           className={cn(
-            "flex items-center rounded-lg px-2 py-2 text-sm font-medium text-zinc-400 hover:bg-white/5 hover:text-white transition-colors",
+            "flex items-center rounded-lg px-2 py-2 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white transition-colors",
             collapsed ? "justify-center" : "gap-3"
           )}
         >

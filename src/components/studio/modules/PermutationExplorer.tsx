@@ -27,22 +27,22 @@ const LAYER_META: Record<Layer, {
     label: "① Constant Addition",
     subtitle: "x2 ⊕ round constant",
     color: "blue",
-    borderClass: "border-blue-500/50", glowClass: "shadow-[0_0_30px_rgba(59,130,246,0.25)]",
-    textClass: "text-blue-300", bgClass: "bg-blue-500/10",
+    borderClass: "border-blue-200 dark:border-blue-500/50", glowClass: "shadow-[0_0_15px_rgba(59,130,246,0.15)] dark:shadow-[0_0_30px_rgba(59,130,246,0.25)]",
+    textClass: "text-blue-700 dark:text-blue-300", bgClass: "bg-blue-50 dark:bg-blue-500/10",
   },
   sbox: {
     label: "② S-Box Substitution",
     subtitle: "5-bit non-linear LUT",
     color: "rose",
-    borderClass: "border-rose-500/50", glowClass: "shadow-[0_0_30px_rgba(244,63,94,0.25)]",
-    textClass: "text-rose-300", bgClass: "bg-rose-500/10",
+    borderClass: "border-rose-200 dark:border-rose-500/50", glowClass: "shadow-[0_0_15px_rgba(244,63,94,0.15)] dark:shadow-[0_0_30px_rgba(244,63,94,0.25)]",
+    textClass: "text-rose-700 dark:text-rose-300", bgClass: "bg-rose-50 dark:bg-rose-500/10",
   },
   diffusion: {
     label: "③ Linear Diffusion",
     subtitle: "Xi ⊕ ROTR(Xi,a) ⊕ ROTR(Xi,b)",
     color: "emerald",
-    borderClass: "border-emerald-500/50", glowClass: "shadow-[0_0_30px_rgba(16,185,129,0.25)]",
-    textClass: "text-emerald-300", bgClass: "bg-emerald-500/10",
+    borderClass: "border-emerald-200 dark:border-emerald-500/50", glowClass: "shadow-[0_0_15px_rgba(16,185,129,0.15)] dark:shadow-[0_0_30px_rgba(16,185,129,0.25)]",
+    textClass: "text-emerald-700 dark:text-emerald-300", bgClass: "bg-emerald-50 dark:bg-emerald-500/10",
   },
 };
 
@@ -65,26 +65,26 @@ function XorBit({ a, b, result, delay = 0 }: { a: string; b: string; result: str
       {/* A bit */}
       <motion.div
         className={`w-8 h-8 rounded-lg border flex items-center justify-center font-mono font-black text-base ${
-          a === "1" ? "bg-blue-500/20 border-blue-500/40 text-blue-300" : "bg-zinc-900 border-zinc-700 text-zinc-500"
+          a === "1" ? "bg-blue-50 dark:bg-blue-500/20 border-blue-200 dark:border-blue-500/40 text-blue-700 dark:text-blue-300" : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-400 dark:text-zinc-500"
         }`}
         animate={{ scale: step >= 1 ? [1, 1.15, 1] : 1 }}
         transition={{ duration: 0.3 }}
       >
         {a}
       </motion.div>
-      <div className="text-zinc-600 text-[10px] font-bold">⊕</div>
+      <div className="text-zinc-400 dark:text-zinc-600 text-[10px] font-bold">⊕</div>
       {/* B bit */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: step >= 1 ? 1 : 0, y: step >= 1 ? 0 : -8 }}
         transition={{ duration: 0.3 }}
         className={`w-8 h-8 rounded-lg border flex items-center justify-center font-mono font-black text-base ${
-          b === "1" ? "bg-amber-500/20 border-amber-500/40 text-amber-300" : "bg-zinc-900 border-zinc-700 text-zinc-500"
+          b === "1" ? "bg-amber-50 dark:bg-amber-500/20 border-amber-200 dark:border-amber-500/40 text-amber-700 dark:text-amber-300" : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-400 dark:text-zinc-500"
         }`}
       >
         {b}
       </motion.div>
-      <div className="w-8 h-[1px] bg-zinc-700" />
+      <div className="w-8 h-[1px] bg-zinc-200 dark:bg-zinc-700" />
       {/* Result bit */}
       <motion.div
         initial={{ opacity: 0, scale: 0.5 }}
@@ -92,8 +92,8 @@ function XorBit({ a, b, result, delay = 0 }: { a: string; b: string; result: str
         transition={{ duration: 0.4, type: "spring" }}
         className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center font-mono font-black text-base ${
           isFlipped
-            ? "bg-blue-600/40 border-blue-400 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)]"
-            : "bg-zinc-900 border-zinc-700 text-zinc-400"
+            ? "bg-blue-100 dark:bg-blue-600/40 border-blue-400 text-blue-600 dark:text-white shadow-[0_0_10px_rgba(59,130,246,0.3)] dark:shadow-[0_0_15px_rgba(59,130,246,0.5)]"
+            : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-400 dark:text-zinc-400"
         }`}
       >
         {result}
@@ -101,7 +101,7 @@ function XorBit({ a, b, result, delay = 0 }: { a: string; b: string; result: str
       {isFlipped && step >= 2 && (
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
-          className="text-[8px] text-blue-400 font-bold"
+          className="text-[8px] text-blue-600 dark:text-blue-400 font-bold"
         >
           FLIP
         </motion.div>
@@ -120,29 +120,29 @@ function ConstantLayer({ round }: { round: number }) {
 
   return (
     <div className="flex flex-col items-center w-full gap-5 py-4">
-      <p className="text-xs text-zinc-400 max-w-lg text-center leading-relaxed">
-        Each round XORs a unique constant into word <span className="text-blue-400 font-bold font-mono">x2</span>.
+      <p className="text-xs text-zinc-600 dark:text-zinc-400 max-w-lg text-center leading-relaxed">
+        Each round XORs a unique constant into word <span className="text-blue-600 dark:text-blue-400 font-bold font-mono">x2</span>.
         This breaks symmetry so each round is mathematically distinct.
       </p>
 
       {/* Labels */}
       <div className="flex gap-4 items-end justify-center">
         <div className="flex flex-col items-center gap-2">
-          <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">x2 (before)</span>
+          <span className="text-[10px] text-zinc-600 dark:text-zinc-500 uppercase tracking-widest font-bold">x2 (before)</span>
           <div className="flex gap-1">
             {beforeBits.split("").map((b, i) => (
               <div key={i} className={`w-8 h-8 rounded-lg border flex items-center justify-center font-mono font-black text-sm ${
-                b === "1" ? "bg-blue-500/20 border-blue-500/30 text-blue-300" : "bg-zinc-900 border-zinc-700 text-zinc-500"
+                b === "1" ? "bg-blue-50 dark:bg-blue-500/20 border-blue-200 dark:border-blue-500/30 text-blue-700 dark:text-blue-300" : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-400 dark:text-zinc-500"
               }`}>{b}</div>
             ))}
           </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 bg-amber-900/20 border border-amber-500/30 rounded-xl px-4 py-2">
-        <span className="text-amber-400 font-bold text-lg">⊕</span>
-        <span className="text-xs text-amber-300 font-bold uppercase tracking-widest">Round {round + 1} Constant</span>
-        <span className="font-mono text-amber-200 text-sm ml-2">0x{rc.constant}</span>
+      <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-500/30 rounded-xl px-4 py-2 shadow-sm dark:shadow-none">
+        <span className="text-amber-600 dark:text-amber-400 font-bold text-lg">⊕</span>
+        <span className="text-xs text-amber-700 dark:text-amber-300 font-bold uppercase tracking-widest">Round {round + 1} Constant</span>
+        <span className="font-mono text-amber-700 dark:text-amber-200 text-sm ml-2">0x{rc.constant}</span>
       </div>
 
       {/* XOR grid — show first 8 bits */}
@@ -157,13 +157,13 @@ function ConstantLayer({ round }: { round: number }) {
           />
         ))}
         <div className="flex flex-col items-end justify-center ml-2">
-          <span className="text-zinc-600 text-xs font-mono">...56 more bits</span>
+          <span className="text-zinc-400 dark:text-zinc-600 text-xs font-mono">...56 more bits</span>
         </div>
       </div>
 
       {/* After result */}
       <div className="flex flex-col items-center gap-1">
-        <span className="text-[10px] text-blue-400 uppercase tracking-widest font-bold">x2 (after XOR)</span>
+        <span className="text-[10px] text-blue-600 dark:text-blue-400 uppercase tracking-widest font-bold">x2 (after XOR)</span>
         <div className="flex gap-1">
           {afterBits.split("").map((b, i) => (
             <motion.div
@@ -173,19 +173,19 @@ function ConstantLayer({ round }: { round: number }) {
               transition={{ delay: 0.9 + i * 0.08, duration: 0.4 }}
               className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center font-mono font-black text-sm ${
                 b === "1"
-                  ? "bg-blue-600/40 border-blue-400 text-white shadow-[0_0_10px_rgba(59,130,246,0.4)]"
-                  : "bg-zinc-900 border-zinc-700 text-zinc-400"
+                  ? "bg-blue-100 dark:bg-blue-600/40 border-blue-400 text-blue-600 dark:text-white shadow-sm dark:shadow-[0_0_10px_rgba(59,130,246,0.4)]"
+                  : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-400 dark:text-zinc-400"
               }`}
             >
               {b}
             </motion.div>
           ))}
-          <span className="text-zinc-600 text-xs font-mono self-end ml-1">...</span>
+          <span className="text-zinc-400 dark:text-zinc-600 text-xs font-mono self-end ml-1">...</span>
         </div>
       </div>
 
-      <div className="text-[11px] text-zinc-500 text-center max-w-sm">
-        Bits that differ between x2 and the constant get <span className="text-blue-400 font-bold">flipped</span>.
+      <div className="text-[11px] text-zinc-600 dark:text-zinc-500 text-center max-w-sm">
+        Bits that differ between x2 and the constant get <span className="text-blue-600 dark:text-blue-400 font-bold">flipped</span>.
         This is how ASCON makes every round compute a different function.
       </div>
     </div>
@@ -205,17 +205,17 @@ function SBoxLayer() {
   }, []);
 
   const wordColors: Record<string, string> = {
-    blue:   "bg-blue-500/20 border-blue-400/50 text-blue-200",
-    purple: "bg-purple-500/20 border-purple-400/50 text-purple-200",
-    teal:   "bg-teal-500/20 border-teal-400/50 text-teal-200",
-    rose:   "bg-rose-500/20 border-rose-400/50 text-rose-200",
-    amber:  "bg-amber-500/20 border-amber-400/50 text-amber-200",
+    blue:   "bg-blue-50 dark:bg-blue-500/20 border-blue-200 dark:border-blue-400/50 text-blue-700 dark:text-blue-200",
+    purple: "bg-purple-50 dark:bg-purple-500/20 border-purple-200 dark:border-purple-400/50 text-purple-700 dark:text-purple-200",
+    teal:   "bg-teal-50 dark:bg-teal-500/20 border-teal-200 dark:border-teal-400/50 text-teal-700 dark:text-teal-200",
+    rose:   "bg-rose-50 dark:bg-rose-500/20 border-rose-200 dark:border-rose-400/50 text-rose-700 dark:text-rose-200",
+    amber:  "bg-amber-50 dark:bg-amber-500/20 border-amber-200 dark:border-amber-400/50 text-amber-700 dark:text-amber-200",
   };
 
   return (
     <div className="flex flex-col items-center gap-6 py-4 w-full">
-      <p className="text-xs text-zinc-400 max-w-lg text-center leading-relaxed">
-        The S-Box takes one vertical <span className="text-rose-400 font-bold">column</span> — 1 bit from each of the 5 words
+      <p className="text-xs text-zinc-600 dark:text-zinc-400 max-w-lg text-center leading-relaxed">
+        The S-Box takes one vertical <span className="text-rose-600 dark:text-rose-400 font-bold">column</span> — 1 bit from each of the 5 words
         — and applies a non-linear 5-bit substitution. This is the <em>only non-linear operation</em> in ASCON.
       </p>
 
@@ -229,10 +229,10 @@ function SBoxLayer() {
             transition={{ delay: i * 0.1, type: "spring" }}
             className="flex flex-col items-center gap-2"
           >
-            <div className={`w-14 h-14 rounded-2xl border-2 flex items-center justify-center font-mono font-black text-3xl ${wordColors[w.color]}`}>
+            <div className={`w-14 h-14 rounded-2xl border-2 flex items-center justify-center font-mono font-black text-3xl shadow-sm dark:shadow-none ${wordColors[w.color]}`}>
               {w.bit}
             </div>
-            <div className="text-xs font-bold text-zinc-400">{w.label}</div>
+            <div className="text-xs font-bold text-zinc-500 dark:text-zinc-400">{w.label}</div>
             {/* Flowing particle line */}
             {step >= 1 && (
               <motion.div
@@ -261,7 +261,7 @@ function SBoxLayer() {
             transition={{ type: "spring", stiffness: 200 }}
             className="relative"
           >
-            <div className="bg-black border-2 border-rose-600 rounded-3xl py-5 px-12 flex items-center gap-4 shadow-[0_0_60px_rgba(244,63,94,0.35)] relative overflow-hidden">
+            <div className="bg-white dark:bg-black border-2 border-rose-300 dark:border-rose-600 rounded-3xl py-5 px-12 flex items-center gap-4 shadow-lg dark:shadow-[0_0_60px_rgba(244,63,94,0.35)] relative overflow-hidden">
               <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(244,63,94,0.08),_transparent)]" />
               <motion.div
                 animate={{ rotate: [0, 5, -5, 0] }}
@@ -270,8 +270,8 @@ function SBoxLayer() {
               >
                 🔀
               </motion.div>
-              <div className="text-rose-300 font-bold text-lg relative z-10">5-Bit S-Box LUT</div>
-              <div className="bg-rose-900/40 px-3 py-1 rounded-lg font-mono text-rose-300 text-sm border border-rose-500/30">
+              <div className="text-rose-700 dark:text-rose-300 font-bold text-lg relative z-10">5-Bit S-Box LUT</div>
+              <div className="bg-rose-50 dark:bg-rose-900/40 px-3 py-1 rounded-lg font-mono text-rose-700 dark:text-rose-300 text-sm border border-rose-200 dark:border-rose-500/30">
                 {SBOX_INPUT_WORDS.map(w => w.bit).join("")} → {SBOX_OUTPUT_WORDS.map(w => w.bit).join("")}
               </div>
             </div>
@@ -295,8 +295,8 @@ function SBoxLayer() {
                 transition={{ delay: i * 0.12, type: "spring", stiffness: 300 }}
                 className="flex flex-col items-center gap-2"
               >
-                <div className="text-xs font-bold text-zinc-400">{w.label}</div>
-                <div className={`w-14 h-14 rounded-2xl border-2 flex items-center justify-center font-mono font-black text-3xl shadow-[0_0_20px_rgba(244,63,94,0.4)] ${wordColors[w.color]}`}>
+                <div className="text-xs font-bold text-zinc-500 dark:text-zinc-400">{w.label}</div>
+                <div className={`w-14 h-14 rounded-2xl border-2 flex items-center justify-center font-mono font-black text-3xl shadow-md dark:shadow-[0_0_20px_rgba(244,63,94,0.4)] ${wordColors[w.color]}`}>
                   {w.bit}
                 </div>
               </motion.div>
@@ -305,8 +305,8 @@ function SBoxLayer() {
         )}
       </AnimatePresence>
 
-      <div className="text-[11px] text-zinc-500 text-center max-w-sm mt-2">
-        This operation is repeated for all <span className="text-rose-400 font-bold">64 columns</span> of the state simultaneously.
+      <div className="text-[11px] text-zinc-600 dark:text-zinc-500 text-center max-w-sm mt-2">
+        This operation is repeated for all <span className="text-rose-600 dark:text-rose-400 font-bold">64 columns</span> of the state simultaneously.
         The output is non-linearly scrambled — no algebra can reverse this cheaply.
       </div>
     </div>
@@ -326,25 +326,25 @@ function DiffusionLayer() {
   }, []);
 
   const wordColorMap: Record<string, string> = {
-    blue:   "border-blue-500/40 text-blue-300 bg-blue-500/10",
-    purple: "border-purple-500/40 text-purple-300 bg-purple-500/10",
-    teal:   "border-teal-500/40 text-teal-300 bg-teal-500/10",
-    rose:   "border-rose-500/40 text-rose-300 bg-rose-500/10",
-    amber:  "border-amber-500/40 text-amber-300 bg-amber-500/10",
+    blue:   "border-blue-200 dark:border-blue-500/40 text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-500/10",
+    purple: "border-purple-200 dark:border-purple-500/40 text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-500/10",
+    teal:   "border-teal-200 dark:border-teal-500/40 text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-500/10",
+    rose:   "border-rose-200 dark:border-rose-500/40 text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-500/10",
+    amber:  "border-amber-200 dark:border-amber-500/40 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10",
   };
   const resultColorMap: Record<string, string> = {
-    blue:   "border-blue-400 text-white bg-blue-600/40 shadow-[0_0_15px_rgba(59,130,246,0.5)]",
-    purple: "border-purple-400 text-white bg-purple-600/40 shadow-[0_0_15px_rgba(168,85,247,0.5)]",
-    teal:   "border-teal-400 text-white bg-teal-600/40 shadow-[0_0_15px_rgba(20,184,166,0.5)]",
-    rose:   "border-rose-400 text-white bg-rose-600/40 shadow-[0_0_15px_rgba(244,63,94,0.5)]",
-    amber:  "border-amber-400 text-white bg-amber-600/40 shadow-[0_0_15px_rgba(245,158,11,0.5)]",
+    blue:   "border-blue-400 text-blue-700 dark:text-white bg-blue-100 dark:bg-blue-600/40 shadow-sm dark:shadow-[0_0_15px_rgba(59,130,246,0.5)]",
+    purple: "border-purple-400 text-purple-700 dark:text-white bg-purple-100 dark:bg-purple-600/40 shadow-sm dark:shadow-[0_0_15px_rgba(168,85,247,0.5)]",
+    teal:   "border-teal-400 text-teal-700 dark:text-white bg-teal-100 dark:bg-teal-600/40 shadow-sm dark:shadow-[0_0_15px_rgba(20,184,166,0.5)]",
+    rose:   "border-rose-400 text-rose-700 dark:text-white bg-rose-100 dark:bg-rose-600/40 shadow-sm dark:shadow-[0_0_15px_rgba(244,63,94,0.5)]",
+    amber:  "border-amber-400 text-amber-700 dark:text-white bg-amber-100 dark:bg-amber-600/40 shadow-sm dark:shadow-[0_0_15px_rgba(245,158,11,0.5)]",
   };
 
   return (
     <div className="flex flex-col items-center gap-4 py-4 w-full">
-      <p className="text-xs text-zinc-400 max-w-lg text-center leading-relaxed">
+      <p className="text-xs text-zinc-600 dark:text-zinc-400 max-w-lg text-center leading-relaxed">
         Each 64-bit word is XORed with two rotated copies of <em>itself</em>.
-        This spreads one bit change to many positions — the <span className="text-emerald-400 font-bold">Avalanche Effect</span>.
+        This spreads one bit change to many positions — the <span className="text-emerald-600 dark:text-emerald-400 font-bold">Avalanche Effect</span>.
       </p>
 
       <div className="flex flex-col gap-3 w-full max-w-3xl">
@@ -354,14 +354,14 @@ function DiffusionLayer() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.08, type: "spring" }}
-            className="bg-black/60 border border-white/5 rounded-2xl p-4 font-mono text-sm relative overflow-hidden"
+            className="bg-zinc-50 dark:bg-black/60 border border-zinc-200 dark:border-white/5 rounded-2xl p-4 font-mono text-sm relative overflow-hidden"
           >
             {/* Base word */}
             <div className="flex items-center gap-4">
               <span className={`w-8 h-8 rounded-lg border flex items-center justify-center font-bold text-xs shrink-0 ${wordColorMap[w.color]}`}>
                 {w.label}
               </span>
-              <span className="tracking-[0.4em] text-zinc-300 font-bold">{w.original}...</span>
+              <span className="tracking-[0.4em] text-zinc-600 dark:text-zinc-300 font-bold">{w.original}...</span>
             </div>
 
             {/* Rotations */}
@@ -371,15 +371,15 @@ function DiffusionLayer() {
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   transition={{ duration: 0.3, delay: i * 0.06 }}
-                  className="flex flex-col gap-1 border-l-2 border-emerald-800/50 ml-10 pl-4 mt-2 overflow-hidden"
+                  className="flex flex-col gap-1 border-l-2 border-emerald-200 dark:border-emerald-800/50 ml-10 pl-4 mt-2 overflow-hidden"
                 >
                   <div className="flex items-center gap-3 text-emerald-600">
-                    <span className="text-[10px] bg-emerald-950/60 px-2 py-0.5 rounded font-bold w-14 text-center">›› {w.rot1val}</span>
+                    <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded font-bold w-14 text-center">›› {w.rot1val}</span>
                     <span className="tracking-[0.4em] text-emerald-700">{w.rot1bits}...</span>
                   </div>
-                  <div className="flex items-center gap-3 text-emerald-500">
-                    <span className="text-[10px] bg-emerald-950/60 px-2 py-0.5 rounded font-bold w-14 text-center">›› {w.rot2val}</span>
-                    <span className="tracking-[0.4em] text-emerald-600">{w.rot2bits}...</span>
+                  <div className="flex items-center gap-3 text-emerald-600 dark:text-emerald-500">
+                    <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded font-bold w-14 text-center">›› {w.rot2val}</span>
+                    <span className="tracking-[0.4em] text-emerald-700 dark:text-emerald-600">{w.rot2bits}...</span>
                   </div>
                 </motion.div>
               )}
@@ -392,7 +392,7 @@ function DiffusionLayer() {
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.06 + 0.15, type: "spring" }}
-                  className="flex items-center gap-4 mt-3 border-t border-white/5 pt-3"
+                  className="flex items-center gap-4 mt-3 border-t border-zinc-200 dark:border-white/5 pt-3"
                 >
                   <span className={`px-3 py-1 rounded-lg border text-[10px] font-bold shrink-0 ${resultColorMap[w.color]}`}>
                     ⊕ new {w.label}
@@ -411,10 +411,10 @@ function DiffusionLayer() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-[11px] text-zinc-500 text-center max-w-sm"
+          className="text-[11px] text-zinc-600 dark:text-zinc-500 text-center max-w-sm"
         >
           A single bit flip in any word now affects many others.
-          This is called the <span className="text-emerald-400 font-bold">Strict Avalanche Criterion</span>.
+          This is called the <span className="text-emerald-600 dark:text-emerald-400 font-bold">Strict Avalanche Criterion</span>.
         </motion.div>
       )}
     </div>
@@ -462,8 +462,8 @@ export function PermutationExplorer() {
     <div className="w-full h-full flex flex-col overflow-hidden">
 
       {/* ── Round Selector ──────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 px-4 pt-4 pb-4 border-b border-white/5 overflow-x-auto custom-scrollbar shrink-0">
-        <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mr-3 shrink-0 whitespace-nowrap">
+      <div className="flex items-center gap-2 px-4 pt-4 pb-4 border-b border-zinc-200 dark:border-white/5 overflow-x-auto custom-scrollbar shrink-0">
+        <span className="text-[10px] text-zinc-500 dark:text-zinc-500 font-bold uppercase tracking-widest mr-3 shrink-0 whitespace-nowrap">
           Round
         </span>
         {ROUND_CONSTANTS.map((rc) => (
@@ -473,19 +473,19 @@ export function PermutationExplorer() {
             className={`flex-shrink-0 w-9 h-9 rounded-xl text-xs font-bold border transition-all ${
               activeRound === rc.round
                 ? "bg-purple-600 border-purple-400 text-white shadow-[0_0_15px_rgba(168,85,247,0.5)]"
-                : "bg-black/60 border-white/10 text-zinc-500 hover:text-zinc-300 hover:border-white/20"
+                : "bg-white dark:bg-black/60 border-zinc-200 dark:border-white/10 text-zinc-500 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 hover:border-zinc-300 dark:hover:border-white/20"
             }`}
           >
             {rc.round + 1}
           </button>
         ))}
-        <span className="ml-2 text-[10px] text-zinc-600 shrink-0 whitespace-nowrap">
-          Constant: <span className="text-zinc-400 font-mono">0x{ROUND_CONSTANTS[activeRound].constant}</span>
+        <span className="ml-2 text-[10px] text-zinc-500 dark:text-zinc-600 shrink-0 whitespace-nowrap">
+          Constant: <span className="text-zinc-600 dark:text-zinc-400 font-mono">0x{ROUND_CONSTANTS[activeRound].constant}</span>
         </span>
       </div>
 
       {/* ── Layer Selector ──────────────────────────────────────────── */}
-      <div className="flex gap-2 px-4 py-3 border-b border-white/5 shrink-0 overflow-x-auto custom-scrollbar">
+      <div className="flex gap-2 px-4 py-3 border-b border-zinc-200 dark:border-white/5 shrink-0 overflow-x-auto custom-scrollbar">
         {LAYER_ORDER.map((layer) => {
           const m = LAYER_META[layer];
           const isActive = activeLayer === layer;
@@ -496,7 +496,7 @@ export function PermutationExplorer() {
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-bold transition-all whitespace-nowrap ${
                 isActive
                   ? `${m.bgClass} ${m.borderClass} ${m.textClass} ${m.glowClass}`
-                  : "bg-black/40 border-white/5 text-zinc-500 hover:text-zinc-300 hover:border-white/10"
+                  : "bg-white dark:bg-black/40 border-zinc-200 dark:border-white/5 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 hover:border-zinc-300 dark:hover:border-white/10"
               }`}
             >
               {m.label}
@@ -513,7 +513,7 @@ export function PermutationExplorer() {
         <div className={`text-[10px] font-bold uppercase tracking-widest ${meta.textClass} mb-0.5`}>
           Current Stage → {meta.label}
         </div>
-        <div className="text-xs text-zinc-400 leading-relaxed">
+        <div className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
           {activeLayer === "constant" && `Round ${activeRound + 1} — a unique constant 0x${ROUND_CONSTANTS[activeRound].constant} is XORed into word x2, making every round of the permutation compute a distinct function. This prevents slide attacks.`}
           {activeLayer === "sbox"     && "A single 5-bit column (one bit from each of x0–x4) passes through the S-Box look-up table. The output is guaranteed to be non-linearly different — no polynomial can model this substitution over a simple field."}
           {activeLayer === "diffusion" && "After S-Box, each 64-bit word is linearly mixed by XORing it with two rotated copies of itself. One changed bit spreads changes to ~32 bit positions (the Avalanche Effect)."}
@@ -539,10 +539,10 @@ export function PermutationExplorer() {
       </div>
 
       {/* ── Bottom Controls ──────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-4 pb-4 pt-2 border-t border-white/5 shrink-0">
+      <div className="flex items-center justify-between px-4 pb-4 pt-2 border-t border-zinc-200 dark:border-white/5 shrink-0">
         <button
           onClick={handleReplay}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-white transition-colors text-xs font-bold"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 border border-zinc-200 dark:border-white/10 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors text-xs font-bold"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           Replay
@@ -561,7 +561,7 @@ export function PermutationExplorer() {
                     ? l === "constant" ? "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]"
                     : l === "sbox"     ? "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]"
                     :                    "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"
-                    : "bg-zinc-800 hover:bg-zinc-600"
+                    : "bg-zinc-300 dark:bg-zinc-800 hover:bg-zinc-400 dark:hover:bg-zinc-600"
                 }`}
               />
             );
@@ -578,7 +578,7 @@ export function PermutationExplorer() {
         ) : (
           <button
             onClick={() => { setActiveRound((r) => (r + 1) % 12); handleLayerChange("constant"); }}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border bg-purple-500/10 border-purple-500/30 text-purple-300 hover:bg-purple-500/20 transition-all"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border bg-purple-50 dark:bg-purple-500/10 border-purple-200 dark:border-purple-500/30 text-purple-600 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-500/20 transition-all"
           >
             <Play className="w-3.5 h-3.5" /> Next Round
           </button>

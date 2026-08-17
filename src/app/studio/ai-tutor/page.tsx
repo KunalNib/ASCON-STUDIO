@@ -11,21 +11,22 @@ import { Expand, Shrink } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import mermaid from "mermaid";
-
-mermaid.initialize({ startOnLoad: false, theme: "dark" });
+import { useTheme } from "next-themes";
 
 const MermaidDiagram = ({ chart }: { chart: string }) => {
   const [svg, setSvg] = useState<string>("");
   const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
+  const { theme } = useTheme();
 
   useEffect(() => {
+    mermaid.initialize({ startOnLoad: false, theme: theme === 'light' ? 'default' : 'dark' });
     mermaid.render(id, chart).then((result) => {
       setSvg(result.svg);
     }).catch(e => console.error(e));
-  }, [chart]);
+  }, [chart, theme]);
 
   if (!svg) return <div className="text-zinc-500 text-sm animate-pulse">Rendering diagram...</div>;
-  return <div dangerouslySetInnerHTML={{ __html: svg }} className="bg-white/5 p-4 rounded-xl overflow-x-auto w-full my-4 flex justify-center" />;
+  return <div dangerouslySetInnerHTML={{ __html: svg }} className="bg-zinc-50 dark:bg-white/5 p-4 rounded-xl overflow-x-auto w-full my-4 flex justify-center border border-zinc-200 dark:border-transparent" />;
 };
 
 interface ChatMessage {
@@ -196,20 +197,18 @@ export default function AITutor() {
   };
 
   const isGenerating = messages[messages.length - 1]?.role === "ai" && messages[messages.length - 1]?.isStreaming;
-  // Get the last highlighted action if it exists in history
   const activeAction = [...messages].reverse().find(m => m.actions?.highlight)?.actions?.highlight;
-  const showSidePanel = [...messages].reverse().find(m => m.actions?.open_side_panel)?.actions?.open_side_panel;
 
   return (
     <div className={`flex h-[calc(100vh-4rem)] p-4 md:p-6 gap-6 ${isFullscreen ? "hidden md:flex flex-col-reverse" : ""}`}>
       
       {/* Left: Chatbot Window */}
-      <div className={`w-full flex flex-col bg-[#09090b] rounded-2xl border border-white/10 shadow-xl overflow-hidden transition-all ${isFullscreen ? "h-1/3 md:w-full" : "md:w-1/2 h-full"}`}>
-        <header className="p-4 border-b border-white/10 bg-black/50 flex items-center gap-3">
-           <Bot className="w-6 h-6 text-blue-400" />
+      <div className={`w-full flex flex-col bg-white dark:bg-[#09090b] rounded-2xl border border-zinc-200 dark:border-white/10 shadow-xl overflow-hidden transition-all ${isFullscreen ? "h-1/3 md:w-full" : "md:w-1/2 h-full"}`}>
+        <header className="p-4 border-b border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-black/50 flex items-center gap-3">
+           <Bot className="w-6 h-6 text-blue-600 dark:text-blue-400" />
            <div>
-             <h2 className="font-semibold text-white">ASCON Copilot</h2>
-             <p className="text-xs text-zinc-400 flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 animate-pulse block" /> Connected to RAG Pipeline</p>
+             <h2 className="font-semibold text-zinc-900 dark:text-white">ASCON Copilot</h2>
+             <p className="text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 animate-pulse block" /> Connected to RAG Pipeline</p>
            </div>
         </header>
 
@@ -222,13 +221,13 @@ export default function AITutor() {
                 animate={{ opacity: 1, y: 0 }}
                 className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}
               >
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-zinc-800' : 'bg-blue-600'}`}>
-                  {msg.role === 'user' ? <User className="w-4 h-4 text-white" /> : <Bot className="w-4 h-4 text-white" />}
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-zinc-200 dark:bg-zinc-800' : 'bg-blue-100 dark:bg-blue-600'}`}>
+                  {msg.role === 'user' ? <User className="w-4 h-4 text-zinc-700 dark:text-white" /> : <Bot className="w-4 h-4 text-blue-700 dark:text-white" />}
                 </div>
                 <div className={`flex flex-col gap-2 max-w-[80%] ${msg.role === "user" ? "items-end" : "items-start"}`}>
-                  <div className={`p-4 rounded-2xl text-sm ${msg.role === "user" ? "bg-white/10 text-white rounded-tr-none px-5 py-3" : "bg-[#111116] text-zinc-300 border border-white/5 rounded-tl-none shadow-md max-w-full overflow-hidden"}`}>
+                  <div className={`p-4 rounded-2xl text-sm ${msg.role === "user" ? "bg-zinc-100 text-zinc-900 dark:bg-white/10 dark:text-white rounded-tr-none px-5 py-3 border border-zinc-200 dark:border-transparent" : "bg-white dark:bg-[#111116] text-zinc-800 dark:text-zinc-300 border border-zinc-200 dark:border-white/5 rounded-tl-none shadow-sm dark:shadow-md max-w-full overflow-hidden"}`}>
                     {msg.image && (
-                       <img src={msg.image} alt="Upload" className="max-w-full h-auto rounded-lg mb-3 border border-white/10" style={{ maxHeight: "200px" }} />
+                       <img src={msg.image} alt="Upload" className="max-w-full h-auto rounded-lg mb-3 border border-zinc-200 dark:border-white/10" style={{ maxHeight: "200px" }} />
                     )}
                     <div className="space-y-3 leading-relaxed w-full overflow-x-auto font-sans">
                       <ReactMarkdown
@@ -240,22 +239,22 @@ export default function AITutor() {
                               return <MermaidDiagram chart={String(children).replace(/\n$/, "")} />;
                             }
                             return !inline ? (
-                              <pre className="bg-black border border-white/10 p-3 rounded-lg overflow-x-auto font-mono text-xs text-blue-300 my-2">
+                              <pre className="bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-white/10 p-3 rounded-lg overflow-x-auto font-mono text-xs text-blue-700 dark:text-blue-300 my-2">
                                 <code className={className} {...props}>
                                   {children}
                                 </code>
                               </pre>
                             ) : (
-                              <code className="bg-blue-500/10 text-blue-300 px-1 py-0.5 rounded font-mono text-xs border border-blue-500/20" {...props}>
+                              <code className="bg-blue-100 dark:bg-blue-500/10 text-blue-800 dark:text-blue-300 px-1 py-0.5 rounded font-mono text-xs border border-blue-200 dark:border-blue-500/20" {...props}>
                                 {children}
                               </code>
                             );
                           },
                           table: ({node, ...props}: any) => <div className="overflow-x-auto w-full"><table className="w-full text-left border-collapse my-4" {...props} /></div>,
-                          th: ({node, ...props}: any) => <th className="border-b border-white/10 p-2 text-zinc-300 font-semibold" {...props} />,
-                          td: ({node, ...props}: any) => <td className="border-b border-white/5 p-2 text-zinc-400" {...props} />,
+                          th: ({node, ...props}: any) => <th className="border-b border-zinc-200 dark:border-white/10 p-2 text-zinc-800 dark:text-zinc-300 font-semibold" {...props} />,
+                          td: ({node, ...props}: any) => <td className="border-b border-zinc-100 dark:border-white/5 p-2 text-zinc-600 dark:text-zinc-400" {...props} />,
                           p: ({node, ...props}: any) => <p className="mb-2 last:mb-0" {...props} />,
-                          a: ({node, ...props}: any) => <a className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
+                          a: ({node, ...props}: any) => <a className="text-blue-600 dark:text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
                           ul: ({node, ...props}: any) => <ul className="list-disc pl-5 my-2 space-y-1" {...props} />,
                           ol: ({node, ...props}: any) => <ol className="list-decimal pl-5 my-2 space-y-1" {...props} />
                         }}
@@ -266,13 +265,13 @@ export default function AITutor() {
                   </div>
 
                   {msg.sources && msg.sources.length > 0 && (
-                    <div className="flex items-center gap-2 text-xs text-blue-400 bg-blue-900/20 px-2 py-1 rounded w-fit">
+                    <div className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/20 px-2 py-1 rounded w-fit">
                       <LinkIcon className="w-3 h-3" />
                       <span>{msg.sources.join(", ")}</span>
                     </div>
                   )}
                   {msg.actions && Object.keys(msg.actions).length > 0 && (
-                    <div className="flex items-center gap-2 text-xs text-purple-400 bg-purple-900/20 px-2 py-1 rounded w-fit">
+                    <div className="flex items-center gap-2 text-xs text-purple-700 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/20 px-2 py-1 rounded w-fit">
                       <RefreshCcw className="w-3 h-3" />
                       <span>Trigger: {msg.actions.highlight}</span>
                     </div>
@@ -284,14 +283,14 @@ export default function AITutor() {
           <div ref={endOfMessagesRef} />
         </div>
 
-        <div className="p-4 border-t border-white/10 bg-black/50">
+        <div className="p-4 border-t border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-black/50">
           <AnimatePresence>
             {selectedImage && (
               <motion.div 
                 initial={{ opacity: 0, y: 10, height: 0 }} animate={{ opacity: 1, y: 0, height: "auto" }} exit={{ opacity: 0, y: 10, height: 0 }}
                 className="mb-3 relative inline-block"
               >
-                 <img src={selectedImage} alt="Preview" className="h-20 w-auto rounded-lg border border-white/20" />
+                 <img src={selectedImage} alt="Preview" className="h-20 w-auto rounded-lg border border-zinc-200 dark:border-white/20 shadow-sm" />
                  <button 
                    onClick={() => setSelectedImage(null)} 
                    className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow-lg transition-colors"
@@ -304,7 +303,7 @@ export default function AITutor() {
           <div className="flex gap-2">
             <button 
               onClick={() => fileInputRef.current?.click()}
-              className="rounded-xl aspect-square w-12 flex items-center justify-center transition-colors border border-white/10 bg-white/5 hover:bg-white/10 text-white shrink-0"
+              className="rounded-xl aspect-square w-12 flex items-center justify-center transition-colors border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-600 dark:text-white shrink-0"
               title="Upload Image"
             >
               <ImageIcon className="w-4 h-4" />
@@ -318,7 +317,7 @@ export default function AITutor() {
             />
             <button 
               onClick={toggleListening}
-              className={`rounded-xl aspect-square w-12 flex items-center justify-center transition-colors border border-white/10 shrink-0 ${isListening ? "bg-red-500/20 text-red-500" : "bg-white/5 hover:bg-white/10 text-white"}`}
+              className={`rounded-xl aspect-square w-12 flex items-center justify-center transition-colors border border-zinc-200 dark:border-white/10 shrink-0 ${isListening ? "bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-500 border-red-200 dark:border-transparent" : "bg-white dark:bg-white/5 hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-600 dark:text-white"}`}
               title="Voice Dictation"
             >
               <Mic className="w-4 h-4" />
@@ -330,19 +329,19 @@ export default function AITutor() {
               onKeyDown={(e) => !isGenerating && e.key === 'Enter' && handleSend()}
               placeholder={isListening ? "Listening... (Speak now)" : "Ask about cryptography..."}
               disabled={isGenerating}
-              className={`flex-1 bg-white/5 border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 transition-colors ${isListening ? "border-red-500/50 bg-red-500/10 placeholder:text-red-400" : "border-white/10 placeholder:text-zinc-500"}`}
+              className={`flex-1 bg-white dark:bg-white/5 border rounded-xl px-4 py-3 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 transition-colors ${isListening ? "border-red-300 dark:border-red-500/50 bg-red-50 dark:bg-red-500/10 placeholder:text-red-400" : "border-zinc-200 dark:border-white/10 placeholder:text-zinc-400 dark:placeholder:text-zinc-500"}`}
             />
             {isGenerating ? (
               <button 
                 onClick={handleStop}
-                className="bg-red-600/20 hover:bg-red-600/40 text-red-500 rounded-xl aspect-square w-12 flex items-center justify-center transition-colors border border-red-500/50"
+                className="bg-red-100 dark:bg-red-600/20 hover:bg-red-200 dark:hover:bg-red-600/40 text-red-600 dark:text-red-500 rounded-xl aspect-square w-12 flex items-center justify-center transition-colors border border-red-200 dark:border-red-500/50"
               >
                 <Square className="w-4 h-4 fill-current" />
               </button>
             ) : (
               <button 
                 onClick={handleSend}
-                className="bg-blue-600 hover:bg-blue-500 text-white rounded-xl aspect-square w-12 flex items-center justify-center transition-colors"
+                className="bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white rounded-xl aspect-square w-12 flex items-center justify-center transition-colors shadow-sm"
               >
                 <Send className="w-4 h-4" />
               </button>
@@ -352,8 +351,8 @@ export default function AITutor() {
       </div>
 
       {/* Right: Dynamic Context Window */}
-      <div className={`hidden md:flex flex-col justify-center items-center bg-black rounded-2xl border border-white/10 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/10 via-black to-black overflow-hidden relative transition-all ${isFullscreen ? "h-2/3 w-full" : "w-1/2 h-full"}`}>
-         <button onClick={() => setIsFullscreen(!isFullscreen)} className="absolute top-4 right-4 z-10 p-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg text-white transition-colors">
+      <div className={`hidden md:flex flex-col justify-center items-center bg-zinc-50 dark:bg-black rounded-2xl border border-zinc-200 dark:border-white/10 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-100/50 dark:from-blue-900/10 via-zinc-50 dark:via-black to-zinc-50 dark:to-black overflow-hidden relative transition-all ${isFullscreen ? "h-2/3 w-full" : "w-1/2 h-full"}`}>
+         <button onClick={() => setIsFullscreen(!isFullscreen)} className="absolute top-4 right-4 z-10 p-2 bg-white dark:bg-white/10 hover:bg-zinc-100 dark:hover:bg-white/20 border border-zinc-200 dark:border-white/10 rounded-lg text-zinc-600 dark:text-white transition-colors shadow-sm dark:shadow-none">
             {isFullscreen ? <Shrink className="w-4 h-4" /> : <Expand className="w-4 h-4" />}
          </button>
          
@@ -365,9 +364,9 @@ export default function AITutor() {
            <InteractiveStateGrid />
          ) : (
            <div className="text-center p-8">
-              <Bot className="w-16 h-16 text-zinc-800 mx-auto mb-4" />
-              <h3 className="text-zinc-500 font-medium">Visual Context Window</h3>
-              <p className="text-zinc-600 text-sm mt-2 max-w-sm">When the AI identifies a cryptographic operation, live visualizations will render here dynamically based on the RAG pipeline commands.</p>
+              <Bot className="w-16 h-16 text-zinc-300 dark:text-zinc-800 mx-auto mb-4" />
+              <h3 className="text-zinc-600 dark:text-zinc-500 font-medium">Visual Context Window</h3>
+              <p className="text-zinc-500 dark:text-zinc-600 text-sm mt-2 max-w-sm">When the AI identifies a cryptographic operation, live visualizations will render here dynamically based on the RAG pipeline commands.</p>
            </div>
          )}
       </div>

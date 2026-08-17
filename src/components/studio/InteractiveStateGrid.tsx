@@ -9,29 +9,29 @@ const WORD_COLORS: Record<string, {
   bg: string; border: string; text: string; label: string; glow: string; dot: string;
 }> = {
   blue: {
-    bg: "bg-blue-900/20", border: "border-blue-500/30", text: "text-blue-300",
-    label: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-    glow: "shadow-[0_0_25px_rgba(59,130,246,0.2)]",
+    bg: "bg-blue-50 dark:bg-blue-900/20", border: "border-blue-200 dark:border-blue-500/30", text: "text-blue-700 dark:text-blue-300",
+    label: "bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/30",
+    glow: "shadow-[0_0_15px_rgba(59,130,246,0.15)] dark:shadow-[0_0_25px_rgba(59,130,246,0.2)]",
     dot: "bg-blue-500",
   },
   amber: {
-    bg: "bg-amber-900/20", border: "border-amber-500/30", text: "text-amber-300",
-    label: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-    glow: "shadow-[0_0_25px_rgba(245,158,11,0.2)]",
+    bg: "bg-amber-50 dark:bg-amber-900/20", border: "border-amber-200 dark:border-amber-500/30", text: "text-amber-700 dark:text-amber-300",
+    label: "bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/30",
+    glow: "shadow-[0_0_15px_rgba(245,158,11,0.15)] dark:shadow-[0_0_25px_rgba(245,158,11,0.2)]",
     dot: "bg-amber-500",
   },
   rose: {
-    bg: "bg-rose-900/20", border: "border-rose-500/30", text: "text-rose-300",
-    label: "bg-rose-500/20 text-rose-400 border-rose-500/30",
-    glow: "shadow-[0_0_25px_rgba(244,63,94,0.2)]",
+    bg: "bg-rose-50 dark:bg-rose-900/20", border: "border-rose-200 dark:border-rose-500/30", text: "text-rose-700 dark:text-rose-300",
+    label: "bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-500/30",
+    glow: "shadow-[0_0_15px_rgba(244,63,94,0.15)] dark:shadow-[0_0_25px_rgba(244,63,94,0.2)]",
     dot: "bg-rose-500",
   },
 };
 
 const BYTE_COLORS: Record<string, string> = {
-  blue:  "bg-blue-500/20 border-blue-500/40 text-blue-200",
-  amber: "bg-amber-500/20 border-amber-500/40 text-amber-200",
-  rose:  "bg-rose-500/20 border-rose-500/40 text-rose-200",
+  blue:  "bg-blue-50 dark:bg-blue-500/20 border-blue-200 dark:border-blue-500/40 text-blue-700 dark:text-blue-200",
+  amber: "bg-amber-50 dark:bg-amber-500/20 border-amber-200 dark:border-amber-500/40 text-amber-700 dark:text-amber-200",
+  rose:  "bg-rose-50 dark:bg-rose-500/20 border-rose-200 dark:border-rose-500/40 text-rose-700 dark:text-rose-200",
 };
 
 export function InteractiveStateGrid() {
@@ -76,18 +76,18 @@ export function InteractiveStateGrid() {
   };
 
   return (
-    <div className="w-full bg-[#030303] border border-zinc-900 rounded-2xl p-5 relative overflow-hidden flex flex-col h-full">
+    <div className="w-full bg-white dark:bg-[#030303] border border-zinc-200 dark:border-zinc-900 rounded-2xl p-5 relative overflow-hidden flex flex-col h-full shadow-sm dark:shadow-none">
 
       {/* Header */}
       <div className="flex items-center justify-between mb-5 shrink-0">
         <div>
-          <h3 className="text-white font-bold text-base flex items-center gap-2">
+          <h3 className="text-zinc-900 dark:text-white font-bold text-base flex items-center gap-2">
             320-Bit Internal State Matrix
-            <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/20 font-bold">
+            <span className="text-[10px] bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full border border-blue-200 dark:border-blue-500/20 font-bold">
               Sponge Construction
             </span>
           </h3>
-          <p className="text-zinc-500 text-xs mt-0.5">5 × 64-bit words. Hover any word to inspect its role at this stage.</p>
+          <p className="text-zinc-600 dark:text-zinc-500 text-xs mt-0.5">5 × 64-bit words. Hover any word to inspect its role at this stage.</p>
         </div>
         <div className="flex items-center gap-3 text-[10px] font-bold shrink-0">
           <div className="flex items-center gap-1.5">
@@ -119,7 +119,7 @@ export function InteractiveStateGrid() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.1, type: "spring", stiffness: 200, damping: 22 }}
               className={`flex flex-col p-3.5 rounded-xl border transition-all duration-300 relative ${
-                isHovered ? `${c.bg} ${c.border} ${c.glow}` : "bg-black/80 border-white/5"
+                isHovered ? `${c.bg} ${c.border} ${c.glow}` : "bg-zinc-50 dark:bg-black/80 border-zinc-200 dark:border-white/5 shadow-sm dark:shadow-none"
               }`}
               onMouseEnter={() => setHoveredWord(idx)}
               onMouseLeave={() => { setHoveredWord(null); setHoveredByteIdx(null); }}
@@ -130,11 +130,11 @@ export function InteractiveStateGrid() {
                   {word.label}
                 </div>
                 <div>
-                  <div className="text-zinc-300 text-xs font-bold">{word.role}</div>
+                  <div className="text-zinc-700 dark:text-zinc-300 text-xs font-bold">{word.role}</div>
                 </div>
                 <div className="ml-auto flex items-center gap-2">
                   <div className={`w-2 h-2 rounded-full ${WORD_COLORS[word.color].dot}`} />
-                  <span className="text-[10px] text-zinc-600 font-mono">{word.hex}</span>
+                  <span className="text-[10px] text-zinc-400 dark:text-zinc-600 font-mono">{word.hex}</span>
                 </div>
               </div>
 
@@ -153,8 +153,8 @@ export function InteractiveStateGrid() {
                       onMouseLeave={() => setHoveredByteIdx(null)}
                       className={`aspect-square flex items-center justify-center rounded-lg border font-mono text-xs font-bold cursor-crosshair transition-all ${
                         isByteHovered
-                          ? "bg-white text-black border-white scale-110 z-10"
-                          : BYTE_COLORS[word.color] ?? "bg-zinc-900 text-zinc-500 border-zinc-800"
+                          ? "bg-zinc-900 dark:bg-white text-white dark:text-black border-zinc-900 dark:border-white scale-110 z-10 shadow-md"
+                          : BYTE_COLORS[word.color] ?? "bg-white dark:bg-zinc-900 text-zinc-400 dark:text-zinc-500 border-zinc-200 dark:border-zinc-800"
                       }`}
                     >
                       {byteVal}
@@ -170,12 +170,12 @@ export function InteractiveStateGrid() {
                     initial={{ opacity: 0, y: 8, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                    className={`absolute -top-14 left-1/2 -translate-x-1/2 w-72 px-4 py-2.5 rounded-xl bg-[#0a0a0e] border ${c.border} shadow-2xl z-50 pointer-events-none`}
+                    className={`absolute -top-14 left-1/2 -translate-x-1/2 w-72 px-4 py-2.5 rounded-xl bg-white dark:bg-[#0a0a0e] border ${c.border} shadow-2xl z-50 pointer-events-none`}
                   >
                     <div className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${c.text}`}>
                       {word.label} — {word.role}
                     </div>
-                    <div className="text-xs text-zinc-300 leading-snug">{getTooltip(word.label)}</div>
+                    <div className="text-xs text-zinc-700 dark:text-zinc-300 leading-snug">{getTooltip(word.label)}</div>
                   </motion.div>
                 )}
               </AnimatePresence>

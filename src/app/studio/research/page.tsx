@@ -20,10 +20,10 @@ export default function ResearchModule() {
       {/* Header */}
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white mb-2 flex items-center gap-3">
-            <BookOpen className="w-8 h-8 text-purple-500" /> Research Library
+          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white mb-2 flex items-center gap-3">
+            <BookOpen className="w-8 h-8 text-purple-600 dark:text-purple-500" /> Research Library
           </h1>
-          <p className="text-zinc-400">
+          <p className="text-zinc-600 dark:text-zinc-400">
             Deep dive into the academic foundations of ASCON cryptography.
           </p>
         </div>
@@ -31,18 +31,18 @@ export default function ResearchModule() {
         {/* Mock Search */}
         <div className="relative group w-full md:w-72">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="w-4 h-4 text-zinc-500 group-focus-within:text-purple-400 transition-colors" />
+            <Search className="w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-purple-600 dark:group-focus-within:text-purple-400 transition-colors" />
           </div>
           <input 
             type="text" 
             placeholder="Search papers, variants..." 
-            className="w-full bg-black border border-white/10 rounded-full py-2 pl-10 pr-4 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all"
+            className="w-full bg-white dark:bg-black border border-zinc-200 dark:border-white/10 rounded-full py-2 pl-10 pr-4 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all shadow-sm dark:shadow-none"
           />
         </div>
       </header>
 
       {/* Tabs */}
-      <div className="flex space-x-1 p-1 bg-white/5 rounded-xl border border-white/10 w-fit backdrop-blur-sm">
+      <div className="flex space-x-1 p-1 bg-zinc-100/50 dark:bg-white/5 rounded-xl border border-zinc-200 dark:border-white/10 w-fit backdrop-blur-sm">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           const Icon = tab.icon;
@@ -51,14 +51,14 @@ export default function ResearchModule() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`relative flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                isActive ? "text-white" : "text-zinc-400 hover:text-zinc-200 hover:bg-white/5"
+                isActive ? "text-zinc-900 dark:text-white" : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/5"
               }`}
             >
-              <Icon className={`w-4 h-4 ${isActive ? "text-purple-400" : ""}`} />
+              <Icon className={`w-4 h-4 ${isActive ? "text-purple-600 dark:text-purple-400" : ""}`} />
               {tab.label}
               {isActive && (
                 <motion.div
-                  className="absolute inset-0 bg-white/10 rounded-lg border border-white/10"
+                  className="absolute inset-0 bg-white dark:bg-white/10 rounded-lg border border-zinc-200 dark:border-white/10 shadow-sm dark:shadow-none"
                   transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                 />
               )}
@@ -68,9 +68,9 @@ export default function ResearchModule() {
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 bg-[#09090b] border border-white/10 rounded-2xl p-6 md:p-8 overflow-y-auto shadow-2xl relative">
+      <div className="flex-1 bg-white dark:bg-[#09090b] border border-zinc-200 dark:border-white/10 rounded-2xl p-6 md:p-8 overflow-y-auto shadow-sm dark:shadow-2xl relative">
         {/* Subtle background glow */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-purple-900/10 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-purple-100/50 dark:from-purple-900/10 via-transparent to-transparent pointer-events-none" />
 
         <AnimatePresence mode="wait">
           {activeTab === "variants" && <VariantsContent key="variants" />}
@@ -112,8 +112,8 @@ function VariantsContent() {
       className="space-y-8 relative z-10"
     >
       <div>
-        <h2 className="text-2xl font-bold text-white mb-2">Algorithm Variants</h2>
-        <p className="text-zinc-400 max-w-3xl leading-relaxed">
+        <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Algorithm Variants</h2>
+        <p className="text-zinc-600 dark:text-zinc-400 max-w-3xl leading-relaxed">
           The ASCON suite consists of several variants, all built upon the same 320-bit permutation structure. 
           By adjusting the <i>rate</i> and <i>capacity</i> boundaries within the sponge construction, the algorithms trade off between throughput and security margins.
         </p>
@@ -121,20 +121,20 @@ function VariantsContent() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {variants.map((v) => (
-          <div key={v.name} className="bg-black/50 border border-white/10 rounded-xl p-6 hover:border-purple-500/30 transition-colors group">
+          <div key={v.name} className="bg-zinc-50 dark:bg-black/50 border border-zinc-200 dark:border-white/10 rounded-xl p-6 hover:border-purple-300 dark:hover:border-purple-500/30 transition-colors group">
             <div className="flex justify-between items-start mb-4">
-              <h3 className="text-xl font-bold text-white">{v.name}</h3>
+              <h3 className="text-xl font-bold text-zinc-900 dark:text-white">{v.name}</h3>
               {v.primary && (
-                <span className="px-2 py-1 text-xs font-semibold bg-purple-500/20 text-purple-400 rounded border border-purple-500/30">Primary</span>
+                <span className="px-2 py-1 text-xs font-semibold bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 rounded border border-purple-200 dark:border-purple-500/30">Primary</span>
               )}
             </div>
-            <p className="text-sm text-zinc-400 mb-6 min-h-[60px]">{v.desc}</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6 min-h-[60px]">{v.desc}</p>
             
             <div className="space-y-3">
               {Object.entries(v.specs).map(([key, val]) => (
-                <div key={key} className="flex justify-between items-center text-sm border-b border-white/5 pb-2 last:border-0 last:pb-0">
+                <div key={key} className="flex justify-between items-center text-sm border-b border-zinc-200 dark:border-white/5 pb-2 last:border-0 last:pb-0">
                   <span className="text-zinc-500 capitalize">{key}</span>
-                  <span className="text-zinc-200 font-mono">{val}</span>
+                  <span className="text-zinc-800 dark:text-zinc-200 font-mono">{val}</span>
                 </div>
               ))}
             </div>
@@ -161,15 +161,15 @@ function JourneyContent() {
       className="space-y-8 relative z-10"
     >
       <div>
-        <h2 className="text-2xl font-bold text-white mb-2">The Road to Standardization</h2>
-        <p className="text-zinc-400 max-w-3xl leading-relaxed">
+        <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">The Road to Standardization</h2>
+        <p className="text-zinc-600 dark:text-zinc-400 max-w-3xl leading-relaxed">
           ASCON wasn't built in a day. Its selection by the National Institute of Standards and Technology (NIST) was the culmination of a rigorous 5-year public competition.
         </p>
       </div>
 
       <div className="relative pl-4 md:pl-0">
         {/* Vertical Line */}
-        <div className="absolute left-[15px] md:left-1/2 top-0 bottom-0 w-px bg-white/10 md:-translate-x-1/2" />
+        <div className="absolute left-[15px] md:left-1/2 top-0 bottom-0 w-px bg-zinc-200 dark:bg-white/10 md:-translate-x-1/2" />
         
         <div className="space-y-12">
           {timeline.map((item, idx) => {
@@ -178,13 +178,13 @@ function JourneyContent() {
               <div key={item.year} className={`relative flex flex-col md:flex-row ${isEven ? "md:flex-row-reverse" : ""} items-start md:items-center gap-8`}>
                 
                 {/* Timeline Dot */}
-                <div className="absolute left-[15px] md:left-1/2 w-4 h-4 rounded-full bg-[#09090b] border-2 border-purple-500 transform -translate-x-[7px] md:-translate-x-1/2 mt-1 md:mt-0 z-10" />
+                <div className="absolute left-[15px] md:left-1/2 w-4 h-4 rounded-full bg-white dark:bg-[#09090b] border-2 border-purple-500 transform -translate-x-[7px] md:-translate-x-1/2 mt-1 md:mt-0 z-10" />
                 
                 {/* Content */}
                 <div className={`w-full md:w-1/2 pl-12 md:pl-0 ${isEven ? "md:pr-16 md:text-right" : "md:pl-16"}`}>
-                  <span className="text-purple-400 font-mono font-bold text-lg mb-1 block">{item.year}</span>
-                  <h3 className="text-xl font-bold text-white mb-2">{item.title}</h3>
-                  <p className="text-zinc-400 leading-relaxed text-sm">{item.desc}</p>
+                  <span className="text-purple-600 dark:text-purple-400 font-mono font-bold text-lg mb-1 block">{item.year}</span>
+                  <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">{item.title}</h3>
+                  <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed text-sm">{item.desc}</p>
                 </div>
               </div>
             );
@@ -204,45 +204,45 @@ function SecurityContent() {
       className="space-y-8 relative z-10"
     >
       <div>
-        <h2 className="text-2xl font-bold text-white mb-2">Cryptanalysis & Security</h2>
-        <p className="text-zinc-400 max-w-3xl leading-relaxed">
+        <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Cryptanalysis & Security</h2>
+        <p className="text-zinc-600 dark:text-zinc-400 max-w-3xl leading-relaxed">
           ASCON provides a robust 128-bit security level against key recovery, forgery, and state recovery attacks. Its design inherently mitigates several classes of advanced cryptanalysis.
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-black/40 border border-white/5 rounded-xl p-6">
-          <h4 className="font-bold text-white mb-3 flex items-center gap-2">
+        <div className="bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-white/5 rounded-xl p-6">
+          <h4 className="font-bold text-zinc-900 dark:text-white mb-3 flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-red-500" /> Differential Cryptanalysis
           </h4>
-          <p className="text-sm text-zinc-400 leading-relaxed">
+          <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
             The 5-bit S-box used in the substitution layer was heavily optimized to maximize resistance against differential trails. Coupled with the linear diffusion layer, the maximum expected differential probability drops exponentially with each round, rendering statistical attacks infeasible.
           </p>
         </div>
 
-        <div className="bg-black/40 border border-white/5 rounded-xl p-6">
-          <h4 className="font-bold text-white mb-3 flex items-center gap-2">
+        <div className="bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-white/5 rounded-xl p-6">
+          <h4 className="font-bold text-zinc-900 dark:text-white mb-3 flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-blue-500" /> Linear Cryptanalysis
           </h4>
-          <p className="text-sm text-zinc-400 leading-relaxed">
+          <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
             Similar to differential resistance, the active S-box count across multiple rounds guarantees strong bounds against linear cryptanalysis. The choice of 12 rounds for initialization creates an insurmountable barrier for linear approximations.
           </p>
         </div>
 
-        <div className="bg-black/40 border border-white/5 rounded-xl p-6">
-          <h4 className="font-bold text-white mb-3 flex items-center gap-2">
+        <div className="bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-white/5 rounded-xl p-6">
+          <h4 className="font-bold text-zinc-900 dark:text-white mb-3 flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-500" /> Forgery Attacks
           </h4>
-          <p className="text-sm text-zinc-400 leading-relaxed">
+          <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
             Operating as a sponge-based AEAD cipher, forgery implies recovering the inner state or guessing the authentication tag. With a capacity of 256 bits, the probability of a successful forgery is bound by 2^-128, adhering perfectly to the 128-bit security target.
           </p>
         </div>
 
-        <div className="bg-black/40 border border-white/5 rounded-xl p-6">
-          <h4 className="font-bold text-white mb-3 flex items-center gap-2">
+        <div className="bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-white/5 rounded-xl p-6">
+          <h4 className="font-bold text-zinc-900 dark:text-white mb-3 flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-yellow-500" /> Side-Channel Resistance
           </h4>
-          <p className="text-sm text-zinc-400 leading-relaxed">
+          <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
             ASCON's operations are fundamentally based on bitwise AND, NOT, and XOR logic. This allows for straightforward, high-speed masked implementations in hardware, defending effectively against power analysis (DPA/CPA) and timing attacks.
           </p>
         </div>

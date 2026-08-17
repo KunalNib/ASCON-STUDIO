@@ -10,48 +10,48 @@ export function SecurityPlayground() {
       
       {/* Sidebar for Experiments */}
       <div className="w-1/3 flex flex-col gap-3">
-         <h2 className="text-xl font-bold flex items-center gap-2 mb-4">
+         <h2 className="text-xl font-bold flex items-center gap-2 mb-4 text-zinc-900 dark:text-white">
            <Crosshair className="text-rose-500 w-5 h-5" /> Threat Models
          </h2>
 
          <button 
            onClick={() => setActiveExp("avalanche")}
-           className={`p-4 rounded-xl border text-left transition-all ${activeExp === 'avalanche' ? 'bg-rose-900/20 border-rose-500 shadow-inner' : 'bg-black border-white/5 text-zinc-500 hover:border-white/20'}`}
+           className={`p-4 rounded-xl border text-left transition-all ${activeExp === 'avalanche' ? 'bg-rose-50 dark:bg-rose-900/20 border-rose-400 dark:border-rose-500 shadow-sm dark:shadow-inner' : 'bg-white dark:bg-black border-zinc-200 dark:border-white/5 text-zinc-500 hover:border-zinc-300 dark:hover:border-white/20'}`}
          >
-            <Zap className={`w-5 h-5 mb-2 ${activeExp === 'avalanche' ? 'text-rose-400' : 'text-zinc-600'}`} />
-            <div className="font-bold text-white mb-1">Avalanche Effect</div>
+            <Zap className={`w-5 h-5 mb-2 ${activeExp === 'avalanche' ? 'text-rose-600 dark:text-rose-400' : 'text-zinc-400 dark:text-zinc-600'}`} />
+            <div className="font-bold text-zinc-900 dark:text-white mb-1">Avalanche Effect</div>
             <div className="text-xs">Observe a single bit-flip cascading through the sponge state.</div>
          </button>
 
          <button 
            onClick={() => setActiveExp("tamper")}
-           className={`p-4 rounded-xl border text-left transition-all ${activeExp === 'tamper' ? 'bg-rose-900/20 border-rose-500 shadow-inner' : 'bg-black border-white/5 text-zinc-500 hover:border-white/20'}`}
+           className={`p-4 rounded-xl border text-left transition-all ${activeExp === 'tamper' ? 'bg-rose-50 dark:bg-rose-900/20 border-rose-400 dark:border-rose-500 shadow-sm dark:shadow-inner' : 'bg-white dark:bg-black border-zinc-200 dark:border-white/5 text-zinc-500 hover:border-zinc-300 dark:hover:border-white/20'}`}
          >
-            <ShieldX className={`w-5 h-5 mb-2 ${activeExp === 'tamper' ? 'text-rose-400' : 'text-zinc-600'}`} />
-            <div className="font-bold text-white mb-1">Ciphertext Tampering</div>
+            <ShieldX className={`w-5 h-5 mb-2 ${activeExp === 'tamper' ? 'text-rose-600 dark:text-rose-400' : 'text-zinc-400 dark:text-zinc-600'}`} />
+            <div className="font-bold text-zinc-900 dark:text-white mb-1">Ciphertext Tampering</div>
             <div className="text-xs">Modify ciphertext in transit and watch the MAC verification fail.</div>
          </button>
 
          <button 
            onClick={() => setActiveExp("nonce")}
-           className={`p-4 rounded-xl border text-left transition-all ${activeExp === 'nonce' ? 'bg-rose-900/20 border-rose-500 shadow-inner' : 'bg-black border-white/5 text-zinc-500 hover:border-white/20'}`}
+           className={`p-4 rounded-xl border text-left transition-all ${activeExp === 'nonce' ? 'bg-rose-50 dark:bg-rose-900/20 border-rose-400 dark:border-rose-500 shadow-sm dark:shadow-inner' : 'bg-white dark:bg-black border-zinc-200 dark:border-white/5 text-zinc-500 hover:border-zinc-300 dark:hover:border-white/20'}`}
          >
-            <ShieldAlert className={`w-5 h-5 mb-2 ${activeExp === 'nonce' ? 'text-rose-400' : 'text-zinc-600'}`} />
-            <div className="font-bold text-white mb-1">Nonce Reuse Simulation</div>
+            <ShieldAlert className={`w-5 h-5 mb-2 ${activeExp === 'nonce' ? 'text-rose-600 dark:text-rose-400' : 'text-zinc-400 dark:text-zinc-600'}`} />
+            <div className="font-bold text-zinc-900 dark:text-white mb-1">Nonce Reuse Simulation</div>
             <div className="text-xs">Why reusing an initialization vector destroys encryption.</div>
          </button>
 
          <button 
            onClick={() => setActiveExp("brute")}
-           className={`p-4 rounded-xl border text-left transition-all ${activeExp === 'brute' ? 'bg-rose-900/20 border-rose-500 shadow-inner' : 'bg-black border-white/5 text-zinc-500 hover:border-white/20'}`}
+           className={`p-4 rounded-xl border text-left transition-all ${activeExp === 'brute' ? 'bg-rose-50 dark:bg-rose-900/20 border-rose-400 dark:border-rose-500 shadow-sm dark:shadow-inner' : 'bg-white dark:bg-black border-zinc-200 dark:border-white/5 text-zinc-500 hover:border-zinc-300 dark:hover:border-white/20'}`}
          >
-            <KeySquare className={`w-5 h-5 mb-2 ${activeExp === 'brute' ? 'text-rose-400' : 'text-zinc-600'}`} />
-            <div className="font-bold text-white mb-1">Key Space (Brute Force)</div>
+            <KeySquare className={`w-5 h-5 mb-2 ${activeExp === 'brute' ? 'text-rose-600 dark:text-rose-400' : 'text-zinc-400 dark:text-zinc-600'}`} />
+            <div className="font-bold text-zinc-900 dark:text-white mb-1">Key Space (Brute Force)</div>
             <div className="text-xs">Visualizing the $2^{128}$ absolute bound of ASCON-128.</div>
          </button>
       </div>
 
-      <div className="flex-1 bg-black border border-white/10 rounded-2xl overflow-hidden relative shadow-2xl flex flex-col">
+      <div className="flex-1 bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-white/10 rounded-2xl overflow-hidden relative shadow-sm dark:shadow-2xl flex flex-col">
          {activeExp === "avalanche" && (
             <div className="h-full w-full flex flex-col">
                <SecurityVisualizer />
