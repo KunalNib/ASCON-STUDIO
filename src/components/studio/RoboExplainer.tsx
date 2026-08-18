@@ -54,8 +54,8 @@ export function RoboExplainer({ text, onBack }: RoboExplainerProps) {
          onClick={handleSkipDelay}
       >
         <div className="relative">
-          <div className="w-20 h-20 rounded-2xl bg-purple-900/30 border-2 border-purple-500 shadow-[0_0_30px_rgba(168,85,247,0.3)] flex items-center justify-center overflow-hidden">
-             <Bot className="w-12 h-12 text-zinc-100 relative z-10" />
+          <div className="w-20 h-20 rounded-2xl bg-purple-100 dark:bg-purple-900/30 border-2 border-purple-400 dark:border-purple-500 shadow-[0_0_30px_rgba(168,85,247,0.15)] dark:shadow-[0_0_30px_rgba(168,85,247,0.3)] flex items-center justify-center overflow-hidden">
+             <Bot className="w-12 h-12 text-purple-600 dark:text-zinc-100 relative z-10" />
              
              {/* Simulates "thinking" / scanning while typing */}
              <AnimatePresence>
@@ -86,21 +86,21 @@ export function RoboExplainer({ text, onBack }: RoboExplainerProps) {
       <motion.div 
         initial={{ opacity: 0, scale: 0.9, x: -20 }}
         animate={{ opacity: 1, scale: 1, x: 0 }}
-        className="flex-1 w-full relative bg-purple-900/10 border border-purple-500/30 rounded-3xl p-6 shadow-2xl min-h-[200px] flex flex-col"
+        className="flex-1 w-full relative bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-500/30 rounded-3xl p-6 shadow-xl dark:shadow-2xl min-h-[200px] flex flex-col"
         onClick={handleSkipDelay}
       >
         {/* Tail for speech bubble */}
-        <div className="hidden md:block absolute w-4 h-4 bg-purple-900/10 border-l border-b border-purple-500/30 transform object-fill rotate-45 -left-[9px] top-12" />
+        <div className="hidden md:block absolute w-4 h-4 bg-purple-50 dark:bg-purple-900/10 border-l border-b border-purple-200 dark:border-purple-500/30 transform object-fill rotate-45 -left-[9px] top-12" />
         
-        <div className="flex-1 text-zinc-200 leading-loose text-base font-medium tracking-wide">
+        <div className="flex-1 text-zinc-800 dark:text-zinc-200 leading-loose text-base font-medium tracking-wide">
           {displayedText}
-          {isTyping && <span className="inline-block w-2 bg-purple-400 animate-pulse ml-1 align-middle h-5" />}
+          {isTyping && <span className="inline-block w-2 bg-purple-500 dark:bg-purple-400 animate-pulse ml-1 align-middle h-5" />}
         </div>
         
-        <div className="flex justify-between items-end mt-4 pt-4 border-t border-white/5">
+        <div className="flex justify-between items-end mt-4 pt-4 border-t border-purple-200 dark:border-white/5">
           <button 
             onClick={(e) => { e.stopPropagation(); onBack(); }}
-            className="flex items-center gap-2 text-zinc-500 hover:text-white text-xs font-bold uppercase tracking-wider transition-colors"
+            className="flex items-center gap-2 text-zinc-500 hover:text-zinc-800 dark:hover:text-white text-xs font-bold uppercase tracking-wider transition-colors"
           >
             ← Back to curriculum
           </button>

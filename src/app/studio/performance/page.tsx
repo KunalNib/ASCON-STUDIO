@@ -34,25 +34,25 @@ export default function PerformanceDashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 shrink-0">
         <div className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-xl p-5 shadow-sm dark:shadow-lg relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 text-cyan-600 dark:text-cyan-500 transition-opacity"><Activity className="w-16 h-16"/></div>
+          <div className="absolute top-0 right-0 p-4 opacity-20 dark:opacity-5 group-hover:opacity-30 dark:group-hover:opacity-10 text-cyan-600 dark:text-cyan-500 transition-opacity"><Activity className="w-16 h-16"/></div>
           <div className="text-zinc-600 dark:text-zinc-500 font-semibold text-xs tracking-wider uppercase mb-1">Execution Speed</div>
           <div className="text-3xl font-bold text-zinc-900 dark:text-white">{metrics.fps.toFixed(1)} <span className="text-lg text-cyan-600 dark:text-cyan-500">FPS</span></div>
         </div>
 
         <div className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-xl p-5 shadow-sm dark:shadow-lg relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 text-orange-600 dark:text-orange-500 transition-opacity"><Gauge className="w-16 h-16"/></div>
+          <div className="absolute top-0 right-0 p-4 opacity-20 dark:opacity-5 group-hover:opacity-30 dark:group-hover:opacity-10 text-orange-600 dark:text-orange-500 transition-opacity"><Gauge className="w-16 h-16"/></div>
           <div className="text-zinc-600 dark:text-zinc-500 font-semibold text-xs tracking-wider uppercase mb-1">Latency (End-to-End)</div>
           <div className="text-3xl font-bold text-zinc-900 dark:text-white">{metrics.latency.toFixed(2)} <span className="text-lg text-orange-600 dark:text-orange-500">ms</span></div>
         </div>
 
         <div className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-xl p-5 shadow-sm dark:shadow-lg relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 text-purple-600 dark:text-purple-500 transition-opacity"><Cpu className="w-16 h-16"/></div>
+          <div className="absolute top-0 right-0 p-4 opacity-20 dark:opacity-5 group-hover:opacity-30 dark:group-hover:opacity-10 text-purple-600 dark:text-purple-500 transition-opacity"><Cpu className="w-16 h-16"/></div>
           <div className="text-zinc-600 dark:text-zinc-500 font-semibold text-xs tracking-wider uppercase mb-1">MCU Cycles</div>
           <div className="text-3xl font-bold text-zinc-900 dark:text-white">{metrics.cpuCycles} <span className="text-lg text-purple-600 dark:text-purple-500">/ op</span></div>
         </div>
 
         <div className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-xl p-5 shadow-sm dark:shadow-lg relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 text-green-600 dark:text-green-500 transition-opacity"><Battery className="w-16 h-16"/></div>
+          <div className="absolute top-0 right-0 p-4 opacity-20 dark:opacity-5 group-hover:opacity-30 dark:group-hover:opacity-10 text-green-600 dark:text-green-500 transition-opacity"><Battery className="w-16 h-16"/></div>
           <div className="text-zinc-600 dark:text-zinc-500 font-semibold text-xs tracking-wider uppercase mb-1">Power Draw</div>
           <div className="text-3xl font-bold text-zinc-900 dark:text-white">{metrics.power.toFixed(2)} <span className="text-lg text-green-600 dark:text-green-500">mW</span></div>
         </div>
