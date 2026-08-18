@@ -137,8 +137,8 @@ def _read_serial_line(ser):
 
 async def serial_reader_task():
     try:
-        ser = serial.Serial("/dev/ttyUSB0", 115200, timeout=0.1)
-        print("Connected to USB Serial /dev/ttyUSB0")
+        ser = serial.Serial("/dev/cu.usbserial-0001", 115200, timeout=0.1)
+        print("Connected to USB Serial /dev/cu.usbserial-0001")
         while True:
             line = await asyncio.to_thread(_read_serial_line, ser)
             if line:

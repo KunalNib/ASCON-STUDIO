@@ -52,54 +52,54 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black flex flex-col justify-center items-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-zinc-50 dark:bg-black flex flex-col justify-center items-center p-4 relative overflow-hidden transition-colors duration-300">
       {/* Background Ambience */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-600/10 rounded-full blur-[128px] mix-blend-screen" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-600/10 dark:bg-blue-600/10 rounded-full blur-[128px] mix-blend-multiply dark:mix-blend-screen" />
       </div>
 
       <motion.div 
          initial={{ opacity: 0, y: 20 }}
          animate={{ opacity: 1, y: 0 }}
-         className="w-full max-w-md bg-[#09090b]/80 backdrop-blur-2xl border border-white/10 p-8 rounded-3xl shadow-2xl relative z-10"
+         className="w-full max-w-md bg-white/80 dark:bg-[#09090b]/80 backdrop-blur-2xl border border-zinc-200 dark:border-white/10 p-8 rounded-3xl shadow-xl dark:shadow-2xl relative z-10"
       >
-         <div className="w-12 h-12 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center mb-6">
-            <LockKeyhole className="w-6 h-6 text-zinc-300" />
+         <div className="w-12 h-12 bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-xl flex items-center justify-center mb-6">
+            <LockKeyhole className="w-6 h-6 text-zinc-600 dark:text-zinc-300" />
          </div>
          
-         <h1 className="text-2xl font-bold text-white mb-2">
+         <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">
            {isRegistering ? "Create your account" : "Sign in to Studio"}
          </h1>
-         <p className="text-zinc-400 text-sm mb-8">
+         <p className="text-zinc-500 dark:text-zinc-400 text-sm mb-8">
            Access the interactive ASCON cryptography platform.
          </p>
 
          <form onSubmit={handleAuth} className="space-y-4">
             <div className="space-y-1">
-              <label className="text-xs font-medium text-zinc-400 ml-1">Email Address</label>
+              <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400 ml-1">Email Address</label>
               <div className="relative">
-                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
                  <input 
                    type="email" 
                    required
                    value={email}
                    onChange={e => setEmail(e.target.value)}
-                   className="w-full bg-black/50 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                   className="w-full bg-zinc-50 dark:bg-black/50 border border-zinc-200 dark:border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-zinc-900 dark:text-white focus:outline-none focus:border-blue-500 transition-colors"
                    placeholder="scholar@university.edu"
                  />
               </div>
             </div>
             
             <div className="space-y-1">
-              <label className="text-xs font-medium text-zinc-400 ml-1">Password</label>
+              <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400 ml-1">Password</label>
               <div className="relative">
-                 <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                 <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
                  <input 
                    type="password" 
                    required
                    value={password}
                    onChange={e => setPassword(e.target.value)}
-                   className="w-full bg-black/50 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                   className="w-full bg-zinc-50 dark:bg-black/50 border border-zinc-200 dark:border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-zinc-900 dark:text-white focus:outline-none focus:border-blue-500 transition-colors"
                    placeholder="••••••••"
                  />
               </div>
@@ -116,7 +116,7 @@ export default function LoginPage() {
             <button 
               type="submit"
               disabled={isLoading}
-              className="w-full flex items-center justify-center gap-2 bg-white hover:bg-zinc-200 text-black rounded-xl py-2.5 font-bold transition-colors disabled:opacity-50 mt-4 group"
+              className="w-full flex items-center justify-center gap-2 bg-zinc-900 dark:bg-white hover:bg-black dark:hover:bg-zinc-200 text-white dark:text-black rounded-xl py-2.5 font-bold transition-colors disabled:opacity-50 mt-4 group"
             >
               {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : (
                 <>
@@ -130,7 +130,7 @@ export default function LoginPage() {
          <div className="mt-6 text-center">
             <button 
               onClick={() => { setIsRegistering(!isRegistering); setError(null); }}
-              className="text-xs text-zinc-500 hover:text-white transition-colors"
+              className="text-xs text-zinc-500 hover:text-zinc-800 dark:hover:text-white transition-colors"
             >
               {isRegistering ? "Already have an account? Sign In" : "Need access? Create an account"}
             </button>

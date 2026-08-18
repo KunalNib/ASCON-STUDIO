@@ -1,12 +1,14 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ChevronRight, Bot, Compass, Play } from "lucide-react";
+import { ChevronRight, Bot, Compass, Play, Sun, Moon } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
 
 export default function LandingPage() {
   const [mounted, setMounted] = useState(false);
+  const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     setMounted(true);
@@ -16,6 +18,15 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-white overflow-hidden relative selection:bg-purple-500/30 transition-colors duration-300">
+      {/* Theme Toggle */}
+      <button 
+        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} 
+        className="absolute top-6 right-6 z-50 p-2.5 rounded-full bg-white/50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-white dark:hover:bg-white/10 shadow-sm dark:shadow-none backdrop-blur-md transition-all"
+        title="Toggle Theme"
+      >
+        {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+      </button>
+
       {/* Background Effects */}
       <div className="absolute inset-0 z-0">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/20 dark:bg-purple-600/30 rounded-full blur-[128px] mix-blend-multiply dark:mix-blend-screen animate-pulse duration-1000"></div>
