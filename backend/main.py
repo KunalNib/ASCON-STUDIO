@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 import asyncio
@@ -15,11 +16,18 @@ app = FastAPI(title="ASCON Studio AI Backend")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3001",
+    ],
+    allow_origin_regex=r"https?://.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 rag_engine = AssistantRAG()
 
@@ -45,6 +53,53 @@ def login(user: UserCreate, db: Database = Depends(database.get_db)):
     
     access_token = auth.create_access_token(data={"sub": db_user.get("email")})
     return {"access_token": access_token, "token_type": "bearer"}
+
+@app.get("/auth/config")
+def get_auth_config():
+    """Returns public auth configuration such as Google Client ID OAUTH_KEY."""
+    oauth_key = os.getenv("OAUTH_KEY", "")
+    return {"oauth_key": oauth_key}
+
+@app.post("/auth/google")
+async def google_auth(payload: models.GoogleAuthSchema, db: Database = Depends(database.get_db)):
+    google_user = await auth.verify_google_token(payload.token)
+    if not google_user or not google_user.get("email"):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Google OAuth token or authentication failed"
+        )
+    
+    email = google_user.get("email")
+    name = google_user.get("name")
+    picture = google_user.get("picture")
+    
+    db_user = db.users.find_one({"email": email})
+    if not db_user:
+        new_user = models.UserInDB(
+            email=email,
+            name=name,
+            picture=picture,
+            auth_provider="google"
+        )
+        db.users.insert_one(new_user.model_dump())
+    else:
+        # Update profile metadata if changed
+        db.users.update_one(
+            {"email": email},
+            {"$set": {"name": name, "picture": picture}}
+        )
+    
+    access_token = auth.create_access_token(data={"sub": email})
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "email": email,
+            "name": name,
+            "picture": picture
+        }
+    }
+
 
 @app.get("/quiz/generate")
 async def generate_quiz():
