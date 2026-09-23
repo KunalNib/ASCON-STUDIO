@@ -189,3 +189,19 @@ export const AUTH_TAG_BYTES = [
 // ─── Final Ciphertext ─────────────────────────────────────────────────────────
 
 export const DEMO_CIPHERTEXT = "A0 94 4F CB 23 BB 9B 3E";
+
+// ─── Decryption & Authenticated Verification Data ─────────────────────────────
+
+export const TAMPERED_CIPHERTEXT = "B0 94 4F CB 23 BB 9B 3E"; // 1-bit flipped in byte 0
+export const TAMPERED_AUTH_TAG   = "FF 2B 3C 4D 5E 6F 70 81 92 A3 B4 C5 D6 E7 F8 09"; // Forged tag
+export const TAMPERED_CANDIDATE_TAG = [
+  "E4", "71", "89", "2A", "0D", "5F", "33", "11",
+  "C2", "98", "AB", "76", "43", "12", "EF", "00"
+];
+
+// Decryption Duplex XOR Steps
+export const DECRYPT_X0_INITIAL = ["E8", "F1", "23", "A7", "4C", "9B", "D2", "51"];
+export const DECRYPT_CIPHERTEXT_BYTES = ["A0", "94", "4F", "CB", "23", "BB", "9B", "3E"];
+export const DECRYPT_RECOVERED_BYTES = ["48", "65", "6C", "6C", "6F", "20", "49", "6F"]; // "Hello IoT"
+export const DECRYPT_RECOVERED_ASCII = ["H", "e", "l", "l", "o", "·", "I", "o"];
+
