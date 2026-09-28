@@ -12,6 +12,8 @@ import {
   BookOpen,
   ChevronDown,
   ChevronUp,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import {
   ThreatSelectorRail,
@@ -23,12 +25,37 @@ import { AvalancheDifferentialAttack } from "@/components/studio/security/attack
 import { NonceReuseAttack } from "@/components/studio/security/attacks/NonceReuseAttack";
 import { PaddingOracleAttack } from "@/components/studio/security/attacks/PaddingOracleAttack";
 import { SideChannelDPAAttack } from "@/components/studio/security/attacks/SideChannelDPAAttack";
+import { AdversaryConsole, emitSecurityLog } from "@/components/studio/security/AdversaryConsole";
+import { isSoundEnabled, toggleSound, playBitClick } from "@/lib/soundFx";
 
 export default function SecurityModule() {
   const [activeThreat, setActiveThreat] = useState<ThreatId>("malleability");
   const [isNistDrawerOpen, setIsNistDrawerOpen] = useState(false);
+  const [soundOn, setSoundOn] = useState(true);
 
   const activeThreatData = THREAT_MODELS.find((t) => t.id === activeThreat) || THREAT_MODELS[0];
+
+  const handleSelectThreat = (id: ThreatId) => {
+    playBitClick();
+    setActiveThreat(id);
+    const threatObj = THREAT_MODELS.find((t) => t.id === id);
+    if (threatObj) {
+      emitSecurityLog(
+        "INFO",
+        `Switched active arena focus to ${threatObj.title} [${threatObj.severity}].`,
+        undefined,
+        id
+      );
+    }
+  };
+
+  const handleToggleSound = () => {
+    const newState = toggleSound();
+    setSoundOn(newState);
+    if (newState) {
+      playBitClick();
+    }
+  };
 
   const renderActiveThreat = () => {
     switch (activeThreat) {
@@ -63,7 +90,7 @@ export default function SecurityModule() {
           </p>
         </div>
 
-        {/* Global Security Metrics Chips */}
+        {/* Global Security Metrics Chips & Controls */}
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-bold text-xs">
             <ShieldCheck className="w-3.5 h-3.5" />
@@ -79,6 +106,19 @@ export default function SecurityModule() {
             <Clock className="w-3.5 h-3.5 text-orange-500" />
             <span>Timing Δ: 0μs</span>
           </div>
+
+          {/* Sound FX Toggle */}
+          <button
+            onClick={handleToggleSound}
+            className={`p-1.5 rounded-xl border transition-colors ${
+              soundOn
+                ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-white/10 hover:bg-zinc-200"
+                : "bg-rose-500/10 text-rose-500 border-rose-500/30"
+            }`}
+            title={soundOn ? "Mute Laboratory Audio FX" : "Unmute Audio FX"}
+          >
+            {soundOn ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+          </button>
 
           <button
             onClick={() => setIsNistDrawerOpen(!isNistDrawerOpen)}
@@ -124,7 +164,7 @@ export default function SecurityModule() {
         <div className="w-full md:w-72 lg:w-80 shrink-0 bg-white dark:bg-[#09090b] border border-zinc-200 dark:border-white/10 rounded-2xl p-3 shadow-sm overflow-y-auto custom-scrollbar">
           <ThreatSelectorRail
             activeThreat={activeThreat}
-            onSelectThreat={(id) => setActiveThreat(id)}
+            onSelectThreat={handleSelectThreat}
           />
         </div>
 
@@ -144,6 +184,9 @@ export default function SecurityModule() {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* ── Docked Live Adversary Telemetry Console ── */}
+      <AdversaryConsole />
     </div>
   );
 }

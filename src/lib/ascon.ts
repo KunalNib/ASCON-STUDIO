@@ -98,6 +98,68 @@ export class Ascon128 {
     }
   }
 
+  // Clone current state
+  clone(): Ascon128 {
+    const copy = new Ascon128();
+    copy.state = [...this.state];
+    return copy;
+  }
+
+  // Set explicit 5-word state
+  setState(words: bigint[]) {
+    this.state = words.map(w => w & 0xffffffffffffffffn);
+  }
+
+  // Flip bit at wordIdx (0..4) and bitIdx (0..63)
+  flipBit(wordIdx: number, bitIdx: number) {
+    if (wordIdx >= 0 && wordIdx < 5 && bitIdx >= 0 && bitIdx < 64) {
+      this.state[wordIdx] ^= (1n << BigInt(bitIdx));
+    }
+  }
+
+  // Execute a specific sub-layer of a round
+  performSubStep(layer: "constant" | "substitution" | "diffusion", round: number) {
+    if (layer === "constant") {
+      this.addConstant(round);
+    } else if (layer === "substitution") {
+      this.substitution();
+    } else if (layer === "diffusion") {
+      this.diffusion();
+    }
+  }
+
+  // Compute total Hamming distance between two 320-bit states (0..320)
+  static hammingDistance(s1: bigint[], s2: bigint[]): number {
+    let diff = 0;
+    for (let i = 0; i < 5; i++) {
+      let xor = (s1[i] ^ s2[i]) & 0xffffffffffffffffn;
+      while (xor > 0n) {
+        if (xor & 1n) diff++;
+        xor >>= 1n;
+      }
+    }
+    return diff;
+  }
+
+  // Compute number of active S-boxes (5-bit vertical slices with at least one flipped bit)
+  static getActiveSboxes(s1: bigint[], s2: bigint[]): number {
+    let active = 0;
+    const diffs = [
+      (s1[0] ^ s2[0]) & 0xffffffffffffffffn,
+      (s1[1] ^ s2[1]) & 0xffffffffffffffffn,
+      (s1[2] ^ s2[2]) & 0xffffffffffffffffn,
+      (s1[3] ^ s2[3]) & 0xffffffffffffffffn,
+      (s1[4] ^ s2[4]) & 0xffffffffffffffffn,
+    ];
+    // Combined bitwise OR across all 5 words: if bit i is 1 in any word, S-box i is active
+    let combined = diffs[0] | diffs[1] | diffs[2] | diffs[3] | diffs[4];
+    while (combined > 0n) {
+      if (combined & 1n) active++;
+      combined >>= 1n;
+    }
+    return active;
+  }
+
   // Initialization
   initialize(key: bigint, nonce: bigint) {
     // IV for Ascon-128 is 160 bits (e.g. k=128, r=64, a=12, b=6)
