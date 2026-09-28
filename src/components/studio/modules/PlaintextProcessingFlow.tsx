@@ -1,55 +1,105 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  PLAINTEXT_BLOCK_BYTES,
-  STATE_X0_BYTES,
-  CIPHERTEXT_BLOCK_BYTES,
-  DEMO_CIPHERTEXT,
-} from "@/lib/asconDemoData";
+import { useAsconStore } from "@/store/useAsconStore";
+import { Ascon128 } from "@/lib/ascon";
+import { CryptoTerm } from "@/components/ui/CryptoTerm";
 import { FileText, Cpu, Lock } from "lucide-react";
 
 export function PlaintextProcessingFlow() {
+  const { session, plaintext, key, nonce, associatedData } = useAsconStore();
   const [step, setStep] = useState(0);
   const [visibleCols, setVisibleCols] = useState(0);
 
+  const livePt = (plaintext || session?.plaintext || "27.4 °C").trim();
+  const liveKey = key || session?.key || "000102030405060708090A0B0C0D0E0F";
+  const liveNonce = nonce || session?.nonce || "000102030405060708090A0B0C0D0E0F";
+  const liveAd = associatedData || session?.associatedData || "ESP32-STATION-1";
+
+  // Compute live ASCON encryption
+  const encResult = useMemo(() => {
+    return Ascon128.encryptAEAD(liveKey, liveNonce, liveAd, livePt);
+  }, [liveKey, liveNonce, liveAd, livePt]);
+
+  // Plaintext bytes (first 8 bytes for Block 1)
+  const ptBlockBytes = useMemo(() => {
+    const raw = Array.from(new TextEncoder().encode(livePt)).map((b) =>
+      b.toString(16).toUpperCase().padStart(2, "0")
+    );
+    const padded = [...raw];
+    if (padded.length < 8) {
+      padded.push("80");
+      while (padded.length < 8) padded.push("00");
+    }
+    return padded.slice(0, 8);
+  }, [livePt]);
+
+  // State x0 bytes (after AD processing, before PT XOR)
+  const stateX0Bytes = useMemo(() => {
+    if (encResult.initializedStateWords && encResult.initializedStateWords[0]) {
+      const hex = encResult.initializedStateWords[0];
+      const bytes: string[] = [];
+      for (let i = 0; i < 16; i += 2) {
+        bytes.push(hex.slice(i, i + 2));
+      }
+      return bytes;
+    }
+    return ["E8", "F1", "23", "A7", "4C", "9B", "D2", "51"];
+  }, [encResult]);
+
+  // Ciphertext bytes: P XOR x0
+  const ctBlockBytes = useMemo(() => {
+    return ptBlockBytes.map((p, i) => {
+      const val = (parseInt(p, 16) ^ parseInt(stateX0Bytes[i] || "00", 16))
+        .toString(16)
+        .toUpperCase()
+        .padStart(2, "0");
+      return val;
+    });
+  }, [ptBlockBytes, stateX0Bytes]);
+
+  const displayCiphertext = encResult.ciphertext || ctBlockBytes.join(" ");
+
   // Auto-animate columns when step 2 hits
   useEffect(() => {
-    if (step < 2) { setVisibleCols(0); return; }
+    if (step < 2) {
+      setVisibleCols(0);
+      return;
+    }
     const interval = setInterval(() => {
       setVisibleCols((c) => {
-        if (c >= PLAINTEXT_BLOCK_BYTES.length) { clearInterval(interval); return c; }
+        if (c >= ptBlockBytes.length) {
+          clearInterval(interval);
+          return c;
+        }
         return c + 1;
       });
     }, 180);
     return () => clearInterval(interval);
-  }, [step]);
-
-  const hexXor = (a: string, b: string) => {
-    const result = (parseInt(a, 16) ^ parseInt(b, 16)).toString(16).toUpperCase().padStart(2, "0");
-    return result;
-  };
+  }, [step, ptBlockBytes.length]);
 
   return (
     <div className="w-full h-full flex flex-col items-center p-4 md:p-6 max-w-5xl mx-auto gap-5 overflow-y-auto custom-scrollbar">
-
       {/* Header */}
       <div className="text-center shrink-0">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold mb-2 border border-blue-500/20">
+          <span>Plain English: Scrambling Your Message into Ciphertext</span>
+        </div>
         <h2 className="text-2xl font-bold flex items-center justify-center gap-3 text-zinc-900 dark:text-white mb-2">
           <FileText className="w-6 h-6 text-blue-600 dark:text-blue-500" />
-          Plaintext Absorption &amp; Encryption
+          <CryptoTerm term="Duplex" display="Plaintext Absorption" /> &amp; Encryption
         </h2>
         <p className="text-zinc-600 dark:text-zinc-400 max-w-2xl text-sm leading-relaxed">
-          ASCON operates in <span className="text-blue-600 dark:text-blue-400 font-bold">duplex / sponge mode</span>.
-          The plaintext is XORed with the top 64-bits of the state (x0) to produce ciphertext.
+          ASCON operates in <CryptoTerm term="Duplex" display="duplex sponge mode" />.
+          The plaintext is XORed with the top 64-bits of the state (<CryptoTerm term="Rate" display="x0" />) to produce ciphertext.
           The same x0 is then fed back into the state, entangling the message with all future operations.
         </p>
       </div>
 
       {/* Step Controls */}
       <div className="flex gap-2 shrink-0">
-        {["Show Plaintext", "Show State x0", "XOR → Ciphertext"].map((label, i) => (
+        {["1. Show Plaintext", "2. Show State x0", "3. XOR → Ciphertext"].map((label, i) => (
           <button
             key={i}
             onClick={() => setStep(i)}
@@ -68,7 +118,6 @@ export function PlaintextProcessingFlow() {
 
       {/* Main XOR Grid */}
       <div className="w-full flex flex-col items-center gap-2 shrink-0">
-
         {/* Plaintext Row */}
         <AnimatePresence>
           {step >= 0 && (
@@ -76,14 +125,16 @@ export function PlaintextProcessingFlow() {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="flex items-center gap-2 w-full"
+              className="flex items-center gap-2 w-full justify-center"
             >
-              <div className="flex items-center gap-2 w-28 shrink-0 justify-end">
+              <div className="flex items-center gap-2 w-32 shrink-0 justify-end">
                 <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                <span className="text-xs text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider">Plaintext</span>
+                <span className="text-xs text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider">
+                  Plaintext P₀
+                </span>
               </div>
               <div className="flex gap-1.5">
-                {PLAINTEXT_BLOCK_BYTES.map((b, i) => (
+                {ptBlockBytes.map((b, i) => (
                   <motion.div
                     key={i}
                     initial={{ opacity: 0, scale: 0.6 }}
@@ -106,16 +157,17 @@ export function PlaintextProcessingFlow() {
             <motion.div
               initial={{ opacity: 0, scaleX: 0 }}
               animate={{ opacity: 1, scaleX: 1 }}
-              className="flex items-center gap-2 w-full"
+              className="flex items-center gap-2 w-full justify-center"
             >
-              <div className="w-28 shrink-0" />
+              <div className="w-32 shrink-0" />
               <div className="flex gap-1.5">
-                {PLAINTEXT_BLOCK_BYTES.map((_, i) => (
+                {ptBlockBytes.map((_, i) => (
                   <div key={i} className="w-10 flex items-center justify-center text-zinc-400 dark:text-zinc-600 font-black text-lg">
                     ⊕
                   </div>
                 ))}
               </div>
+              <span className="text-xs text-transparent font-mono">(8 bytes)</span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -127,14 +179,16 @@ export function PlaintextProcessingFlow() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="flex items-center gap-2 w-full"
+              className="flex items-center gap-2 w-full justify-center"
             >
-              <div className="flex items-center gap-2 w-28 shrink-0 justify-end">
+              <div className="flex items-center gap-2 w-32 shrink-0 justify-end">
                 <Cpu className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                <span className="text-xs text-purple-600 dark:text-purple-400 font-bold uppercase tracking-wider">State x0</span>
+                <span className="text-xs text-purple-600 dark:text-purple-400 font-bold uppercase tracking-wider">
+                  <CryptoTerm term="Rate" display="State x0" />
+                </span>
               </div>
               <div className="flex gap-1.5">
-                {STATE_X0_BYTES.map((b, i) => (
+                {stateX0Bytes.map((b, i) => (
                   <motion.div
                     key={i}
                     initial={{ opacity: 0, scale: 0.6 }}
@@ -146,6 +200,7 @@ export function PlaintextProcessingFlow() {
                   </motion.div>
                 ))}
               </div>
+              <span className="text-xs text-zinc-500 dark:text-zinc-600 font-mono">(Rate doorway)</span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -155,7 +210,7 @@ export function PlaintextProcessingFlow() {
           <motion.div
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
-            className="w-full max-w-sm ml-28 h-[2px] bg-gradient-to-r from-blue-500 via-purple-500 to-emerald-500 rounded-full"
+            className="w-full max-w-sm h-[2px] bg-gradient-to-r from-blue-500 via-purple-500 to-emerald-500 rounded-full my-1"
           />
         )}
 
@@ -165,14 +220,16 @@ export function PlaintextProcessingFlow() {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex items-center gap-2 w-full"
+              className="flex items-center gap-2 w-full justify-center"
             >
-              <div className="flex items-center gap-2 w-28 shrink-0 justify-end">
+              <div className="flex items-center gap-2 w-32 shrink-0 justify-end">
                 <Lock className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider">Ciphertext</span>
+                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider">
+                  Ciphertext C₀
+                </span>
               </div>
               <div className="flex gap-1.5">
-                {CIPHERTEXT_BLOCK_BYTES.map((b, i) => (
+                {ctBlockBytes.map((b, i) => (
                   <AnimatePresence key={i}>
                     {i < visibleCols ? (
                       <motion.div
@@ -191,6 +248,7 @@ export function PlaintextProcessingFlow() {
                   </AnimatePresence>
                 ))}
               </div>
+              <span className="text-xs text-zinc-500 dark:text-zinc-600 font-mono">(Encrypted)</span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -198,7 +256,7 @@ export function PlaintextProcessingFlow() {
 
       {/* Explanation cards */}
       <AnimatePresence>
-        {step >= 2 && visibleCols >= PLAINTEXT_BLOCK_BYTES.length && (
+        {step >= 2 && visibleCols >= ptBlockBytes.length && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -206,18 +264,32 @@ export function PlaintextProcessingFlow() {
           >
             <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-500/20 rounded-2xl p-4 text-center shadow-sm dark:shadow-none">
               <div className="text-xl font-black text-blue-900 dark:text-white font-mono mb-1">P ⊕ x0 = C</div>
-              <div className="text-xs text-blue-600 dark:text-blue-400 font-bold uppercase tracking-widest">The core operation</div>
-              <p className="text-xs text-zinc-600 dark:text-zinc-500 mt-2">Each plaintext byte is XORed with the corresponding state byte to produce ciphertext.</p>
+              <div className="text-xs text-blue-600 dark:text-blue-400 font-bold uppercase tracking-widest">
+                The Core XOR Operation
+              </div>
+              <p className="text-xs text-zinc-600 dark:text-zinc-500 mt-2">
+                Plain English: Each plaintext byte is XORed with the corresponding memory state byte to produce encrypted ciphertext.
+              </p>
             </div>
             <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-500/20 rounded-2xl p-4 text-center shadow-sm dark:shadow-none">
-              <div className="text-xl font-black text-purple-700 dark:text-purple-300 font-mono mb-1">x0 ← x0||P</div>
-              <div className="text-xs text-purple-600 dark:text-purple-400 font-bold uppercase tracking-widest">State Absorption</div>
-              <p className="text-xs text-zinc-600 dark:text-zinc-500 mt-2">The plaintext is absorbed back into the rate — entangling the message with authentication.</p>
+              <div className="text-xl font-black text-purple-700 dark:text-purple-300 font-mono mb-1">x0 ← x0 ⊕ P</div>
+              <div className="text-xs text-purple-600 dark:text-purple-400 font-bold uppercase tracking-widest">
+                State Absorption
+              </div>
+              <p className="text-xs text-zinc-600 dark:text-zinc-500 mt-2">
+                Plain English: The plaintext is absorbed into internal memory so all future steps cryptographically depend on this message.
+              </p>
             </div>
             <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-500/20 rounded-2xl p-4 text-center shadow-sm dark:shadow-none">
-              <div className="text-xl font-black text-emerald-700 dark:text-emerald-300 font-mono mb-1">p⁸ →</div>
-              <div className="text-xs text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-widest">Next Block</div>
-              <p className="text-xs text-zinc-600 dark:text-zinc-500 mt-2">Between blocks, an 8-round permutation scrambles the state before absorbing the next block.</p>
+              <div className="text-xl font-black text-emerald-700 dark:text-emerald-300 font-mono mb-1">
+                p⁶ Rounds →
+              </div>
+              <div className="text-xs text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-widest">
+                Next Block Permutation
+              </div>
+              <p className="text-xs text-zinc-600 dark:text-zinc-500 mt-2">
+                Plain English: 6 rounds of non-linear mathematical bit-mixing thoroughly scramble memory before the next block is processed.
+              </p>
             </div>
           </motion.div>
         )}
@@ -225,7 +297,7 @@ export function PlaintextProcessingFlow() {
 
       {/* Final ciphertext */}
       <AnimatePresence>
-        {step >= 2 && visibleCols >= PLAINTEXT_BLOCK_BYTES.length && (
+        {step >= 2 && visibleCols >= ptBlockBytes.length && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -233,13 +305,13 @@ export function PlaintextProcessingFlow() {
             className="w-full bg-emerald-50 dark:bg-emerald-950/20 border-2 border-emerald-200 dark:border-emerald-500/30 rounded-2xl p-5 text-center shadow-sm dark:shadow-[0_0_30px_rgba(16,185,129,0.1)]"
           >
             <div className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase tracking-widest font-bold mb-2">
-              Generated Ciphertext (Block 1)
+              Live Generated Ciphertext (Block 1)
             </div>
             <div className="font-mono text-2xl text-emerald-800 dark:text-emerald-100 tracking-widest font-black">
-              {DEMO_CIPHERTEXT}
+              {displayCiphertext}
             </div>
             <div className="text-xs text-zinc-500 dark:text-zinc-600 mt-2 font-mono">
-              "{PLAINTEXT_BLOCK_BYTES.join(" ")}" (PT) XOR "{STATE_X0_BYTES.join(" ")}" (x0)
+              &quot;{ptBlockBytes.join(" ")}&quot; (PT) XOR &quot;{stateX0Bytes.join(" ")}&quot; (x0)
             </div>
           </motion.div>
         )}
@@ -247,3 +319,4 @@ export function PlaintextProcessingFlow() {
     </div>
   );
 }
+

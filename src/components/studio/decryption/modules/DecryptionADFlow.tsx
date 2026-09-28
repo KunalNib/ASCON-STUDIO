@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAsconStore } from "@/store/useAsconStore";
 import { Fingerprint, ArrowDown, ShieldAlert, CheckCircle2, RefreshCw } from "lucide-react";
 import { DEMO_ASSOC_DATA } from "@/lib/asconDemoData";
+import { CryptoTerm } from "@/components/ui/CryptoTerm";
 
 export function DecryptionADFlow() {
   const { decryptionAssociatedData, decryptionTampered, setDecryptionTampered } = useAsconStore();
@@ -19,12 +20,15 @@ export function DecryptionADFlow() {
     <div className="w-full h-full flex flex-col items-center p-4 md:p-6 max-w-4xl mx-auto gap-5 overflow-y-auto custom-scrollbar">
       {/* Header */}
       <div className="text-center shrink-0">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold mb-2 border border-emerald-500/20">
+          <span>Plain English: Authenticating the Message Header (Routing Metadata)</span>
+        </div>
         <h2 className="text-2xl font-bold flex items-center justify-center gap-3 text-zinc-900 dark:text-white mb-2">
           <Fingerprint className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-          Associated Data (AD) Re-absorption &amp; Integrity Binding
+          <CryptoTerm term="Associated Data" display="Associated Data (AD)" /> Re-absorption &amp; Integrity Binding
         </h2>
         <p className="text-zinc-600 dark:text-zinc-400 max-w-xl text-sm leading-relaxed">
-          The receiver re-absorbs cleartext header bytes into state word <code className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">x0</code>.
+          The receiver re-absorbs cleartext header bytes into state word <CryptoTerm term="Rate" display="x0" />.
           Tampering with routing metadata alters the sponge trajectory before ciphertext is ever read.
         </p>
       </div>

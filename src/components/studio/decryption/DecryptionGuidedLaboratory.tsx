@@ -241,6 +241,8 @@ export function DecryptionGuidedLaboratory() {
     DecryptionNarrativeStep,
     {
       title: string;
+      simpleTerm: string;
+      simpleAnalogy: string;
       what: string;
       how: string;
       why: string;
@@ -251,6 +253,8 @@ export function DecryptionGuidedLaboratory() {
   > = {
     DECRYPT_INPUT_PARAMETERS: {
       title: "Ciphertext & Tag Input",
+      simpleTerm: "Receiving the Locked Message & Digital Seal",
+      simpleAnalogy: "Like receiving a sealed envelope in the mail with an unbroken wax stamp.",
       what: "Loading the encrypted payload and expected authentication signature.",
       how: "Parsing the 64-bit ciphertext block, 128-bit MAC tag, nonce, and shared secret key.",
       why: "AEAD requires both ciphertext and tag together to guarantee confidentiality and authenticity.",
@@ -260,6 +264,8 @@ export function DecryptionGuidedLaboratory() {
     },
     DECRYPT_STATE_INITIALIZATION: {
       title: "State Initialization (S₀)",
+      simpleTerm: "Cipher Setup & Initial Memory Blending",
+      simpleAnalogy: "Setting the dials on a combination lock with your secret key before opening.",
       what: "Initializing the 320-bit state and executing 12 forward permutation rounds.",
       how: "Setting S = IV || K || N, executing p¹², and XORing Key into capacity words.",
       why: "Sponge permutations are symmetric: decryption uses the identical forward p¹² permutation!",
@@ -269,6 +275,8 @@ export function DecryptionGuidedLaboratory() {
     },
     DECRYPT_AD_PROCESSING: {
       title: "Associated Data Re-absorption",
+      simpleTerm: "Checking Envelope Header (Metadata)",
+      simpleAnalogy: "Verifying the sender label and return address so nobody can swap packages.",
       what: "Absorbing cleartext packet headers into state word x0.",
       how: "XORing AD into x0, running round permutation p⁶, and adding a 1-bit domain separator into x4.",
       why: "Cryptographically binds message metadata so headers cannot be altered in transit.",
@@ -278,6 +286,8 @@ export function DecryptionGuidedLaboratory() {
     },
     DECRYPT_CIPHERTEXT_PROCESSING: {
       title: "Plaintext Recovery & Duplex Feedback",
+      simpleTerm: "Unscrambling the Original Message (XOR)",
+      simpleAnalogy: "Using the cipher state as a decoder ring to reveal the true text character-by-character.",
       what: "Extracting plaintext and absorbing ciphertext into the internal state.",
       how: "Computing P₀ = C₀ ⊕ x0 to recover data, then replacing x0 with C₀ (x0 ← C₀).",
       why: "Duplex sponge mode requires absorbing the ciphertext to mirror the sender's state trajectory.",
@@ -287,6 +297,8 @@ export function DecryptionGuidedLaboratory() {
     },
     DECRYPT_FINALIZATION: {
       title: "Finalization & Candidate Squeeze",
+      simpleTerm: "Calculating What the Seal Should Look Like",
+      simpleAnalogy: "Pressing your own wax seal on a duplicate card to prepare for comparison.",
       what: "Re-injecting the key and squeezing candidate tag words.",
       how: "XORing Key into state, running final 12-round permutation p¹², and extracting (x3 || x4) ⊕ K.",
       why: "Generates the local Candidate Tag (T*) to test whether the message was tampered with.",
@@ -296,6 +308,8 @@ export function DecryptionGuidedLaboratory() {
     },
     DECRYPT_TAG_VERIFICATION: {
       title: "Tag Verification & Release Gate",
+      simpleTerm: "Comparing Seals & Safe Message Release",
+      simpleAnalogy: "Laying the incoming seal and your calculated seal side-by-side. If identical, release; if cracked, burn the letter.",
       what: "Testing candidate tag against received tag in constant time.",
       how: "Performing constant-time byte equality check between T* and T.",
       why: "Constant-time checking stops timing side-channel attacks. Unverified plaintext must never be released.",
@@ -436,6 +450,15 @@ export function DecryptionGuidedLaboratory() {
                       <h3 className="text-base font-bold text-zinc-900 dark:text-white mt-0.5">
                         {data.title}
                       </h3>
+                      <div className="flex flex-col gap-1.5 mt-2.5">
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-semibold">
+                          <span>💡 Plain English:</span>
+                          <span className="font-bold">{data.simpleTerm}</span>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/5 text-[11px] text-zinc-600 dark:text-zinc-400 leading-relaxed italic">
+                          Everyday Analogy: {data.simpleAnalogy}
+                        </div>
+                      </div>
                     </div>
 
                     <div className="bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/5 p-4 rounded-2xl relative overflow-hidden">

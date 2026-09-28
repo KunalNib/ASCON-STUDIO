@@ -228,24 +228,85 @@ export function GuidedLaboratory() {
     setAnimationSpeed(speeds[(idx + 1) % speeds.length]);
   };
 
-  const explanations: Record<NarrativeStep, { title: string; what: string; how: string; why: string; input: string; output: string; security: string }> = {
+  const explanations: Record<
+    NarrativeStep,
+    {
+      title: string;
+      simpleTerm: string;
+      simpleAnalogy: string;
+      what: string;
+      how: string;
+      why: string;
+      input: string;
+      output: string;
+      security: string;
+    }
+  > = {
     INPUT_PARAMETERS: {
-      title: "Preparation & Crypto Params", what: "Loading Sensor Data, Key, Nonce, and Associated Data.", how: "Allocating 128-bit Key, 128-bit Nonce, and string AD into memory.", why: "Cryptography requires these inputs. Nonce ensures uniqueness.", input: "Sensor reading + Key/Nonce/AD", output: "Parameters loaded in memory", security: "Never reuse a Nonce with the same Key.",
+      title: "Preparation & Crypto Params",
+      simpleTerm: "Setting Up Master Keys & Message",
+      simpleAnalogy: "Writing your secret letter, choosing a unique one-time lock number, and writing the delivery address.",
+      what: "Loading Sensor Data, Key, Nonce, and Associated Data.",
+      how: "Allocating 128-bit Key, 128-bit Nonce, and string AD into memory.",
+      why: "Cryptography requires these inputs. Nonce ensures uniqueness.",
+      input: "Sensor reading + Key/Nonce/AD",
+      output: "Parameters loaded in memory",
+      security: "Never reuse a Nonce with the same Key.",
     },
     STATE_INITIALIZATION: {
-      title: "State Initialization", what: "Populating and scrambling the central memory matrix.", how: "Formatting IV, Key, and Nonce into five 64-bit words, then running 12-round pa permutation.", why: "Distributes the key and nonce completely across all 320 bits.", input: "IV + Key + Nonce", output: "Mixed 320-bit State", security: "Achieves full diffusion before processing any AD or Plaintext.",
+      title: "State Initialization",
+      simpleTerm: "Blending Secret Key Into 320-bit Memory",
+      simpleAnalogy: "Putting all ingredients into a high-speed blender and spinning 12 times so nothing can be separated.",
+      what: "Populating and scrambling the central memory matrix.",
+      how: "Formatting IV, Key, and Nonce into five 64-bit words, then running 12-round pa permutation.",
+      why: "Distributes the key and nonce completely across all 320 bits.",
+      input: "IV + Key + Nonce",
+      output: "Mixed 320-bit State",
+      security: "Achieves full diffusion before processing any AD or Plaintext.",
     },
     AD_PROCESSING: {
-      title: "Associated Data Processing", what: "Absorbing context data into the state.", how: "XORing AD into the state and running pb permutations.", why: "Binds the AD to the state without encrypting it.", input: "Mixed State + AD", output: "Updated State", security: "Any tampering with AD invalidates the final tag.",
+      title: "Associated Data Processing",
+      simpleTerm: "Stamping the Package Header (Routing Metadata)",
+      simpleAnalogy: "Inscribing the recipient and routing info into the wax seal so nobody can swap labels.",
+      what: "Absorbing context data into the state.",
+      how: "XORing AD into the state and running pb permutations.",
+      why: "Binds the AD to the state without encrypting it.",
+      input: "Mixed State + AD",
+      output: "Updated State",
+      security: "Any tampering with AD invalidates the final tag.",
     },
     PLAINTEXT_ENCRYPTION: {
-      title: "Plaintext Encryption & Permutation", what: "Encrypting the sensor data and mixing the state.", how: "XORing plaintext into X0 to get ciphertext, then running constant addition, S-box, and diffusion.", why: "Extracts ciphertext while feeding plaintext back into the state.", input: "Plaintext block + State", output: "Ciphertext chunk + New State", security: "Provides both Confidentiality and Integrity tracking.",
+      title: "Plaintext Encryption & Permutation",
+      simpleTerm: "Scrambling Your Message into Ciphertext",
+      simpleAnalogy: "Using a secret cipher wheel to swap letters into encrypted code while feeding results back to memory.",
+      what: "Encrypting the sensor data and mixing the state.",
+      how: "XORing plaintext into X0 to get ciphertext, then running constant addition, S-box, and diffusion.",
+      why: "Extracts ciphertext while feeding plaintext back into the state.",
+      input: "Plaintext block + State",
+      output: "Ciphertext chunk + New State",
+      security: "Provides both Confidentiality and Integrity tracking.",
     },
     FINALIZATION: {
-      title: "Finalization", what: "Preparing to generate the tag.", how: "XORing the key into the state again and running the permutation one last time.", why: "Ensures the tag securely depends on the key and the entire message history.", input: "Current State + Key", output: "Finalized State", security: "Prevents attackers from forging tags by exploiting internal state.",
+      title: "Finalization",
+      simpleTerm: "Re-Locking Memory with Secret Key",
+      simpleAnalogy: "Inserting the master key one last time and locking the safe before printing the tamper seal.",
+      what: "Preparing to generate the tag.",
+      how: "XORing the key into the state again and running the permutation one last time.",
+      why: "Ensures the tag securely depends on the key and the entire message history.",
+      input: "Current State + Key",
+      output: "Finalized State",
+      security: "Prevents attackers from forging tags by exploiting internal state.",
     },
     AUTH_OUTPUT: {
-      title: "Authentication Tag & Output", what: "Extracting the final security footprint.", how: "Taking the lowest bits of the final state (X3, X4) and XORing with the Key.", why: "Produces a 128-bit tag attached to the message to verify integrity.", input: "Final State (X3, X4)", output: session.authenticationTag, security: "If 1 bit of plaintext/AD changes, this tag changes completely.",
+      title: "Authentication Tag & Output",
+      simpleTerm: "Creating the Digital Tamper Seal (128 bits)",
+      simpleAnalogy: "Pressing the 128-bit royal wax seal onto the parcel. If anyone tampers with 1 bit, the seal breaks.",
+      what: "Extracting the final security footprint.",
+      how: "Taking the lowest bits of the final state (X3, X4) and XORing with the Key.",
+      why: "Produces a 128-bit tag attached to the message to verify integrity.",
+      input: "Final State (X3, X4)",
+      output: session.authenticationTag,
+      security: "If 1 bit of plaintext/AD changes, this tag changes completely.",
     },
   };
 
@@ -364,7 +425,18 @@ export function GuidedLaboratory() {
                     transition={{ duration: 0.3 }}
                     className="space-y-5 pb-6"
                   >
-                    <div className="text-2xl font-bold text-zinc-900 dark:text-white leading-tight">{data.title}</div>
+                    <div className="space-y-2">
+                      <div className="text-2xl font-bold text-zinc-900 dark:text-white leading-tight">{data.title}</div>
+                      <div className="flex flex-col gap-1.5 pt-1">
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-700 dark:text-blue-300 text-xs font-semibold w-fit">
+                          <span>💡 Plain English:</span>
+                          <span className="font-bold">{data.simpleTerm}</span>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/5 text-[11px] text-zinc-600 dark:text-zinc-400 leading-relaxed italic">
+                          Everyday Analogy: {data.simpleAnalogy}
+                        </div>
+                      </div>
+                    </div>
 
                     <div className="bg-zinc-50 dark:bg-white/5 p-4 rounded-xl border border-zinc-200 dark:border-white/5 relative overflow-hidden shadow-sm">
                       <div className="absolute top-0 left-0 w-1 h-full bg-blue-500" />

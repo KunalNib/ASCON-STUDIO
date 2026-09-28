@@ -91,6 +91,8 @@ interface AsconState {
   associatedData: string;
   activeExplorerTab: string;
   modeType: string;
+  activeFlippedBit: number | null;
+  hoveredOperation: string | null;
 
   // ── Gamification ──────────────────────────────────────────
   /** Global XP shared with the Quiz arena */
@@ -163,44 +165,62 @@ interface AsconState {
   setToken: (token: string | null) => void;
 }
 
-// Generate the initial deterministic session matching the required parameters
-const initialDemoSession = (): ExecutionSession => ({
-  sessionId: "DEMO-EXEC-001",
-  deviceId: "ESP32-01",
-  sensorReading: "27.4 °C",
-  
-  // Actual mock bytes/hex for education purposes
-  plaintext: "27.4 °C",
-  plaintextBytes: "32 37 2E 34 20 C2 B0 43",
-  
-  key: "000102030405060708090A0B0C0D0E0F",
-  nonce: "000102030405060708090A0B0C0D0E0F",
-  associatedData: "ESP32-STATION-1",
-  
-  initialState: [
-    "0000000000000000",
-    "0000000000000000",
-    "0000000000000000",
-    "0000000000000000",
-    "0000000000000000"
-  ], 
-  
-  currentStage: "INPUT_PARAMETERS",
-  currentRound: 0,
-  currentOperation: "IDLE",
-  
-  stateHistory: [], 
-  
-  ciphertext: "8F 9C 2B 4A 1F E3 DD C1", // Precomputed
-  authenticationTag: "1A 2B 3C 4D 5E 6F 70 81 92 A3 B4 C5 D6 E7 F8 09", // Precomputed
-  verificationResult: true,
-  performanceMetrics: {
-    timeMs: 0.24,
-    throughput: 3.2
-  },
-  
-  timestamp: new Date().toISOString()
-});
+// Default parameters matching ASCON-128 specification
+const DEFAULT_DEMO_KEY = "000102030405060708090A0B0C0D0E0F";
+const DEFAULT_DEMO_NONCE = "000102030405060708090A0B0C0D0E0F";
+const DEFAULT_DEMO_AD = "ESP32-STATION-1";
+const DEFAULT_DEMO_PT = "27.4 °C";
+
+function runAsconEncryption(k: string, n: string, ad: string, pt: string) {
+  try {
+    const enc = Ascon128.encryptAEAD(k, n, ad, pt);
+    const ptBytes = Array.from(new TextEncoder().encode(pt))
+      .map((b) => b.toString(16).toUpperCase().padStart(2, "0"))
+      .join(" ");
+    return {
+      ciphertext: enc.ciphertext,
+      authenticationTag: enc.authenticationTag,
+      initialState: enc.initialStateWords,
+      plaintextBytes: ptBytes,
+    };
+  } catch (e) {
+    console.error("Encryption error:", e);
+    return {
+      ciphertext: "04 C4 2F 82 A8 7B EF A3",
+      authenticationTag: "FC 6F BB FA DF F5 56 79 7C 62 51 71 F5 67 71 88",
+      initialState: ["80400C0600000000", "0001020304050607", "08090A0B0C0D0E0F", "0001020304050607", "08090A0B0C0D0E0F"],
+      plaintextBytes: "32 37 2E 34 20 C2 B0 43",
+    };
+  }
+}
+
+// Generate the initial deterministic session matching real ASCON-128
+const initialDemoSession = (): ExecutionSession => {
+  const enc = runAsconEncryption(DEFAULT_DEMO_KEY, DEFAULT_DEMO_NONCE, DEFAULT_DEMO_AD, DEFAULT_DEMO_PT);
+  return {
+    sessionId: "DEMO-EXEC-001",
+    deviceId: "ESP32-01",
+    sensorReading: DEFAULT_DEMO_PT,
+    plaintext: DEFAULT_DEMO_PT,
+    plaintextBytes: enc.plaintextBytes,
+    key: DEFAULT_DEMO_KEY,
+    nonce: DEFAULT_DEMO_NONCE,
+    associatedData: DEFAULT_DEMO_AD,
+    initialState: enc.initialState,
+    currentStage: "INPUT_PARAMETERS",
+    currentRound: 0,
+    currentOperation: "IDLE",
+    stateHistory: [],
+    ciphertext: enc.ciphertext,
+    authenticationTag: enc.authenticationTag,
+    verificationResult: true,
+    performanceMetrics: {
+      timeMs: 0.24,
+      throughput: 3.2,
+    },
+    timestamp: new Date().toISOString(),
+  };
+};
 
 const defaultSteps: NarrativeStep[] = [
   "INPUT_PARAMETERS",
@@ -224,12 +244,14 @@ export const useAsconStore = create<AsconState>()(
       demoMode: true,
       isHardwareConnected: false,
       learningMode: "beginner",
-      plaintext: "27.4 °C",
-      key: "000102030405060708090A0B0C0D0E0F",
-      nonce: "000102030405060708090A0B0C0D0E0F",
-      associatedData: "AUTH_DATA",
+      plaintext: DEFAULT_DEMO_PT,
+      key: DEFAULT_DEMO_KEY,
+      nonce: DEFAULT_DEMO_NONCE,
+      associatedData: DEFAULT_DEMO_AD,
       activeExplorerTab: "init",
       modeType: "guided",
+      activeFlippedBit: null,
+      hoveredOperation: null,
       token: null,
 
       // ── Gamification initial state ────────────────────────
@@ -246,12 +268,12 @@ export const useAsconStore = create<AsconState>()(
       decryptionXp: 0,
       decryptionCompletedSteps: [],
       decryptionTampered: false,
-      decryptionCiphertext: "A0 94 4F CB 23 BB 9B 3E",
-      decryptionAuthTag: "1A 2B 3C 4D 5E 6F 70 81 92 A3 B4 C5 D6 E7 F8 09",
-      decryptionKey: "000102030405060708090A0B0C0D0E0F",
-      decryptionNonce: "101112131415161718191A1B1C1D1E1F",
-      decryptionAssociatedData: "ESP32-STATION-1",
-      decryptionRecoveredPlaintext: "Hello IoT",
+      decryptionCiphertext: "04 C4 2F 82 A8 7B EF A3",
+      decryptionAuthTag: "FC 6F BB FA DF F5 56 79 7C 62 51 71 F5 67 71 88",
+      decryptionKey: DEFAULT_DEMO_KEY,
+      decryptionNonce: DEFAULT_DEMO_NONCE,
+      decryptionAssociatedData: DEFAULT_DEMO_AD,
+      decryptionRecoveredPlaintext: DEFAULT_DEMO_PT,
 
       setDecryptionStep: (index: number) => set({
         currentDecryptionStepIndex: Math.max(0, Math.min(index, defaultDecryptionSteps.length - 1))
@@ -272,50 +294,215 @@ export const useAsconStore = create<AsconState>()(
           ? state.decryptionCompletedSteps
           : [...state.decryptionCompletedSteps, step]
       })),
-      setDecryptionTampered: (tampered: boolean) => set({ decryptionTampered: tampered }),
-      setDecryptionCiphertext: (ct: string) => set({ decryptionCiphertext: ct }),
-      setDecryptionAuthTag: (tag: string) => set({ decryptionAuthTag: tag }),
-      setDecryptionKey: (k: string) => set({ decryptionKey: k }),
-      setDecryptionNonce: (n: string) => set({ decryptionNonce: n }),
-      setDecryptionAssociatedData: (ad: string) => set({ decryptionAssociatedData: ad }),
-      syncDecryptionFromEncryption: () => set((state) => ({
-        decryptionCiphertext: state.session.ciphertext || "A0 94 4F CB 23 BB 9B 3E",
-        decryptionAuthTag: state.session.authenticationTag || "1A 2B 3C 4D 5E 6F 70 81 92 A3 B4 C5 D6 E7 F8 09",
-        decryptionKey: state.session.key || "000102030405060708090A0B0C0D0E0F",
-        decryptionNonce: state.session.nonce || "101112131415161718191A1B1C1D1E1F",
-        decryptionAssociatedData: state.session.associatedData || "ESP32-STATION-1",
-        decryptionRecoveredPlaintext: state.session.plaintext || "Hello IoT",
-        decryptionTampered: false,
-      })),
-      resetDecryption: () => set({
-        currentDecryptionStepIndex: 0,
-        decryptionPlaybackState: "idle",
-        decryptionXp: 0,
-        decryptionCompletedSteps: [],
-        decryptionTampered: false,
-        decryptionCiphertext: "A0 94 4F CB 23 BB 9B 3E",
-        decryptionAuthTag: "1A 2B 3C 4D 5E 6F 70 81 92 A3 B4 C5 D6 E7 F8 09",
-        decryptionKey: "000102030405060708090A0B0C0D0E0F",
-        decryptionNonce: "101112131415161718191A1B1C1D1E1F",
-        decryptionAssociatedData: "ESP32-STATION-1",
-        decryptionRecoveredPlaintext: "Hello IoT",
+      setDecryptionTampered: (tampered: boolean) => set((state) => {
+        let ct = state.decryptionCiphertext;
+        if (tampered) {
+          // Flip bit 0 of the first byte of authentic ciphertext
+          const cleanBytes = ct.trim().split(/\s+/);
+          if (cleanBytes.length > 0) {
+            const firstByte = (parseInt(cleanBytes[0], 16) ^ 0x01)
+              .toString(16)
+              .toUpperCase()
+              .padStart(2, "0");
+            ct = [firstByte, ...cleanBytes.slice(1)].join(" ");
+          }
+        } else {
+          // Restore authentic ciphertext from session
+          ct = state.session.ciphertext || "04 C4 2F 82 A8 7B EF A3";
+        }
+        const dec = Ascon128.decryptAEAD(
+          state.decryptionKey,
+          state.decryptionNonce,
+          state.decryptionAssociatedData,
+          ct,
+          state.decryptionAuthTag
+        );
+        return {
+          decryptionTampered: tampered,
+          decryptionCiphertext: ct,
+          decryptionRecoveredPlaintext: dec.recoveredPlaintext,
+        };
       }),
+      setDecryptionCiphertext: (ct: string) => set((state) => {
+        const dec = Ascon128.decryptAEAD(
+          state.decryptionKey,
+          state.decryptionNonce,
+          state.decryptionAssociatedData,
+          ct,
+          state.decryptionAuthTag
+        );
+        return {
+          decryptionCiphertext: ct,
+          decryptionRecoveredPlaintext: dec.recoveredPlaintext,
+        };
+      }),
+      setDecryptionAuthTag: (tag: string) => set((state) => {
+        const dec = Ascon128.decryptAEAD(
+          state.decryptionKey,
+          state.decryptionNonce,
+          state.decryptionAssociatedData,
+          state.decryptionCiphertext,
+          tag
+        );
+        return {
+          decryptionAuthTag: tag,
+          decryptionRecoveredPlaintext: dec.recoveredPlaintext,
+        };
+      }),
+      setDecryptionKey: (k: string) => set((state) => {
+        const dec = Ascon128.decryptAEAD(
+          k,
+          state.decryptionNonce,
+          state.decryptionAssociatedData,
+          state.decryptionCiphertext,
+          state.decryptionAuthTag
+        );
+        return {
+          decryptionKey: k,
+          decryptionRecoveredPlaintext: dec.recoveredPlaintext,
+        };
+      }),
+      setDecryptionNonce: (n: string) => set((state) => {
+        const dec = Ascon128.decryptAEAD(
+          state.decryptionKey,
+          n,
+          state.decryptionAssociatedData,
+          state.decryptionCiphertext,
+          state.decryptionAuthTag
+        );
+        return {
+          decryptionNonce: n,
+          decryptionRecoveredPlaintext: dec.recoveredPlaintext,
+        };
+      }),
+      setDecryptionAssociatedData: (ad: string) => set((state) => {
+        const dec = Ascon128.decryptAEAD(
+          state.decryptionKey,
+          state.decryptionNonce,
+          ad,
+          state.decryptionCiphertext,
+          state.decryptionAuthTag
+        );
+        return {
+          decryptionAssociatedData: ad,
+          decryptionRecoveredPlaintext: dec.recoveredPlaintext,
+        };
+      }),
+      syncDecryptionFromEncryption: () => set((state) => {
+        const ct = state.session.ciphertext || "04 C4 2F 82 A8 7B EF A3";
+        const tag = state.session.authenticationTag || "FC 6F BB FA DF F5 56 79 7C 62 51 71 F5 67 71 88";
+        const k = state.session.key || DEFAULT_DEMO_KEY;
+        const n = state.session.nonce || DEFAULT_DEMO_NONCE;
+        const ad = state.session.associatedData || DEFAULT_DEMO_AD;
+        const dec = Ascon128.decryptAEAD(k, n, ad, ct, tag);
+        return {
+          decryptionCiphertext: ct,
+          decryptionAuthTag: tag,
+          decryptionKey: k,
+          decryptionNonce: n,
+          decryptionAssociatedData: ad,
+          decryptionRecoveredPlaintext: dec.recoveredPlaintext,
+          decryptionTampered: false,
+        };
+      }),
+      resetDecryption: () => {
+        const k = DEFAULT_DEMO_KEY;
+        const n = DEFAULT_DEMO_NONCE;
+        const ad = DEFAULT_DEMO_AD;
+        const ct = "04 C4 2F 82 A8 7B EF A3";
+        const tag = "FC 6F BB FA DF F5 56 79 7C 62 51 71 F5 67 71 88";
+        const dec = Ascon128.decryptAEAD(k, n, ad, ct, tag);
+        return set({
+          currentDecryptionStepIndex: 0,
+          decryptionPlaybackState: "idle",
+          decryptionXp: 0,
+          decryptionCompletedSteps: [],
+          decryptionTampered: false,
+          decryptionCiphertext: ct,
+          decryptionAuthTag: tag,
+          decryptionKey: k,
+          decryptionNonce: n,
+          decryptionAssociatedData: ad,
+          decryptionRecoveredPlaintext: dec.recoveredPlaintext,
+        });
+      },
       // ─────────────────────────────────────────────────────
       
       setToken: (t: string | null) => set({ token: t }),
-      setPlaintext: (pt: string) => set((state) => ({ 
-        plaintext: pt,
-        session: { ...state.session, plaintext: pt, sensorReading: pt }
-      })),
-      setKey: () => {},
-      setNonce: () => {},
-      setAssociatedData: () => {},
-      setLearningMode: () => {},
-      setModeType: () => {},
-      setActiveExplorerTab: () => {},
-      setActiveFlippedBit: () => {},
-      setHoveredOperation: () => {},
-      encrypt: () => {},
+      setPlaintext: (pt: string) => set((state) => {
+        const enc = runAsconEncryption(state.key, state.nonce, state.associatedData, pt);
+        return {
+          plaintext: pt,
+          session: {
+            ...state.session,
+            plaintext: pt,
+            sensorReading: pt,
+            plaintextBytes: enc.plaintextBytes,
+            ciphertext: enc.ciphertext,
+            authenticationTag: enc.authenticationTag,
+            initialState: enc.initialState,
+          },
+        };
+      }),
+      setKey: (k: string) => set((state) => {
+        const enc = runAsconEncryption(k, state.nonce, state.associatedData, state.plaintext);
+        return {
+          key: k,
+          session: {
+            ...state.session,
+            key: k,
+            ciphertext: enc.ciphertext,
+            authenticationTag: enc.authenticationTag,
+            initialState: enc.initialState,
+          },
+        };
+      }),
+      setNonce: (n: string) => set((state) => {
+        const enc = runAsconEncryption(state.key, n, state.associatedData, state.plaintext);
+        return {
+          nonce: n,
+          session: {
+            ...state.session,
+            nonce: n,
+            ciphertext: enc.ciphertext,
+            authenticationTag: enc.authenticationTag,
+            initialState: enc.initialState,
+          },
+        };
+      }),
+      setAssociatedData: (ad: string) => set((state) => {
+        const enc = runAsconEncryption(state.key, state.nonce, ad, state.plaintext);
+        return {
+          associatedData: ad,
+          session: {
+            ...state.session,
+            associatedData: ad,
+            ciphertext: enc.ciphertext,
+            authenticationTag: enc.authenticationTag,
+            initialState: enc.initialState,
+          },
+        };
+      }),
+      setLearningMode: (mode: any) => set({ learningMode: mode }),
+      setModeType: (mode: any) => set({ modeType: mode }),
+      setActiveExplorerTab: (tab: any) => set({ activeExplorerTab: tab }),
+      setActiveFlippedBit: (index: number | null) => set({ activeFlippedBit: index }),
+      setHoveredOperation: (op: string | null) => set({ hoveredOperation: op }),
+      encrypt: () => set((state) => {
+        const enc = runAsconEncryption(state.key, state.nonce, state.associatedData, state.plaintext);
+        return {
+          session: {
+            ...state.session,
+            plaintext: state.plaintext,
+            sensorReading: state.plaintext,
+            plaintextBytes: enc.plaintextBytes,
+            ciphertext: enc.ciphertext,
+            authenticationTag: enc.authenticationTag,
+            initialState: enc.initialState,
+            timestamp: new Date().toISOString(),
+          },
+        };
+      }),
       setHardwareConnected: (status: boolean) => set({ isHardwareConnected: status }),
 
       addXp: (amount: number) => set((state) => ({ xp: Math.max(0, state.xp + amount) })),
@@ -371,7 +558,7 @@ export const useAsconStore = create<AsconState>()(
     }),
     {
       name: 'ascon-auth-storage',
-      version: 5,
+      version: 6,
       migrate: (persistedState: any, version: number) => {
         const state = persistedState as AsconState;
         const validStage = defaultSteps.includes(state?.session?.currentStage as any)
@@ -391,12 +578,12 @@ export const useAsconStore = create<AsconState>()(
           decryptionXp: state?.decryptionXp ?? 0,
           decryptionCompletedSteps: validDecryptedCompleted,
           decryptionTampered: state?.decryptionTampered ?? false,
-          decryptionCiphertext: state?.decryptionCiphertext ?? "A0 94 4F CB 23 BB 9B 3E",
-          decryptionAuthTag: state?.decryptionAuthTag ?? "1A 2B 3C 4D 5E 6F 70 81 92 A3 B4 C5 D6 E7 F8 09",
-          decryptionKey: state?.decryptionKey ?? "000102030405060708090A0B0C0D0E0F",
-          decryptionNonce: state?.decryptionNonce ?? "101112131415161718191A1B1C1D1E1F",
-          decryptionAssociatedData: state?.decryptionAssociatedData ?? "ESP32-STATION-1",
-          decryptionRecoveredPlaintext: state?.decryptionRecoveredPlaintext ?? "Hello IoT",
+          decryptionCiphertext: state?.decryptionCiphertext ?? "04 C4 2F 82 A8 7B EF A3",
+          decryptionAuthTag: state?.decryptionAuthTag ?? "FC 6F BB FA DF F5 56 79 7C 62 51 71 F5 67 71 88",
+          decryptionKey: state?.decryptionKey ?? DEFAULT_DEMO_KEY,
+          decryptionNonce: state?.decryptionNonce ?? DEFAULT_DEMO_NONCE,
+          decryptionAssociatedData: state?.decryptionAssociatedData ?? DEFAULT_DEMO_AD,
+          decryptionRecoveredPlaintext: state?.decryptionRecoveredPlaintext ?? DEFAULT_DEMO_PT,
           session: {
             ...state?.session,
             currentStage: validStage

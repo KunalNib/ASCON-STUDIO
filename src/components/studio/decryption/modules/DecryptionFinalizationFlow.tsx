@@ -1,22 +1,51 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAsconStore } from "@/store/useAsconStore";
 import { Key, Lock, ArrowDown, Cpu, Sparkles } from "lucide-react";
-import {
-  AUTH_TAG_BYTES,
-  FINAL_STATE_BEFORE_TAG,
-  DEMO_KEY,
-  TAMPERED_CANDIDATE_TAG,
-} from "@/lib/asconDemoData";
+import { Ascon128 } from "@/lib/ascon";
+import { CryptoTerm } from "@/components/ui/CryptoTerm";
 
 export function DecryptionFinalizationFlow() {
-  const { decryptionTampered } = useAsconStore();
+  const {
+    decryptionTampered,
+    decryptionKey,
+    decryptionNonce,
+    decryptionAssociatedData,
+    decryptionCiphertext,
+    decryptionAuthTag,
+  } = useAsconStore();
+
   const [squeezeStep, setSqueezeStep] = useState(0);
   const [visibleBytes, setVisibleBytes] = useState(0);
 
-  const displayTagBytes = decryptionTampered ? TAMPERED_CANDIDATE_TAG : AUTH_TAG_BYTES;
+  // Compute live ASCON-128 candidate tag
+  const decResult = useMemo(() => {
+    return Ascon128.decryptAEAD(
+      decryptionKey || "000102030405060708090A0B0C0D0E0F",
+      decryptionNonce || "000102030405060708090A0B0C0D0E0F",
+      decryptionAssociatedData || "ESP32-STATION-1",
+      decryptionCiphertext || "04 C4 2F 82 A8 7B EF A3",
+      decryptionAuthTag || "FC 6F BB FA DF F5 56 79 7C 62 51 71 F5 67 71 88"
+    );
+  }, [
+    decryptionKey,
+    decryptionNonce,
+    decryptionAssociatedData,
+    decryptionCiphertext,
+    decryptionAuthTag,
+  ]);
+
+  const displayTagBytes = useMemo(() => {
+    if (decResult.candidateTagBytes && decResult.candidateTagBytes.length >= 16) {
+      return decResult.candidateTagBytes;
+    }
+    return [
+      "FC", "6F", "BB", "FA", "DF", "F5", "56", "79",
+      "7C", "62", "51", "71", "F5", "67", "71", "88",
+    ];
+  }, [decResult]);
 
   useEffect(() => {
     setSqueezeStep(0);
@@ -37,28 +66,43 @@ export function DecryptionFinalizationFlow() {
       clearTimeout(t2);
       clearTimeout(t3);
     };
-  }, [decryptionTampered]);
+  }, [decryptionTampered, decryptionCiphertext]);
 
   const stateWords = [
-    { label: "x0", bytes: FINAL_STATE_BEFORE_TAG.x0, role: "Rate", dim: true },
-    { label: "x1", bytes: FINAL_STATE_BEFORE_TAG.x1, role: "Capacity", dim: true },
-    { label: "x2", bytes: FINAL_STATE_BEFORE_TAG.x2, role: "Capacity", dim: true },
-    { label: "x3", bytes: FINAL_STATE_BEFORE_TAG.x3, role: "Candidate Tag [0:7]", dim: false },
-    { label: "x4", bytes: FINAL_STATE_BEFORE_TAG.x4, role: "Candidate Tag [8:15]", dim: false },
+    { label: "x0", bytes: ["A1", "3B", "72", "9C"], role: "Rate (64-bit)", dim: true },
+    { label: "x1", bytes: ["5D", "8F", "14", "EE"], role: "Capacity", dim: true },
+    { label: "x2", bytes: ["88", "21", "44", "0B"], role: "Capacity", dim: true },
+    {
+      label: "x3",
+      bytes: displayTagBytes.slice(0, 4),
+      role: "Candidate Tag [0:7]",
+      dim: false,
+    },
+    {
+      label: "x4",
+      bytes: displayTagBytes.slice(8, 12),
+      role: "Candidate Tag [8:15]",
+      dim: false,
+    },
   ];
 
   return (
     <div className="w-full h-full flex flex-col p-4 md:p-6 max-w-5xl mx-auto gap-5 overflow-y-auto custom-scrollbar items-center">
       {/* Header */}
       <div className="text-center shrink-0">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold mb-2 border border-emerald-500/20">
+          <span>Plain English: Re-Locking Memory with Secret Key to Squeeze Out the Seal</span>
+        </div>
         <h2 className="text-2xl font-bold flex items-center justify-center gap-3 text-zinc-900 dark:text-white mb-2">
           <Lock className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-          Finalization &amp; Candidate Tag Squeeze
+          Finalization &amp; <CryptoTerm term="Candidate Tag" display="Candidate Tag Squeeze" />
         </h2>
         <p className="text-zinc-600 dark:text-zinc-400 max-w-2xl text-sm leading-relaxed">
           Before verifying authenticity, the decryptor computes its own{" "}
-          <strong className="text-emerald-600 dark:text-emerald-400">Candidate Tag (T*)</strong> by re-injecting the Key,
-          running the 12-round permutation <code className="font-mono font-bold">p¹²</code>, and squeezing the capacity words.
+          <strong className="text-emerald-600 dark:text-emerald-400">
+            <CryptoTerm term="Candidate Tag" display="Candidate Tag (T*)" />
+          </strong>{" "}
+          by re-injecting the Key, running the 12-round permutation <CryptoTerm term="p12" display="p¹²" />, and squeezing the capacity words.
         </p>
       </div>
 
@@ -67,7 +111,7 @@ export function DecryptionFinalizationFlow() {
         <div className="flex-1 bg-white dark:bg-[#0c0d10] rounded-3xl border border-zinc-200 dark:border-white/10 p-5 flex flex-col gap-4 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-              State Words After Final p¹²
+              State Words After Final <CryptoTerm term="p12" display="p¹²" />
             </span>
             <span className="text-[11px] font-mono text-zinc-400">320 bits total</span>
           </div>
@@ -103,14 +147,15 @@ export function DecryptionFinalizationFlow() {
                 </div>
 
                 <div className="flex gap-1 font-mono text-xs">
-                  {w.bytes.slice(0, 4).join(" ")} ...
+                  {w.bytes.join(" ")} ...
                 </div>
               </motion.div>
             ))}
           </div>
 
           <div className="text-[11px] text-zinc-500 leading-relaxed pt-2 border-t border-zinc-200 dark:border-white/5">
-            Key is XORed with capacity words <code className="font-mono font-bold text-zinc-800 dark:text-zinc-200">x3</code> and{" "}
+            Key is XORed with <CryptoTerm term="Capacity" display="capacity words" />{" "}
+            <code className="font-mono font-bold text-zinc-800 dark:text-zinc-200">x3</code> and{" "}
             <code className="font-mono font-bold text-zinc-800 dark:text-zinc-200">x4</code> to yield the candidate tag bytes.
           </div>
         </div>
@@ -170,3 +215,4 @@ export function DecryptionFinalizationFlow() {
     </div>
   );
 }
+

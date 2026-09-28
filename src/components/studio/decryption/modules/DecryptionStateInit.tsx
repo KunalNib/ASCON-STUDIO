@@ -1,14 +1,42 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Cpu, Zap, Layers, ShieldCheck, ArrowRight, RefreshCw } from "lucide-react";
-import { INITIAL_STATE_WORDS, INITIALIZED_STATE_BYTES } from "@/lib/asconDemoData";
+import { useAsconStore } from "@/store/useAsconStore";
+import { Ascon128 } from "@/lib/ascon";
+import { CryptoTerm } from "@/components/ui/CryptoTerm";
 
 export function DecryptionStateInit() {
+  const { decryptionKey, decryptionNonce } = useAsconStore();
   const [activeRound, setActiveRound] = useState(0);
   const [isPermuting, setIsPermuting] = useState(false);
   const [permuted, setPermuted] = useState(false);
+
+  const keyClean = (decryptionKey || "000102030405060708090A0B0C0D0E0F").padEnd(32, "0").slice(0, 32);
+  const nonceClean = (decryptionNonce || "000102030405060708090A0B0C0D0E0F").padEnd(32, "0").slice(0, 32);
+
+  // Compute live initial and permuted state words
+  const stateMatrix = useMemo(() => {
+    const enc = Ascon128.encryptAEAD(keyClean, nonceClean, "ESP32-STATION-1", "27.4 °C");
+    const initialWords = [
+      { label: "x0", hex: enc.initialStateWords[0] || "80400C0600000000", role: "IV (64-bit)" },
+      { label: "x1", hex: enc.initialStateWords[1] || keyClean.slice(0, 16), role: "Key [0:63]" },
+      { label: "x2", hex: enc.initialStateWords[2] || keyClean.slice(16, 32), role: "Key [64:127]" },
+      { label: "x3", hex: enc.initialStateWords[3] || nonceClean.slice(0, 16), role: "Nonce [0:63]" },
+      { label: "x4", hex: enc.initialStateWords[4] || nonceClean.slice(16, 32), role: "Nonce [64:127]" },
+    ];
+
+    const permutedWords = [
+      { label: "x0", hex: enc.initializedStateWords[0] || "BC830FBEF3A1651B" },
+      { label: "x1", hex: enc.initializedStateWords[1] || "487A66865036B909" },
+      { label: "x2", hex: enc.initializedStateWords[2] || "A031B0C5810C1CD6" },
+      { label: "x3", hex: enc.initializedStateWords[3] || "DD7CE72083702217" },
+      { label: "x4", hex: enc.initializedStateWords[4] || "9B17156EDE557CE7" },
+    ];
+
+    return { initialWords, permutedWords };
+  }, [keyClean, nonceClean]);
 
   const runPermutationSimulation = () => {
     setIsPermuting(true);
@@ -30,19 +58,30 @@ export function DecryptionStateInit() {
     setIsPermuting(false);
   };
 
+  const toBytes = (hex: string) => {
+    const bytes: string[] = [];
+    for (let i = 0; i < 16; i += 2) {
+      bytes.push(hex.slice(i, i + 2));
+    }
+    return bytes;
+  };
+
   return (
     <div className="w-full h-full flex flex-col p-4 md:p-6 max-w-5xl mx-auto gap-5 overflow-y-auto custom-scrollbar items-center">
       {/* Header */}
       <div className="text-center shrink-0">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold mb-2 border border-emerald-500/20">
+          <span>Plain English: Setting Up Internal Memory &amp; Blending the Master Key</span>
+        </div>
         <h2 className="text-2xl font-bold flex items-center justify-center gap-3 text-zinc-900 dark:text-white mb-2">
           <Cpu className="w-6 h-6 text-emerald-600 dark:text-emerald-500" />
-          State Initialization &amp; Sponge Symmetry
+          State Initialization &amp; <CryptoTerm term="Sponge" display="Sponge Symmetry" />
         </h2>
         <p className="text-zinc-600 dark:text-zinc-400 max-w-2xl text-sm leading-relaxed">
-          ASCON initializes the 320-bit state with the 64-bit IV, 128-bit Key, and 128-bit Nonce.
+          ASCON initializes the 320-bit state with the 64-bit <CryptoTerm term="IV" display="IV" />, 128-bit <CryptoTerm term="Key" display="Key" />, and 128-bit <CryptoTerm term="Nonce" display="Nonce" />.
           Notice the key architectural marvel:{" "}
           <strong className="text-emerald-600 dark:text-emerald-400">
-            Decryption uses the exact same forward 12-round permutation (p¹²)
+            Decryption uses the exact same forward 12-round permutation (<CryptoTerm term="p12" display="p¹²" />)
           </strong>
           — no inverse S-box or reverse linear layer circuits are needed!
         </p>
@@ -54,26 +93,17 @@ export function DecryptionStateInit() {
         <div>
           <span className="font-bold">Lightweight IoT Architecture Win: </span>
           Traditional AES requires distinct encryption and decryption hardware (SubBytes vs InvSubBytes).
-          ASCON sponge construction evaluates <code className="font-mono font-bold">p(S)</code> in the forward direction
-          identically on both endpoints, reducing ASIC / FPGA gate count by ~40%.
+          ASCON sponge construction evaluates <CryptoTerm term="S-Box" display="p(S)" /> in the forward direction
+          identically on both endpoints, reducing silicon area by ~40%.
         </div>
       </div>
 
       {/* 320-bit State Matrix Visual */}
       <div className="w-full grid grid-cols-1 lg:grid-cols-5 gap-3">
-        {INITIAL_STATE_WORDS.map((w, idx) => {
+        {stateMatrix.initialWords.map((w, idx) => {
           const displayBytes = permuted
-            ? INITIALIZED_STATE_BYTES[w.label] || ["FF", "FF", "FF", "FF", "FF", "FF", "FF", "FF"]
-            : [
-                w.hex.slice(0, 2),
-                w.hex.slice(2, 4),
-                w.hex.slice(4, 6),
-                w.hex.slice(6, 8),
-                w.hex.slice(8, 10),
-                w.hex.slice(10, 12),
-                w.hex.slice(12, 14),
-                w.hex.slice(14, 16),
-              ];
+            ? toBytes(stateMatrix.permutedWords[idx]?.hex || "0000000000000000")
+            : toBytes(w.hex);
 
           return (
             <motion.div
@@ -120,7 +150,7 @@ export function DecryptionStateInit() {
           <div className="flex items-center gap-2">
             <Layers className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white">
-              Forward Permutation p¹² Execution (12 Rounds: 0 → 11)
+              Forward Permutation <CryptoTerm term="p12" display="p¹²" /> Execution (12 Rounds: 0 → 11)
             </h3>
           </div>
 
@@ -163,22 +193,29 @@ export function DecryptionStateInit() {
           ))}
         </div>
 
-        {/* Round internals summary */}
+        {/* Round internals summary with plain English */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t border-zinc-200 dark:border-white/5 text-xs text-zinc-600 dark:text-zinc-400">
           <div>
-            <strong className="text-zinc-900 dark:text-white block mb-0.5">1. Constant Addition (pC)</strong>
-            <span>x2 ⊕= cᵣ (round constant injects asymmetry).</span>
+            <strong className="text-zinc-900 dark:text-white block mb-0.5">
+              1. Constant Addition (<CryptoTerm term="Addition of Constants" display="pC" />)
+            </strong>
+            <span>Injects unique round numbers so rounds don&apos;t repeat patterns.</span>
           </div>
           <div>
-            <strong className="text-zinc-900 dark:text-white block mb-0.5">2. Substitution Layer (pS)</strong>
-            <span>64 parallel 5-bit S-boxes provide high non-linearity.</span>
+            <strong className="text-zinc-900 dark:text-white block mb-0.5">
+              2. Substitution Layer (<CryptoTerm term="S-Box" display="pS" />)
+            </strong>
+            <span>64 parallel 5-bit S-boxes confuse linear mathematical analysis.</span>
           </div>
           <div>
-            <strong className="text-zinc-900 dark:text-white block mb-0.5">3. Linear Diffusion (pL)</strong>
-            <span>xi ⊕= (xi ⋙ a) ⊕ (xi ⋙ b) spreads bits across words.</span>
+            <strong className="text-zinc-900 dark:text-white block mb-0.5">
+              3. Linear Diffusion (<CryptoTerm term="Linear Diffusion" display="pL" />)
+            </strong>
+            <span>Rotates and spreads every bit across all 64 positions in the register.</span>
           </div>
         </div>
       </div>
     </div>
   );
 }
+

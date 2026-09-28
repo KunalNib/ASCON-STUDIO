@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAsconStore } from "@/store/useAsconStore";
 import {
@@ -12,17 +12,76 @@ import {
   AlertOctagon,
   Sparkles,
 } from "lucide-react";
-import {
-  DECRYPT_X0_INITIAL,
-  DECRYPT_CIPHERTEXT_BYTES,
-  DECRYPT_RECOVERED_BYTES,
-  DECRYPT_RECOVERED_ASCII,
-} from "@/lib/asconDemoData";
+import { Ascon128 } from "@/lib/ascon";
+import { CryptoTerm } from "@/components/ui/CryptoTerm";
 
 export function DecryptionPlaintextRecovery() {
-  const { decryptionCiphertext, decryptionTampered } = useAsconStore();
+  const {
+    decryptionCiphertext,
+    decryptionTampered,
+    decryptionKey,
+    decryptionNonce,
+    decryptionAssociatedData,
+    decryptionAuthTag,
+  } = useAsconStore();
+
   const [step, setStep] = useState(0);
   const [revealedCount, setRevealedCount] = useState(0);
+
+  // Dynamically compute real ASCON-128 decryption state
+  const decResult = useMemo(() => {
+    return Ascon128.decryptAEAD(
+      decryptionKey || "000102030405060708090A0B0C0D0E0F",
+      decryptionNonce || "000102030405060708090A0B0C0D0E0F",
+      decryptionAssociatedData || "ESP32-STATION-1",
+      decryptionCiphertext || "04 C4 2F 82 A8 7B EF A3",
+      decryptionAuthTag || "FC 6F BB FA DF F5 56 79 7C 62 51 71 F5 67 71 88"
+    );
+  }, [
+    decryptionKey,
+    decryptionNonce,
+    decryptionAssociatedData,
+    decryptionCiphertext,
+    decryptionAuthTag,
+  ]);
+
+  const x0Bytes = useMemo(() => {
+    if (decResult.rateWordX0AfterInit && decResult.rateWordX0AfterInit.length >= 8) {
+      return decResult.rateWordX0AfterInit.slice(0, 8);
+    }
+    return ["E8", "F1", "23", "A7", "4C", "9B", "D2", "51"];
+  }, [decResult]);
+
+  const ctBytes = useMemo(() => {
+    const raw = (decryptionCiphertext || "04 C4 2F 82 A8 7B EF A3").trim().split(/\s+/);
+    const padded = [...raw];
+    while (padded.length < 8) padded.push("00");
+    return padded.slice(0, 8);
+  }, [decryptionCiphertext]);
+
+  const recoveredBytes = useMemo(() => {
+    if (decResult.recoveredBytes && decResult.recoveredBytes.length >= 8) {
+      return decResult.recoveredBytes.slice(0, 8);
+    }
+    // Dynamic fallback XOR byte by byte: P = C ^ x0
+    return ctBytes.map((c, i) => {
+      const val = (parseInt(c, 16) ^ parseInt(x0Bytes[i] || "00", 16))
+        .toString(16)
+        .toUpperCase()
+        .padStart(2, "0");
+      return val;
+    });
+  }, [decResult, ctBytes, x0Bytes]);
+
+  const recoveredAscii = useMemo(() => {
+    return recoveredBytes.map((hex) => {
+      const code = parseInt(hex, 16);
+      if (code >= 32 && code <= 126) {
+        return code === 32 ? "·" : String.fromCharCode(code);
+      }
+      return "·";
+    });
+  }, [recoveredBytes]);
 
   // Auto-animate byte decoding when step 2 is active
   useEffect(() => {
@@ -32,7 +91,7 @@ export function DecryptionPlaintextRecovery() {
     }
     const interval = setInterval(() => {
       setRevealedCount((c) => {
-        if (c >= DECRYPT_CIPHERTEXT_BYTES.length) {
+        if (c >= ctBytes.length) {
           clearInterval(interval);
           return c;
         }
@@ -40,23 +99,18 @@ export function DecryptionPlaintextRecovery() {
       });
     }, 180);
     return () => clearInterval(interval);
-  }, [step]);
-
-  const hexXor = (a: string, b: string) => {
-    const val = (parseInt(a, 16) ^ parseInt(b, 16))
-      .toString(16)
-      .toUpperCase()
-      .padStart(2, "0");
-    return val;
-  };
+  }, [step, ctBytes.length]);
 
   return (
     <div className="w-full h-full flex flex-col items-center p-4 md:p-6 max-w-5xl mx-auto gap-5 overflow-y-auto custom-scrollbar">
       {/* Header */}
       <div className="text-center shrink-0">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold mb-2 border border-emerald-500/20">
+          <span>Plain English: Unscrambling Your Message Block-by-Block</span>
+        </div>
         <h2 className="text-2xl font-bold flex items-center justify-center gap-3 text-zinc-900 dark:text-white mb-2">
           <Unlock className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-          Duplex Plaintext Recovery &amp; State Feedback
+          <CryptoTerm term="Duplex" display="Duplex Plaintext Recovery" /> &amp; State Feedback
         </h2>
         <p className="text-zinc-600 dark:text-zinc-400 max-w-2xl text-sm leading-relaxed">
           In ASCON decryption, plaintext is recovered by computing{" "}
@@ -71,7 +125,9 @@ export function DecryptionPlaintextRecovery() {
       <div className="w-full bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-center gap-3 text-xs text-amber-900 dark:text-amber-200">
         <AlertOctagon className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
         <div>
-          <span className="font-bold">Cryptographic Quarantine (NIST SP 800-232): </span>
+          <span className="font-bold">
+            <CryptoTerm term="Zero-Trust Gate" display="Cryptographic Quarantine" showBadge /> (NIST SP 800-232):{" "}
+          </span>
           The recovered plaintext is held in provisional volatile memory. It{" "}
           <strong>MUST NOT be released</strong> to the application until Tag Verification passes in Step 6.
         </div>
@@ -105,14 +161,14 @@ export function DecryptionPlaintextRecovery() {
       <div className="w-full bg-white dark:bg-[#0c0d10] border border-zinc-200 dark:border-white/10 rounded-3xl p-6 shadow-sm flex flex-col gap-5">
         {/* Row 1: State Word x0 */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-          <div className="w-36 shrink-0 flex items-center gap-2">
+          <div className="w-44 shrink-0 flex items-center gap-2">
             <Cpu className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
-              State Rate x0:
+              <CryptoTerm term="Rate" display="State Rate x0" />:
             </span>
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {DECRYPT_X0_INITIAL.map((b, i) => (
+            {x0Bytes.map((b, i) => (
               <div
                 key={i}
                 className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 flex items-center justify-center font-mono text-xs font-bold text-zinc-700 dark:text-zinc-300"
@@ -121,7 +177,7 @@ export function DecryptionPlaintextRecovery() {
               </div>
             ))}
           </div>
-          <span className="text-[11px] text-zinc-500 font-mono">(64-bit rate)</span>
+          <span className="text-[11px] text-zinc-500 font-mono">(64-bit rate doorway)</span>
         </div>
 
         {/* Row 2: Ciphertext */}
@@ -132,23 +188,29 @@ export function DecryptionPlaintextRecovery() {
               animate={{ opacity: 1, y: 0 }}
               className="flex flex-col sm:flex-row items-start sm:items-center gap-3"
             >
-              <div className="w-36 shrink-0 flex items-center gap-2">
+              <div className="w-44 shrink-0 flex items-center gap-2">
                 <FileText className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
-                  Ciphertext C₀:
+                  <CryptoTerm term="Bit-Flipping" display="Ciphertext C₀" />:
                 </span>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {DECRYPT_CIPHERTEXT_BYTES.map((b, i) => (
+                {ctBytes.map((b, i) => (
                   <div
                     key={i}
-                    className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center font-mono text-xs font-bold text-emerald-700 dark:text-emerald-300"
+                    className={`w-10 h-10 rounded-xl border flex items-center justify-center font-mono text-xs font-bold ${
+                      decryptionTampered && i === 0
+                        ? "bg-rose-500/20 border-rose-500 text-rose-700 dark:text-rose-300 animate-pulse"
+                        : "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300"
+                    }`}
                   >
                     {b}
                   </div>
                 ))}
               </div>
-              <span className="text-[11px] text-zinc-500 font-mono">(64-bit block)</span>
+              <span className="text-[11px] text-zinc-500 font-mono">
+                {decryptionTampered ? "(Tampered Byte 0)" : "(64-bit block)"}
+              </span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -162,14 +224,14 @@ export function DecryptionPlaintextRecovery() {
               className="flex flex-col gap-3 pt-3 border-t border-zinc-200 dark:border-white/10"
             >
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                <div className="w-36 shrink-0 flex items-center gap-2">
+                <div className="w-44 shrink-0 flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
                     Recovered (Hex):
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
-                  {DECRYPT_RECOVERED_BYTES.map((b, i) => {
+                  {recoveredBytes.map((b, i) => {
                     const isVisible = i < revealedCount;
                     return (
                       <motion.div
@@ -178,7 +240,9 @@ export function DecryptionPlaintextRecovery() {
                         animate={{ scale: isVisible ? 1 : 0.8, opacity: isVisible ? 1 : 0.2 }}
                         className={`w-10 h-10 rounded-xl border flex items-center justify-center font-mono text-xs font-bold ${
                           isVisible
-                            ? "bg-emerald-600 border-emerald-500 text-white shadow-sm"
+                            ? decryptionTampered && i === 0
+                              ? "bg-rose-600 border-rose-500 text-white shadow-sm"
+                              : "bg-emerald-600 border-emerald-500 text-white shadow-sm"
                             : "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-white/5 text-zinc-400"
                         }`}
                       >
@@ -191,20 +255,22 @@ export function DecryptionPlaintextRecovery() {
 
               {/* ASCII Translation Row */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                <div className="w-36 shrink-0 flex items-center gap-2">
+                <div className="w-44 shrink-0 flex items-center gap-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">
-                    ASCII Decoded:
+                    Plain English Text:
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
-                  {DECRYPT_RECOVERED_ASCII.map((char, i) => {
+                  {recoveredAscii.map((char, i) => {
                     const isVisible = i < revealedCount;
                     return (
                       <div
                         key={i}
                         className={`w-10 h-8 rounded-lg flex items-center justify-center font-mono text-sm font-bold border ${
                           isVisible
-                            ? "bg-zinc-100 dark:bg-white/5 border-emerald-500/40 text-emerald-700 dark:text-emerald-300"
+                            ? decryptionTampered && i === 0
+                              ? "bg-rose-50 dark:bg-rose-950/40 border-rose-500/40 text-rose-700 dark:text-rose-300"
+                              : "bg-zinc-100 dark:bg-white/5 border-emerald-500/40 text-emerald-700 dark:text-emerald-300"
                             : "bg-transparent border-transparent text-transparent"
                         }`}
                       >
@@ -225,10 +291,11 @@ export function DecryptionPlaintextRecovery() {
             <strong>Duplex Feedback Law: </strong>
             Immediately after extracting Plaintext, state register <code className="font-mono font-bold text-zinc-900 dark:text-white">x0</code> is
             overwritten with <code className="font-mono font-bold text-emerald-600 dark:text-emerald-400">C₀</code>, and
-            permutation <code className="font-mono font-bold">p⁶</code> runs. This synchronizes the receiver's state with the sender.
+            permutation <CryptoTerm term="p6" display="p⁶" /> runs. This synchronizes the receiver's state with the sender.
           </div>
         </div>
       </div>
     </div>
   );
 }
+

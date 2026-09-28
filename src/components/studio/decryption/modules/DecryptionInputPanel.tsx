@@ -15,12 +15,7 @@ import {
   Lock,
   Unlock,
 } from "lucide-react";
-import {
-  DEMO_CIPHERTEXT,
-  DEMO_AUTH_TAG,
-  TAMPERED_CIPHERTEXT,
-  TAMPERED_AUTH_TAG,
-} from "@/lib/asconDemoData";
+import { CryptoTerm } from "@/components/ui/CryptoTerm";
 
 export function DecryptionInputPanel() {
   const {
@@ -30,6 +25,7 @@ export function DecryptionInputPanel() {
     decryptionKey,
     decryptionNonce,
     decryptionAssociatedData,
+    decryptionRecoveredPlaintext,
     decryptionTampered,
     setDecryptionTampered,
     setDecryptionCiphertext,
@@ -40,23 +36,15 @@ export function DecryptionInputPanel() {
   const [activeTab, setActiveTab] = useState<"payloads" | "tamper" | "bytes">("payloads");
 
   const ctBytes = useMemo(() => {
-    return (decryptionCiphertext || DEMO_CIPHERTEXT).trim().split(/\s+/);
+    return (decryptionCiphertext || "04 C4 2F 82 A8 7B EF A3").trim().split(/\s+/);
   }, [decryptionCiphertext]);
 
   const tagBytes = useMemo(() => {
-    return (decryptionAuthTag || DEMO_AUTH_TAG).trim().split(/\s+/);
+    return (decryptionAuthTag || "FC 6F BB FA DF F5 56 79 7C 62 51 71 F5 67 71 88").trim().split(/\s+/);
   }, [decryptionAuthTag]);
 
   const handleToggleTamper = () => {
-    const nextTamper = !decryptionTampered;
-    setDecryptionTampered(nextTamper);
-    if (nextTamper) {
-      setDecryptionCiphertext(TAMPERED_CIPHERTEXT);
-      setDecryptionAuthTag(TAMPERED_AUTH_TAG);
-    } else {
-      setDecryptionCiphertext(session.ciphertext || DEMO_CIPHERTEXT);
-      setDecryptionAuthTag(session.authenticationTag || DEMO_AUTH_TAG);
-    }
+    setDecryptionTampered(!decryptionTampered);
   };
 
   return (
@@ -173,7 +161,7 @@ export function DecryptionInputPanel() {
               {decryptionTampered && (
                 <div className="text-[11px] text-rose-600 dark:text-rose-400 flex items-center gap-1.5 font-medium">
                   <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                  <span>Byte 0 modified from A0 to B0 (Bit-4 flipped by adversary).</span>
+                  <span>Byte 0 modified (Bit 0 flipped to {ctBytes[0]} by adversary).</span>
                 </div>
               )}
             </div>
@@ -184,10 +172,10 @@ export function DecryptionInputPanel() {
                 <div className="flex items-center gap-2">
                   <Hash className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   <span className="text-xs font-bold uppercase tracking-wider text-zinc-900 dark:text-white">
-                    Authentication Tag (T)
+                    <CryptoTerm term="Authentication Tag" display="Authentication Tag (T)" />
                   </span>
                 </div>
-                <span className="text-[11px] font-mono text-zinc-500">128 bits (16 bytes MAC)</span>
+                <span className="text-[11px] font-mono text-zinc-500">128 bits (16 bytes Digital Seal)</span>
               </div>
 
               <div className="flex flex-wrap gap-1.5">
@@ -210,7 +198,7 @@ export function DecryptionInputPanel() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="bg-white dark:bg-[#0c0d10] border border-zinc-200 dark:border-white/10 rounded-2xl p-3 flex flex-col gap-1">
                 <div className="flex items-center gap-1.5 text-zinc-500 text-[11px] uppercase font-bold">
-                  <Key className="w-3.5 h-3.5 text-amber-500" /> Shared Key (128-bit)
+                  <Key className="w-3.5 h-3.5 text-amber-500" /> <CryptoTerm term="Key" display="Shared Key (128-bit)" />
                 </div>
                 <div className="font-mono text-xs text-zinc-900 dark:text-zinc-100 truncate">
                   {decryptionKey}
@@ -219,7 +207,7 @@ export function DecryptionInputPanel() {
 
               <div className="bg-white dark:bg-[#0c0d10] border border-zinc-200 dark:border-white/10 rounded-2xl p-3 flex flex-col gap-1">
                 <div className="flex items-center gap-1.5 text-zinc-500 text-[11px] uppercase font-bold">
-                  <Binary className="w-3.5 h-3.5 text-rose-500" /> Public Nonce (128-bit)
+                  <Binary className="w-3.5 h-3.5 text-rose-500" /> <CryptoTerm term="Nonce" display="Public Nonce (128-bit)" />
                 </div>
                 <div className="font-mono text-xs text-zinc-900 dark:text-zinc-100 truncate">
                   {decryptionNonce}
@@ -228,7 +216,7 @@ export function DecryptionInputPanel() {
 
               <div className="bg-white dark:bg-[#0c0d10] border border-zinc-200 dark:border-white/10 rounded-2xl p-3 flex flex-col gap-1">
                 <div className="flex items-center gap-1.5 text-zinc-500 text-[11px] uppercase font-bold">
-                  <Fingerprint className="w-3.5 h-3.5 text-blue-500" /> Associated Data
+                  <Fingerprint className="w-3.5 h-3.5 text-blue-500" /> <CryptoTerm term="Associated Data" display="Associated Data" />
                 </div>
                 <div className="font-mono text-xs text-zinc-900 dark:text-zinc-100 truncate">
                   {decryptionAssociatedData}
@@ -253,9 +241,8 @@ export function DecryptionInputPanel() {
               </h3>
             </div>
             <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-              In traditional unauthenticated ciphers (e.g. standard CBC mode without HMAC or CTR mode),
-              attackers can flip bits in the ciphertext to alter destination IP addresses, bank amounts,
-              or commands. ASCON is an <strong>AEAD cipher</strong>; any bit changed in transit will cause
+              In traditional unauthenticated ciphers, attackers can flip bits in the ciphertext to alter data.
+              ASCON is an <CryptoTerm term="AEAD" display="AEAD cipher" />; any bit changed in transit will cause
               the calculated candidate tag to catastrophically diverge, failing verification at Step 6.
             </p>
 
@@ -263,8 +250,6 @@ export function DecryptionInputPanel() {
               <div
                 onClick={() => {
                   setDecryptionTampered(false);
-                  setDecryptionCiphertext(session.ciphertext || DEMO_CIPHERTEXT);
-                  setDecryptionAuthTag(session.authenticationTag || DEMO_AUTH_TAG);
                 }}
                 className={`p-4 rounded-xl border cursor-pointer transition-all ${
                   !decryptionTampered
@@ -284,15 +269,13 @@ export function DecryptionInputPanel() {
                 </div>
                 <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
                   Transmits valid ciphertext matching the cryptographic tag. Decryption will pass verification
-                  and unlock &quot;Hello IoT&quot;.
+                  and unlock &quot;{decryptionRecoveredPlaintext || "authentic message"}&quot;.
                 </p>
               </div>
 
               <div
                 onClick={() => {
                   setDecryptionTampered(true);
-                  setDecryptionCiphertext(TAMPERED_CIPHERTEXT);
-                  setDecryptionAuthTag(TAMPERED_AUTH_TAG);
                 }}
                 className={`p-4 rounded-xl border cursor-pointer transition-all ${
                   decryptionTampered

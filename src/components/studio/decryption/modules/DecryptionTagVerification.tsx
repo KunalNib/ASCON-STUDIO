@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAsconStore } from "@/store/useAsconStore";
 import {
@@ -15,11 +15,8 @@ import {
   FileCheck,
   AlertTriangle,
 } from "lucide-react";
-import {
-  AUTH_TAG_BYTES,
-  TAMPERED_CANDIDATE_TAG,
-  TAMPERED_AUTH_TAG,
-} from "@/lib/asconDemoData";
+import { Ascon128 } from "@/lib/ascon";
+import { CryptoTerm } from "@/components/ui/CryptoTerm";
 
 export function DecryptionTagVerification() {
   const {
@@ -28,14 +25,43 @@ export function DecryptionTagVerification() {
     decryptionRecoveredPlaintext,
     decryptionAuthTag,
     decryptionCiphertext,
+    decryptionKey,
+    decryptionNonce,
+    decryptionAssociatedData,
   } = useAsconStore();
 
   const [verifying, setVerifying] = useState(false);
   const [checkedBytesCount, setCheckedBytesCount] = useState(0);
   const [verifiedResult, setVerifiedResult] = useState<"pass" | "fail" | null>(null);
 
-  const candidateTag = decryptionTampered ? TAMPERED_CANDIDATE_TAG : AUTH_TAG_BYTES;
-  const receivedTag = (decryptionAuthTag || AUTH_TAG_BYTES.join(" ")).trim().split(/\s+/);
+  // Compute live ASCON-128 candidate tag and validity
+  const decResult = useMemo(() => {
+    return Ascon128.decryptAEAD(
+      decryptionKey || "000102030405060708090A0B0C0D0E0F",
+      decryptionNonce || "000102030405060708090A0B0C0D0E0F",
+      decryptionAssociatedData || "ESP32-STATION-1",
+      decryptionCiphertext || "04 C4 2F 82 A8 7B EF A3",
+      decryptionAuthTag || "FC 6F BB FA DF F5 56 79 7C 62 51 71 F5 67 71 88"
+    );
+  }, [
+    decryptionKey,
+    decryptionNonce,
+    decryptionAssociatedData,
+    decryptionCiphertext,
+    decryptionAuthTag,
+  ]);
+
+  const candidateTag = useMemo(() => {
+    return decResult.candidateTagBytes;
+  }, [decResult]);
+
+  const receivedTag = useMemo(() => {
+    const raw = (decryptionAuthTag || "FC 6F BB FA DF F5 56 79 7C 62 51 71 F5 67 71 88")
+      .trim()
+      .split(/\s+/);
+    while (raw.length < 16) raw.push("00");
+    return raw.slice(0, 16);
+  }, [decryptionAuthTag]);
 
   const startConstantTimeVerification = () => {
     setVerifying(true);
@@ -49,31 +75,37 @@ export function DecryptionTagVerification() {
       if (count >= 16) {
         clearInterval(interval);
         setVerifying(false);
-        setVerifiedResult(decryptionTampered ? "fail" : "pass");
+        setVerifiedResult(decResult.isValid ? "pass" : "fail");
       }
     }, 80);
   };
 
   useEffect(() => {
     startConstantTimeVerification();
-  }, [decryptionTampered]);
+  }, [decryptionTampered, decryptionCiphertext, decryptionAuthTag]);
 
   return (
     <div className="w-full h-full flex flex-col p-4 md:p-6 max-w-5xl mx-auto gap-5 overflow-y-auto custom-scrollbar items-center">
       {/* Header */}
       <div className="text-center shrink-0">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold mb-2 border border-emerald-500/20">
+          <span>Plain English: Checking the Digital Tamper Seal Before Releasing Data</span>
+        </div>
         <h2 className="text-2xl font-bold flex items-center justify-center gap-3 text-zinc-900 dark:text-white mb-2">
           {verifiedResult === "fail" ? (
             <ShieldAlert className="w-6 h-6 text-rose-600 dark:text-rose-500" />
           ) : (
             <ShieldCheck className="w-6 h-6 text-emerald-600 dark:text-emerald-500" />
           )}
-          Constant-Time Tag Verification &amp; Release Gate
+          <CryptoTerm term="Constant-Time Verification" display="Constant-Time Tag Verification" /> &amp;{" "}
+          <CryptoTerm term="Zero-Trust Gate" display="Release Gate" />
         </h2>
         <p className="text-zinc-600 dark:text-zinc-400 max-w-2xl text-sm leading-relaxed">
-          The ultimate security frontier in AEAD. Candidate Tag <code className="font-mono font-bold text-emerald-600 dark:text-emerald-400">T*</code> is
-          compared byte-for-byte in constant time against received Tag <code className="font-mono font-bold text-zinc-800 dark:text-zinc-200">T</code>.
-          If any byte mismatches, tentative plaintext is obliterated.
+          The ultimate security frontier in <CryptoTerm term="AEAD" />. Candidate Tag{" "}
+          <code className="font-mono font-bold text-emerald-600 dark:text-emerald-400">T*</code> is
+          compared byte-for-byte in constant time against received Tag{" "}
+          <code className="font-mono font-bold text-zinc-800 dark:text-zinc-200">T</code>.
+          If even a single byte differs, the tentative message is immediately destroyed.
         </p>
       </div>
 
@@ -120,7 +152,7 @@ export function DecryptionTagVerification() {
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                1. Calculated Candidate Tag (T*)
+                1. Calculated Candidate Tag (T*) [Your Expected Seal]
               </span>
               <span className="text-[10px] text-zinc-400 uppercase font-mono">From Local State</span>
             </div>
