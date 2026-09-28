@@ -13,20 +13,177 @@ import remarkGfm from "remark-gfm";
 import mermaid from "mermaid";
 import { useTheme } from "next-themes";
 
-const MermaidDiagram = ({ chart }: { chart: string }) => {
+function sanitizeMermaid(code: string): string {
+  if (!code) return "";
+  let text = code.trim();
+
+  // Strip code block fences if present
+  text = text.replace(/^```(?:mermaid)?\s*/i, "").replace(/\s*```$/i, "").trim();
+
+  // Valid diagram headers
+  const validHeaders = [
+    "graph",
+    "flowchart",
+    "sequencediagram",
+    "classdiagram",
+    "statediagram",
+    "erdiagram",
+    "journey",
+    "gantt",
+    "pie",
+    "gitgraph",
+    "mindmap",
+    "timeline",
+    "quadrantchart",
+    "sankey-beta",
+    "xychart-beta",
+  ];
+
+  const firstLine = text.split("\n")[0].trim().toLowerCase();
+  const hasHeader = validHeaders.some((h) => firstLine.startsWith(h));
+  if (!hasHeader) {
+    text = "graph TD\n" + text;
+  }
+
+  // Quote unquoted node labels with parentheses, colons, slashes, or commas inside square brackets
+  // e.g. A[Initialization (128-bit)] -> A["Initialization (128-bit)"]
+  text = text.replace(/(\b[a-zA-Z0-9_-]+)\[([^"\]\r\n]+)\]/g, (match, id, content) => {
+    if (/[():,\/]/.test(content)) {
+      return `${id}["${content.trim().replace(/"/g, "'")}"]`;
+    }
+    return match;
+  });
+
+  // Quote unquoted rounded node labels: A(Init (128-bit)) -> A("Init (128-bit)")
+  text = text.replace(/(\b[a-zA-Z0-9_-]+)\(([^"\)\r\n]+)\)/g, (match, id, content) => {
+    if (/[():,\/]/.test(content)) {
+      return `${id}("${content.trim().replace(/"/g, "'")}")`;
+    }
+    return match;
+  });
+
+  return text;
+}
+
+const MermaidDiagram = ({ chart, isStreaming }: { chart: string; isStreaming?: boolean }) => {
   const [svg, setSvg] = useState<string>("");
-  const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
+  const [hasError, setHasError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { theme } = useTheme();
+  const instanceId = useRef(`mermaid-${Math.random().toString(36).substring(2, 9)}`);
 
   useEffect(() => {
-    mermaid.initialize({ startOnLoad: false, theme: theme === 'light' ? 'default' : 'dark' });
-    mermaid.render(id, chart).then((result) => {
-      setSvg(result.svg);
-    }).catch(e => console.error(e));
-  }, [chart, theme]);
+    let isMounted = true;
 
-  if (!svg) return <div className="text-zinc-500 text-sm animate-pulse">Rendering diagram...</div>;
-  return <div dangerouslySetInnerHTML={{ __html: svg }} className="bg-zinc-50 dark:bg-white/5 p-4 rounded-xl overflow-x-auto w-full my-4 flex justify-center border border-zinc-200 dark:border-transparent" />;
+    // Remove any leftover error SVGs that Mermaid may have attached to document.body
+    const cleanupStrayMermaidElements = () => {
+      if (typeof document !== "undefined") {
+        document.querySelectorAll('[id^="dmermaid"], [id^="mermaid-"]').forEach((el) => {
+          if (el.parentNode === document.body) {
+            el.remove();
+          }
+        });
+      }
+    };
+
+    const renderChart = async () => {
+      if (!chart || chart.trim().length === 0) {
+        if (isMounted) setIsLoading(false);
+        return;
+      }
+
+      if (isStreaming) {
+        if (isMounted) {
+          setIsLoading(true);
+        }
+        return;
+      }
+
+      setIsLoading(true);
+      setHasError(false);
+
+      const sanitized = sanitizeMermaid(chart);
+
+      try {
+        mermaid.initialize({
+          startOnLoad: false,
+          suppressErrorRendering: true,
+          securityLevel: "loose",
+          theme: theme === "light" ? "default" : "dark",
+        });
+
+        // Test syntax parsing before rendering
+        const isValid = await mermaid.parse(sanitized, { suppressErrors: true });
+        if (!isValid) {
+          if (isMounted) {
+            setHasError(true);
+            setIsLoading(false);
+          }
+          cleanupStrayMermaidElements();
+          return;
+        }
+
+        // Render the diagram
+        const uniqueId = `${instanceId.current}-${Date.now()}`;
+        const result = await mermaid.render(uniqueId, sanitized);
+        if (isMounted) {
+          setSvg(result.svg);
+          setHasError(false);
+          setIsLoading(false);
+        }
+      } catch {
+        if (isMounted) {
+          setHasError(true);
+          setIsLoading(false);
+        }
+      } finally {
+        cleanupStrayMermaidElements();
+      }
+    };
+
+    // Debounce slightly to allow streaming tokens to accumulate
+    const timer = setTimeout(() => {
+      renderChart();
+    }, 200);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+      cleanupStrayMermaidElements();
+    };
+  }, [chart, theme, isStreaming]);
+
+  if ((isLoading || isStreaming) && !svg) {
+    return (
+      <div className="flex items-center gap-2 p-3 my-3 bg-zinc-50 dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-xl text-xs text-zinc-500 font-mono animate-pulse">
+        <div className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />
+        <span>{isStreaming ? "Generating diagram..." : "Rendering diagram..."}</span>
+      </div>
+    );
+  }
+
+  if (hasError && !svg) {
+    return (
+      <div className="my-3 p-3 rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-black/40 text-xs">
+        <div className="flex items-center justify-between text-zinc-600 dark:text-zinc-400 mb-1.5 font-mono">
+          <span className="font-bold">Diagram Flow</span>
+          <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+            Flow Specification
+          </span>
+        </div>
+        <pre className="font-mono text-[11px] p-2.5 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 overflow-x-auto text-zinc-700 dark:text-zinc-300">
+          {chart.trim()}
+        </pre>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      dangerouslySetInnerHTML={{ __html: svg }}
+      className="bg-white dark:bg-zinc-950 p-4 rounded-xl overflow-x-auto w-full my-4 flex justify-center border border-zinc-200 dark:border-white/10 shadow-sm"
+    />
+  );
 };
 
 interface ChatMessage {
@@ -236,7 +393,7 @@ export default function AITutor() {
                           code({ node, inline, className, children, ...props }: any) {
                             const match = /language-(\w+)/.exec(className || "");
                             if (!inline && match && match[1] === "mermaid") {
-                              return <MermaidDiagram chart={String(children).replace(/\n$/, "")} />;
+                              return <MermaidDiagram chart={String(children).replace(/\n$/, "")} isStreaming={msg.isStreaming} />;
                             }
                             return !inline ? (
                               <pre className="bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-white/10 p-3 rounded-lg overflow-x-auto font-mono text-xs text-blue-700 dark:text-blue-300 my-2">

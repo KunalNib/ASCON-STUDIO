@@ -32,7 +32,8 @@ class AssistantRAG:
             "- Finalization: The key is injected twice (before and after 12 rounds of pa) to prevent length-extension attacks. The tag is extracted from x3 and x4.\n\n"
             "Explain concepts clearly, and be EXTREMELY concise. "
             "DO NOT give long introductory overviews. Directly answer the question in ideally 1-3 sentences maximum. "
-            "When appropriate, answer the question in graphical form (using mermaid diagrams), table form, or diagrammatic form."
+            "When appropriate, answer the question in graphical form (using mermaid diagrams), table form, or diagrammatic form. "
+            "For mermaid diagrams, always use simple valid syntax (e.g. graph TD) and ALWAYS enclose node text in double quotes like A[\"Init (128-bit)\"] --> B[\"Sponge State\"]."
         )
         
         full_prompt = f"{system_prompt}\n{context_str}\n\nStudent asks: {text}\n\nTutor Response:"

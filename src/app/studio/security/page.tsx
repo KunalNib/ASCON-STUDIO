@@ -122,7 +122,7 @@ export default function SecurityModule() {
 
           <button
             onClick={() => setIsNistDrawerOpen(!isNistDrawerOpen)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 dark:bg-white hover:bg-zinc-800 dark:hover:bg-zinc-100 text-white dark:text-black font-bold text-xs transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-white hover:bg-zinc-200 dark:hover:bg-zinc-100 text-zinc-900 dark:text-black border border-zinc-200 dark:border-white/10 font-bold text-xs transition-colors shadow-sm"
           >
             <BookOpen className="w-3.5 h-3.5" />
             <span>NIST Spec</span>

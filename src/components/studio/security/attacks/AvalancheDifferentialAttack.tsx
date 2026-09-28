@@ -254,10 +254,10 @@ export function AvalancheDifferentialAttack() {
         </div>
 
         {/* 5 Words × 64 Bits Matrix Grid */}
-        <div className="flex flex-col gap-1.5 w-full bg-zinc-950 p-3 rounded-2xl border border-zinc-800/80 overflow-x-auto custom-scrollbar">
+        <div className="flex flex-col gap-1.5 w-full bg-zinc-100 dark:bg-zinc-950 p-3 rounded-2xl border border-zinc-200 dark:border-zinc-800/80 overflow-x-auto custom-scrollbar">
           {["x0", "x1", "x2", "x3", "x4"].map((wordName, wIdx) => (
             <div key={wIdx} className="flex items-center gap-2">
-              <span className="w-6 font-mono text-[10px] font-bold text-zinc-500 shrink-0">
+              <span className="w-6 font-mono text-[10px] font-bold text-zinc-500 dark:text-zinc-400 shrink-0">
                 {wordName}
               </span>
               <div className="grid grid-cols-[repeat(64,minmax(0,1fr))] gap-0.5 flex-1 min-w-[580px]">
@@ -272,10 +272,10 @@ export function AvalancheDifferentialAttack() {
                       onClick={() => handleSelectBit(globalIdx)}
                       className={`h-4 rounded-[2px] cursor-pointer transition-all ${
                         isOrigin
-                          ? "bg-white ring-2 ring-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)] z-10 scale-110"
+                          ? "bg-zinc-900 dark:bg-white ring-2 ring-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)] z-10 scale-110"
                           : isFlipped
                           ? "bg-amber-400 dark:bg-amber-500 shadow-[0_0_4px_rgba(245,158,11,0.6)]"
-                          : "bg-zinc-800/80 hover:bg-zinc-700"
+                          : "bg-zinc-200 dark:bg-zinc-800/80 hover:bg-zinc-300 dark:hover:bg-zinc-700"
                       }`}
                       title={`Word ${wordName} Bit ${bitIdx} (Global #${globalIdx}) | ${
                         isOrigin ? "Origin Seed" : isFlipped ? "Flipped" : "Unchanged"

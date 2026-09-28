@@ -272,13 +272,13 @@ export function BitFlippingAttack() {
         </div>
 
         {/* ── 8-Bit Micro-Manipulator Panel ── */}
-        <div className="p-3 bg-zinc-900 dark:bg-black rounded-xl border border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="p-3 bg-zinc-100 dark:bg-black/60 rounded-xl border border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Sliders className="w-4 h-4 text-rose-500" />
             <div className="font-mono text-xs">
-              <span className="text-zinc-400">Byte [{selectedByteIdx}] Bit Inspector: </span>
-              <span className="font-bold text-white">0x{ciphertext[selectedByteIdx]}</span>{" "}
-              <span className="text-zinc-500">
+              <span className="text-zinc-600 dark:text-zinc-400">Byte [{selectedByteIdx}] Bit Inspector: </span>
+              <span className="font-bold text-zinc-900 dark:text-white">0x{ciphertext[selectedByteIdx]}</span>{" "}
+              <span className="text-zinc-400 dark:text-zinc-500">
                 (Orig: 0x{defaultCiphertextHex[selectedByteIdx]})
               </span>
             </div>
@@ -300,13 +300,13 @@ export function BitFlippingAttack() {
                     hasChanged
                       ? "bg-rose-600 text-white border-rose-400 shadow-[0_0_8px_rgba(244,63,94,0.6)]"
                       : isBitSet
-                      ? "bg-zinc-700 text-zinc-200 border-zinc-600 hover:bg-zinc-600"
-                      : "bg-zinc-800 text-zinc-400 border-zinc-700 hover:bg-zinc-700"
+                      ? "bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-200 border-zinc-300 dark:border-zinc-600 hover:bg-zinc-300 dark:hover:bg-zinc-600"
+                      : "bg-white dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700"
                   }`}
                   title={`Toggle bit ${bitIdx} (weight 2^${bitIdx} = ${1 << bitIdx})`}
                 >
                   <span>{isBitSet ? "1" : "0"}</span>
-                  <span className="text-[8px] text-zinc-400 font-normal">b{bitIdx}</span>
+                  <span className="text-[8px] text-zinc-400 dark:text-zinc-500 font-normal">b{bitIdx}</span>
                 </button>
               );
             })}

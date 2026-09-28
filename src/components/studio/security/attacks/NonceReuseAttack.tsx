@@ -208,15 +208,15 @@ export function NonceReuseAttack() {
         </div>
 
         {/* ── Interactive Crib Dragging Workbench ── */}
-        <div className="p-3 bg-zinc-900 dark:bg-black rounded-xl border border-zinc-800 flex flex-col gap-3">
+        <div className="p-3 bg-zinc-100 dark:bg-black/60 rounded-xl border border-zinc-200 dark:border-zinc-800 flex flex-col gap-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-            <div className="flex items-center gap-2 font-mono text-zinc-200">
+            <div className="flex items-center gap-2 font-mono text-zinc-800 dark:text-zinc-200">
               <Search className="w-4 h-4 text-amber-500" />
               <span className="font-bold">Interactive Crib Dragging Tool</span>
             </div>
 
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] text-zinc-400 font-mono">Sample Cribs:</span>
+              <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono">Sample Cribs:</span>
               {["COMMAND:", "VALVE_", "STATUS:"].map((crib) => (
                 <button
                   key={crib}
@@ -227,7 +227,7 @@ export function NonceReuseAttack() {
                   className={`px-2 py-0.5 rounded text-[10px] font-mono transition-colors ${
                     selectedCrib === crib
                       ? "bg-amber-500 text-black font-bold"
-                      : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+                      : "bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700"
                   }`}
                 >
                   &quot;{crib}&quot;
@@ -244,12 +244,12 @@ export function NonceReuseAttack() {
                 value={selectedCrib}
                 onChange={(e) => setSelectedCrib(e.target.value)}
                 placeholder="Enter known word (crib)..."
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-1.5 font-mono text-xs text-white focus:outline-none focus:border-amber-500"
+                className="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-1.5 font-mono text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-amber-500"
               />
             </div>
 
             <div className="sm:col-span-2 flex items-center gap-3">
-              <span className="text-[10px] font-mono text-zinc-400 shrink-0">
+              <span className="text-[10px] font-mono text-zinc-500 dark:text-zinc-400 shrink-0">
                 Offset: [{cribOffset}]
               </span>
               <input
@@ -258,13 +258,13 @@ export function NonceReuseAttack() {
                 max={Math.max(0, xorDiff.length - selectedCrib.length)}
                 value={cribOffset}
                 onChange={(e) => handleDragCrib(parseInt(e.target.value))}
-                className="w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                className="w-full h-2 bg-zinc-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
               />
             </div>
           </div>
 
           {/* Real-time Decoded Output from Crib Dragging */}
-          <div className="p-2.5 bg-black/60 rounded-lg border border-zinc-800/80 flex items-center justify-between text-xs font-mono">
+          <div className="p-2.5 bg-white dark:bg-black/60 rounded-lg border border-zinc-200 dark:border-zinc-800/80 flex items-center justify-between text-xs font-mono">
             <div className="flex items-center gap-2">
               <span className="text-zinc-500 text-[11px]">Decoded Plaintext Stream:</span>
               <div className="flex items-center gap-1">
@@ -273,10 +273,10 @@ export function NonceReuseAttack() {
                     key={i}
                     className={`px-1.5 py-0.5 rounded font-bold text-xs ${
                       res.isMatch
-                        ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+                        ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40"
                         : res.isPrintable
-                        ? "bg-amber-500/10 text-amber-300"
-                        : "text-zinc-600"
+                        ? "bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                        : "text-zinc-400 dark:text-zinc-600"
                     }`}
                   >
                     {res.char}

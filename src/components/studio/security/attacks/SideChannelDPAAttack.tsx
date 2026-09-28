@@ -179,17 +179,17 @@ export function SideChannelDPAAttack() {
         </div>
 
         {/* Phosphor Oscilloscope Screen */}
-        <div className="h-48 bg-zinc-950 rounded-xl border border-zinc-800 p-3 relative overflow-hidden flex flex-col justify-center">
+        <div className="h-48 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 p-3 relative overflow-hidden flex flex-col justify-center">
           {/* Phosphor Grid Lines */}
-          <div className="absolute inset-0 grid grid-rows-4 grid-cols-8 opacity-15 pointer-events-none">
+          <div className="absolute inset-0 grid grid-rows-4 grid-cols-8 opacity-25 dark:opacity-15 pointer-events-none">
             {Array.from({ length: 32 }).map((_, i) => (
-              <div key={i} className="border-b border-r border-cyan-400" />
+              <div key={i} className="border-b border-r border-cyan-500/20 dark:border-cyan-400" />
             ))}
           </div>
 
           {/* S-box Window Highlight */}
-          <div className="absolute left-[38%] right-[44%] top-0 bottom-0 bg-cyan-500/10 border-x border-cyan-500/30 pointer-events-none z-0">
-            <span className="absolute top-2 left-2 text-[8px] font-mono text-cyan-400 uppercase tracking-widest">
+          <div className="absolute left-[38%] right-[44%] top-0 bottom-0 bg-cyan-500/10 border-x border-cyan-500/20 dark:border-cyan-500/30 pointer-events-none z-0">
+            <span className="absolute top-2 left-2 text-[8px] font-mono text-cyan-600 dark:text-cyan-400 uppercase tracking-widest font-bold">
               S-Box Phase (pS)
             </span>
           </div>
@@ -214,8 +214,8 @@ export function SideChannelDPAAttack() {
                     curve.isCorrect && !isMasked
                       ? "#f43f5e" // Glowing Rose for compromised key
                       : isMasked
-                      ? "rgba(16, 185, 129, 0.4)" // Soft emerald for protected masked traces
-                      : "rgba(113, 113, 122, 0.3)" // Gray noise for wrong guesses
+                      ? "rgba(16, 185, 129, 0.55)" // Soft emerald for protected masked traces
+                      : "rgba(161, 161, 170, 0.4)" // Gray noise for wrong guesses
                   }
                   strokeWidth={curve.isCorrect && !isMasked ? "2.5" : "1"}
                   strokeLinecap="round"

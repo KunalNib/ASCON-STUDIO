@@ -250,18 +250,18 @@ export function PaddingOracleAttack() {
         </div>
 
         {/* Oscilloscope Graph Canvas Container */}
-        <div className="h-44 bg-zinc-950 rounded-xl border border-zinc-800 p-3 flex flex-col justify-end relative overflow-hidden">
+        <div className="h-44 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 p-3 flex flex-col justify-end relative overflow-hidden">
           {/* Horizontal Threshold Grid Lines */}
-          <div className="absolute inset-0 grid grid-rows-4 opacity-15 pointer-events-none">
-            <div className="border-b border-cyan-400" />
-            <div className="border-b border-cyan-400" />
-            <div className="border-b border-cyan-400" />
+          <div className="absolute inset-0 grid grid-rows-4 opacity-25 dark:opacity-15 pointer-events-none">
+            <div className="border-b border-cyan-500/30 dark:border-cyan-400" />
+            <div className="border-b border-cyan-500/30 dark:border-cyan-400" />
+            <div className="border-b border-cyan-500/30 dark:border-cyan-400" />
           </div>
 
           {/* Outlier Threshold Indicator */}
           {probeMode === "vulnerable" && (
             <div className="absolute top-[30%] left-0 right-0 border-b border-dashed border-rose-500/50 flex justify-end px-3">
-              <span className="text-[9px] font-mono text-rose-400 uppercase tracking-widest">
+              <span className="text-[9px] font-mono text-rose-600 dark:text-rose-400 uppercase tracking-widest">
                 Statistical Outlier Trigger Level (~22μs)
               </span>
             </div>
@@ -279,11 +279,11 @@ export function PaddingOracleAttack() {
                   className={`flex-1 rounded-t-[2px] transition-colors flex flex-col items-center justify-end pb-1 ${
                     c.isMatch && probeMode === "vulnerable"
                       ? "bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.9)]"
-                      : "bg-cyan-500/50"
+                      : "bg-cyan-500/40 dark:bg-cyan-500/50"
                   }`}
                   title={`0x${c.byteHex}: ${c.timeUs.toFixed(2)}μs`}
                 >
-                  <span className="text-[7px] font-mono text-zinc-400 select-none hidden md:block">
+                  <span className="text-[7px] font-mono text-zinc-500 dark:text-zinc-400 select-none hidden md:block">
                     {c.byteHex}
                   </span>
                 </motion.div>
