@@ -32,12 +32,19 @@ const DEFAULT_NONCE = "000102030405060708090A0B0C0D0E0F";
 const DEFAULT_AD = "DATASET-CLASSIFIED";
 
 export default function SensitiveDataModule() {
-  const [inputText, setInputText] = useState(SAMPLE_DATASETS.Financial);
+  const { plaintext, setPlaintext } = useAsconStore();
+  
+  const [inputText, setInputText] = useState(() => {
+    if (plaintext && plaintext !== "27.4 °C") {
+      return plaintext;
+    }
+    return SAMPLE_DATASETS.Financial;
+  });
+  
   const [encryptedData, setEncryptedData] = useState<{ ciphertext: string; tag: string } | null>(null);
   const [decryptedText, setDecryptedText] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { setPlaintext } = useAsconStore();
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -46,6 +53,7 @@ export default function SensitiveDataModule() {
     reader.onload = (event) => {
       const content = event.target?.result as string;
       setInputText(content);
+      setPlaintext(content);
       setEncryptedData(null);
       setDecryptedText(null);
     };
@@ -121,6 +129,7 @@ export default function SensitiveDataModule() {
             key={label}
             onClick={() => {
               setInputText(data);
+              setPlaintext(data);
               setEncryptedData(null);
               setDecryptedText(null);
             }}
@@ -156,6 +165,9 @@ export default function SensitiveDataModule() {
                 setInputText(e.target.value);
                 setEncryptedData(null);
                 setDecryptedText(null);
+              }}
+              onBlur={() => {
+                if (inputText) setPlaintext(inputText);
               }}
               className="flex-1 w-full bg-zinc-50 dark:bg-black/50 border border-zinc-200 dark:border-white/10 rounded-xl p-4 font-mono text-sm text-zinc-800 dark:text-zinc-300 focus:outline-none focus:border-blue-500 resize-none transition-colors"
               placeholder="Paste your sensitive JSON or text here..."
