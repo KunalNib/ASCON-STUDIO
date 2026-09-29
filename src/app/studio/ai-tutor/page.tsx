@@ -206,7 +206,7 @@ export default function AITutor() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const currentStepIndex = useAsconStore(state => state.currentStepIndex);
   const learningMode = useAsconStore(state => state.learningMode);
-  
+
   const ws = useRef<WebSocket | null>(null);
   const recognitionRef = useRef<any>(null);
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
@@ -223,10 +223,10 @@ export default function AITutor() {
 
   const connectWebSocket = () => {
     ws.current = new WebSocket("ws://127.0.0.1:8000/ws/ai-tutor");
-    
+
     ws.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      
+
       if (data.type === "chunk") {
         setMessages((prev) => {
           const newMsgs = [...prev];
@@ -243,11 +243,11 @@ export default function AITutor() {
           const newMsgs = [...prev];
           const last = newMsgs[newMsgs.length - 1];
           if (last.role === "ai") {
-            newMsgs[newMsgs.length - 1] = { 
-              ...last, 
-              isStreaming: false, 
-              actions: data.actions, 
-              sources: data.sources 
+            newMsgs[newMsgs.length - 1] = {
+              ...last,
+              isStreaming: false,
+              actions: data.actions,
+              sources: data.sources
             };
           }
           return newMsgs;
@@ -266,7 +266,7 @@ export default function AITutor() {
         recognitionRef.current = new SpeechRecognition();
         recognitionRef.current.continuous = true;
         recognitionRef.current.interimResults = true;
-        
+
         recognitionRef.current.onresult = (event: any) => {
           let transcript = "";
           for (let i = event.resultIndex; i < event.results.length; ++i) {
@@ -274,23 +274,23 @@ export default function AITutor() {
           }
           setInput((prev) => prev + " " + transcript);
         };
-        
+
         recognitionRef.current.onerror = (event: any) => {
-           console.error("Speech recognition error", event.error);
-           if (event.error === 'not-allowed') {
-             setIsListening(false);
-             isListeningRef.current = false;
-           }
+          console.error("Speech recognition error", event.error);
+          if (event.error === 'not-allowed') {
+            setIsListening(false);
+            isListeningRef.current = false;
+          }
         };
 
         recognitionRef.current.onend = () => {
-           if (isListeningRef.current) {
-              try {
-                recognitionRef.current.start();
-              } catch (e) {
-                console.error(e);
-              }
-           }
+          if (isListeningRef.current) {
+            try {
+              recognitionRef.current.start();
+            } catch (e) {
+              console.error(e);
+            }
+          }
         };
       }
     }
@@ -309,12 +309,12 @@ export default function AITutor() {
 
   const handleSend = () => {
     if ((!input.trim() && !selectedImage) || !ws.current || ws.current.readyState !== WebSocket.OPEN) return;
-    
+
     setMessages((prev) => [...prev, { role: "user", content: input, image: selectedImage || undefined }]);
     const payload = {
-       text: input,
-       image: selectedImage || undefined,
-       context: { step: currentStepIndex, mode: learningMode }
+      text: input,
+      image: selectedImage || undefined,
+      context: { step: currentStepIndex, mode: learningMode }
     };
     ws.current.send(JSON.stringify(payload));
     setInput("");
@@ -329,7 +329,7 @@ export default function AITutor() {
         const newMsgs = [...prev];
         const last = newMsgs[newMsgs.length - 1];
         if (last && last.role === "ai" && last.isStreaming) {
-           newMsgs[newMsgs.length - 1] = { ...last, isStreaming: false, content: last.content + " [Aborted by user]" };
+          newMsgs[newMsgs.length - 1] = { ...last, isStreaming: false, content: last.content + " [Aborted by user]" };
         }
         return newMsgs;
       });
@@ -358,21 +358,21 @@ export default function AITutor() {
 
   return (
     <div className={`flex h-[calc(100vh-4rem)] p-4 md:p-6 gap-6 ${isFullscreen ? "hidden md:flex flex-col-reverse" : ""}`}>
-      
+
       {/* Left: Chatbot Window */}
       <div className={`w-full flex flex-col bg-white dark:bg-[#09090b] rounded-2xl border border-zinc-200 dark:border-white/10 shadow-xl overflow-hidden transition-all ${isFullscreen ? "h-1/3 md:w-full" : "md:w-1/2 h-full"}`}>
         <header className="p-4 border-b border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-black/50 flex items-center gap-3">
-           <Bot className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-           <div>
-             <h2 className="font-semibold text-zinc-900 dark:text-white">ASCON Copilot</h2>
-             <p className="text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 animate-pulse block" /> Connected to RAG Pipeline</p>
-           </div>
+          <Bot className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+          <div>
+            <h2 className="font-semibold text-zinc-900 dark:text-white">ASCON Copilot</h2>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 animate-pulse block" /> Connected to RAG Pipeline</p>
+          </div>
         </header>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           <AnimatePresence initial={false}>
             {messages.map((msg, idx) => (
-              <motion.div 
+              <motion.div
                 key={idx}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -384,7 +384,7 @@ export default function AITutor() {
                 <div className={`flex flex-col gap-2 max-w-[80%] ${msg.role === "user" ? "items-end" : "items-start"}`}>
                   <div className={`p-4 rounded-2xl text-sm ${msg.role === "user" ? "bg-zinc-100 text-zinc-900 dark:bg-white/10 dark:text-white rounded-tr-none px-5 py-3 border border-zinc-200 dark:border-transparent" : "bg-white dark:bg-[#111116] text-zinc-800 dark:text-zinc-300 border border-zinc-200 dark:border-white/5 rounded-tl-none shadow-sm dark:shadow-md max-w-full overflow-hidden"}`}>
                     {msg.image && (
-                       <img src={msg.image} alt="Upload" className="max-w-full h-auto rounded-lg mb-3 border border-zinc-200 dark:border-white/10" style={{ maxHeight: "200px" }} />
+                      <img src={msg.image} alt="Upload" className="max-w-full h-auto rounded-lg mb-3 border border-zinc-200 dark:border-white/10" style={{ maxHeight: "200px" }} />
                     )}
                     <div className="space-y-3 leading-relaxed w-full overflow-x-auto font-sans">
                       <ReactMarkdown
@@ -407,13 +407,13 @@ export default function AITutor() {
                               </code>
                             );
                           },
-                          table: ({node, ...props}: any) => <div className="overflow-x-auto w-full"><table className="w-full text-left border-collapse my-4" {...props} /></div>,
-                          th: ({node, ...props}: any) => <th className="border-b border-zinc-200 dark:border-white/10 p-2 text-zinc-800 dark:text-zinc-300 font-semibold" {...props} />,
-                          td: ({node, ...props}: any) => <td className="border-b border-zinc-100 dark:border-white/5 p-2 text-zinc-600 dark:text-zinc-400" {...props} />,
-                          p: ({node, ...props}: any) => <p className="mb-2 last:mb-0" {...props} />,
-                          a: ({node, ...props}: any) => <a className="text-blue-600 dark:text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
-                          ul: ({node, ...props}: any) => <ul className="list-disc pl-5 my-2 space-y-1" {...props} />,
-                          ol: ({node, ...props}: any) => <ol className="list-decimal pl-5 my-2 space-y-1" {...props} />
+                          table: ({ node, ...props }: any) => <div className="overflow-x-auto w-full"><table className="w-full text-left border-collapse my-4" {...props} /></div>,
+                          th: ({ node, ...props }: any) => <th className="border-b border-zinc-200 dark:border-white/10 p-2 text-zinc-800 dark:text-zinc-300 font-semibold" {...props} />,
+                          td: ({ node, ...props }: any) => <td className="border-b border-zinc-100 dark:border-white/5 p-2 text-zinc-600 dark:text-zinc-400" {...props} />,
+                          p: ({ node, ...props }: any) => <p className="mb-2 last:mb-0" {...props} />,
+                          a: ({ node, ...props }: any) => <a className="text-blue-600 dark:text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
+                          ul: ({ node, ...props }: any) => <ul className="list-disc pl-5 my-2 space-y-1" {...props} />,
+                          ol: ({ node, ...props }: any) => <ol className="list-decimal pl-5 my-2 space-y-1" {...props} />
                         }}
                       >
                         {msg.content}
@@ -443,44 +443,44 @@ export default function AITutor() {
         <div className="p-4 border-t border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-black/50">
           <AnimatePresence>
             {selectedImage && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 10, height: 0 }} animate={{ opacity: 1, y: 0, height: "auto" }} exit={{ opacity: 0, y: 10, height: 0 }}
                 className="mb-3 relative inline-block"
               >
-                 <img src={selectedImage} alt="Preview" className="h-20 w-auto rounded-lg border border-zinc-200 dark:border-white/20 shadow-sm" />
-                 <button 
-                   onClick={() => setSelectedImage(null)} 
-                   className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow-lg transition-colors"
-                 >
-                   <X className="w-3 h-3" />
-                 </button>
+                <img src={selectedImage} alt="Preview" className="h-20 w-auto rounded-lg border border-zinc-200 dark:border-white/20 shadow-sm" />
+                <button
+                  onClick={() => setSelectedImage(null)}
+                  className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow-lg transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                </button>
               </motion.div>
             )}
           </AnimatePresence>
           <div className="flex gap-2">
-            <button 
+            <button
               onClick={() => fileInputRef.current?.click()}
               className="rounded-xl aspect-square w-12 flex items-center justify-center transition-colors border border-zinc-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-600 dark:text-white shrink-0"
               title="Upload Image"
             >
               <ImageIcon className="w-4 h-4" />
             </button>
-            <input 
-              type="file" 
-              accept="image/*" 
-              className="hidden" 
-              ref={fileInputRef} 
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              ref={fileInputRef}
               onChange={handleImageSelect}
             />
-            <button 
+            <button
               onClick={toggleListening}
               className={`rounded-xl aspect-square w-12 flex items-center justify-center transition-colors border border-zinc-200 dark:border-white/10 shrink-0 ${isListening ? "bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-500 border-red-200 dark:border-transparent" : "bg-white dark:bg-white/5 hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-600 dark:text-white"}`}
               title="Voice Dictation"
             >
               <Mic className="w-4 h-4" />
             </button>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => !isGenerating && e.key === 'Enter' && handleSend()}
@@ -489,14 +489,14 @@ export default function AITutor() {
               className={`flex-1 bg-white dark:bg-white/5 border rounded-xl px-4 py-3 text-sm text-zinc-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 transition-colors ${isListening ? "border-red-300 dark:border-red-500/50 bg-red-50 dark:bg-red-500/10 placeholder:text-red-400" : "border-zinc-200 dark:border-white/10 placeholder:text-zinc-400 dark:placeholder:text-zinc-500"}`}
             />
             {isGenerating ? (
-              <button 
+              <button
                 onClick={handleStop}
                 className="bg-red-100 dark:bg-red-600/20 hover:bg-red-200 dark:hover:bg-red-600/40 text-red-600 dark:text-red-500 rounded-xl aspect-square w-12 flex items-center justify-center transition-colors border border-red-200 dark:border-red-500/50"
               >
                 <Square className="w-4 h-4 fill-current" />
               </button>
             ) : (
-              <button 
+              <button
                 onClick={handleSend}
                 className="bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white rounded-xl aspect-square w-12 flex items-center justify-center transition-colors shadow-sm"
               >
@@ -509,25 +509,25 @@ export default function AITutor() {
 
       {/* Right: Dynamic Context Window */}
       <div className={`hidden md:flex flex-col justify-center items-center bg-zinc-50 dark:bg-black rounded-2xl border border-zinc-200 dark:border-white/10 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-100/50 dark:from-blue-900/10 via-zinc-50 dark:via-black to-zinc-50 dark:to-black overflow-hidden relative transition-all ${isFullscreen ? "h-2/3 w-full" : "w-1/2 h-full"}`}>
-         <button onClick={() => setIsFullscreen(!isFullscreen)} className="absolute top-4 right-4 z-10 p-2 bg-white dark:bg-white/10 hover:bg-zinc-100 dark:hover:bg-white/20 border border-zinc-200 dark:border-white/10 rounded-lg text-zinc-600 dark:text-white transition-colors shadow-sm dark:shadow-none">
-            {isFullscreen ? <Shrink className="w-4 h-4" /> : <Expand className="w-4 h-4" />}
-         </button>
-         
-         {activeAction === "permutation-view" ? (
-           <PermutationVisualizer />
-         ) : activeAction === "security-view" ? (
-           <SecurityVisualizer />
-         ) : activeAction === "state-view" ? (
-           <InteractiveStateGrid />
-         ) : (
-           <div className="text-center p-8">
-              <Bot className="w-16 h-16 text-zinc-300 dark:text-zinc-800 mx-auto mb-4" />
-              <h3 className="text-zinc-600 dark:text-zinc-500 font-medium">Visual Context Window</h3>
-              <p className="text-zinc-500 dark:text-zinc-600 text-sm mt-2 max-w-sm">When the AI identifies a cryptographic operation, live visualizations will render here dynamically based on the RAG pipeline commands.</p>
-           </div>
-         )}
+        <button onClick={() => setIsFullscreen(!isFullscreen)} className="absolute top-4 right-4 z-10 p-2 bg-white dark:bg-white/10 hover:bg-zinc-100 dark:hover:bg-white/20 border border-zinc-200 dark:border-white/10 rounded-lg text-zinc-600 dark:text-white transition-colors shadow-sm dark:shadow-none">
+          {isFullscreen ? <Shrink className="w-4 h-4" /> : <Expand className="w-4 h-4" />}
+        </button>
+
+        {activeAction === "permutation-view" ? (
+          <PermutationVisualizer />
+        ) : activeAction === "security-view" ? (
+          <SecurityVisualizer />
+        ) : activeAction === "state-view" ? (
+          <InteractiveStateGrid />
+        ) : (
+          <div className="text-center p-8">
+            <Bot className="w-16 h-16 text-zinc-300 dark:text-zinc-800 mx-auto mb-4" />
+            <h3 className="text-zinc-600 dark:text-zinc-500 font-medium">Visual Context Window</h3>
+            <p className="text-zinc-500 dark:text-zinc-600 text-sm mt-2 max-w-sm">When the AI identifies a cryptographic operation, live visualizations will render here dynamically based on the RAG pipeline commands.</p>
+          </div>
+        )}
       </div>
-      
+
     </div>
   );
 }

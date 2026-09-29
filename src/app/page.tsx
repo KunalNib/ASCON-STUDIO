@@ -91,7 +91,7 @@ export default function LandingPage() {
           transition={{ duration: 0.8, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
           className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl"
         >
-          <Link href="/learn" className="group rounded-xl p-[1px] bg-gradient-to-br from-purple-500 to-blue-600 transition-all hover:scale-[1.02] active:scale-[0.98]">
+          <Link href="/studio/learn" className="group rounded-xl p-[1px] bg-gradient-to-br from-purple-500 to-blue-600 transition-all hover:scale-[1.02] active:scale-[0.98]">
             <div className="flex items-center justify-center gap-2 px-8 py-4 bg-white/90 dark:bg-black/80 backdrop-blur-xl rounded-xl font-semibold w-full transition-colors group-hover:bg-white/70 dark:group-hover:bg-black/40 text-black dark:text-white">
               <Play className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               Start Learning
@@ -105,14 +105,14 @@ export default function LandingPage() {
             </div>
           </Link>
 
-          <Link href="/ai-tutor" className="group rounded-xl p-[1px] bg-black/5 dark:bg-white/5 transition-all hover:bg-black/10 dark:hover:bg-white/10 hover:scale-[1.02] active:scale-[0.98]">
+          <Link href="/studio/ai-tutor" className="group rounded-xl p-[1px] bg-black/5 dark:bg-white/5 transition-all hover:bg-black/10 dark:hover:bg-white/10 hover:scale-[1.02] active:scale-[0.98]">
             <div className="flex items-center justify-center gap-2 px-8 py-4 bg-transparent backdrop-blur-xl rounded-xl font-semibold w-full text-zinc-700 dark:text-zinc-300">
               <Bot className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               Talk to AI
             </div>
           </Link>
           
-          <Link href="/algorithm" className="group rounded-xl p-[1px] bg-black/5 dark:bg-white/5 transition-all hover:bg-black/10 dark:hover:bg-white/10 hover:scale-[1.02] active:scale-[0.98]">
+          <Link href="/studio/research" className="group rounded-xl p-[1px] bg-black/5 dark:bg-white/5 transition-all hover:bg-black/10 dark:hover:bg-white/10 hover:scale-[1.02] active:scale-[0.98]">
             <div className="flex items-center justify-center gap-2 px-8 py-4 bg-transparent backdrop-blur-xl rounded-xl font-semibold w-full text-zinc-700 dark:text-zinc-300">
               <ChevronRight className="w-5 h-5 text-zinc-500 dark:text-zinc-400 group-hover:translate-x-1 transition-transform" />
               Explore Algorithm
