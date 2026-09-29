@@ -77,11 +77,11 @@ export const LEARNING_CURRICULUM: LearningCourseCategory[] = [
         icon: Network,
         diagramType: "iot-hardware",
         sandboxType: null,
-        summary: "IoT microcontrollers have tiny microprocessors, just kilobytes of RAM, and coin-cell batteries that must last years. Traditional ciphers like AES drain their power in days.",
+        summary: "Smart devices like smart locks and health monitors have very little memory and tiny batteries. Older security methods like AES are too heavy and drain their power quickly. ASCON is designed to be lightweight and fast for these small devices.",
         analogy: {
           title: "The Semi-Truck vs. The Electric Scooter",
-          story: "Imagine delivering a small letter across a narrow footbridge. Traditional AES is like driving a massive 18-wheel semi-truck: it's incredibly secure, but it burns huge amounts of gas and gets stuck in tight spaces. ASCON is an electric scooter: agile, lightweight, yet carrying the same bulletproof locked briefcase.",
-          takeaway: "Cryptographic security should not come at the cost of killing a battery or overheating a microcontroller."
+          story: "Think of AES as a giant, heavy truck. It's very safe, but it uses a lot of gas and can't fit on small roads. ASCON is like a fast electric scooter. It easily travels on small roads, uses almost no energy, but still protects your package perfectly.",
+          takeaway: "Security shouldn't drain your battery or need huge amounts of memory."
         },
         technicalAnatomy: {
           heading: "Microcontroller Constraints (ESP32 / Cortex-M0)",
@@ -101,7 +101,7 @@ export const LEARNING_CURRICULUM: LearningCourseCategory[] = [
             "AES only works on Linux supercomputers"
           ],
           correctIndex: 1,
-          explanation: "Traditional AES requires table caches and substantial CPU cycles, quickly draining the batteries of tiny microcontrollers like smart locks or medical monitors."
+          explanation: "Older methods like AES need a lot of memory and processing power. This quickly drains the batteries of small devices."
         }
       },
       {
@@ -113,10 +113,10 @@ export const LEARNING_CURRICULUM: LearningCourseCategory[] = [
         icon: Binary,
         diagramType: "sponge",
         sandboxType: null,
-        summary: "ASCON uses a sponge architecture that maintains a 320-bit internal state divided into Rate (public window) and Capacity (hidden secret core).",
+        summary: "ASCON works like a sponge. It has two parts: an outer part that absorbs data, and an inner secret part that scrambles it to keep it safe.",
         analogy: {
           title: "Absorbing Spilled Water and Squeezing Out Lemonade",
-          story: "Think of a kitchen sponge. In the 'Absorb' phase, you dip it into liquid (your plaintext message), soaking the information into its porous interior. The cryptographic permutation is like squeezing and twisting the sponge in a blender. In the 'Squeeze' phase, you press the sponge to extract ciphertext and the authentication tag.",
+          story: "Just like a kitchen sponge, ASCON 'absorbs' your message. Then, it gets twisted and squeezed to output the scrambled secret message. The same sponge is used for everything without needing extra tools.",
           takeaway: "The same underlying sponge state handles absorbing headers, encrypting messages, and generating security tags without needing separate algorithms."
         },
         technicalAnatomy: {
@@ -137,7 +137,7 @@ export const LEARNING_CURRICULUM: LearningCourseCategory[] = [
             "It compresses images before encryption"
           ],
           correctIndex: 1,
-          explanation: "The Capacity remains shielded from outside observers, ensuring attackers cannot reconstruct the internal cipher state."
+          explanation: "The Capacity is the hidden inner core. Because attackers can't see it, it keeps the whole process secure."
         }
       },
       {
@@ -149,11 +149,11 @@ export const LEARNING_CURRICULUM: LearningCourseCategory[] = [
         icon: ShieldCheck,
         diagramType: "aead-pipeline",
         sandboxType: "aead-envelope",
-        summary: "Encryption alone is not enough: hackers can flip bits in transit. AEAD encrypts the secret message while generating a cryptographic tag that guarantees nothing was altered.",
+        summary: "AEAD does two things at once: it hides your message so nobody can read it (Encryption), and it adds a tamper-proof seal so you know nobody changed it (Authentication).",
         analogy: {
           title: "The Postal Envelope with an Indelible Seal",
-          story: "Imagine sending a letter. The recipient's mailing address on the outside is Associated Data (it must be readable by mail carriers). The letter inside is Plaintext (scrambled into Ciphertext so snoops can't read it). The wax seal on the back is the Authentication Tag. If a spy opens the envelope or alters the destination address, the wax seal shatters.",
-          takeaway: "AEAD protects confidentiality (hiding data) AND integrity (detecting any modification) in a single unified operation."
+          story: "Imagine sending a letter. The outside address (Associated Data) must be readable for the postman. The letter inside is scrambled so snoops can't read it. Finally, you put a wax seal on the envelope. If a spy tampers with the letter or the address, the seal breaks!",
+          takeaway: "AEAD protects confidentiality (hiding data) AND integrity (detecting any modification) in a single step."
         },
         technicalAnatomy: {
           heading: "AEAD Security Properties",
@@ -173,7 +173,7 @@ export const LEARNING_CURRICULUM: LearningCourseCategory[] = [
             "The sender's computer automatically restarts"
           ],
           correctIndex: 1,
-          explanation: "Even though Associated Data travels in plaintext, it is mathematically bound to the authentication tag. Any tampering invalidates the tag check."
+          explanation: "Even though the outside address is readable, it is linked to the wax seal. If anyone changes a single letter of the address, the seal breaks and the message is rejected."
         }
       },
       {
@@ -185,11 +185,11 @@ export const LEARNING_CURRICULUM: LearningCourseCategory[] = [
         icon: Key,
         diagramType: "symmetric-key",
         sandboxType: null,
-        summary: "ASCON is a symmetric cipher: sender and receiver share the same secret 128-bit key. A unique Nonce must be used for every single message to prevent pattern analysis.",
+        summary: "ASCON uses the same secret key to lock and unlock the message. But to be extra safe, it also uses a 'Nonce' — a unique stamp that must NEVER be used twice with the same key.",
         analogy: {
           title: "Twin Padlocks and Unique Date Stamps",
-          story: "You and your bank both own a copy of the same key. Every time you send a message, you also stamp a unique, never-repeated serial number (Nonce) on the box. Even if you send the exact same word 'HELLO' 100 times, each box looks completely different because the serial number scrambles the initial lock state.",
-          takeaway: "Never reuse a Nonce with the same key. Reusing a nonce breaks the cipher's mathematical guarantees."
+          story: "Imagine you and your friend have copies of the same key. Every time you send a locked box, you also put a unique serial number (the Nonce) on it. Even if you send the same message twice, the serial number makes the lock behave completely differently.",
+          takeaway: "Never reuse a Nonce with the same key. Reusing a nonce breaks the lock and lets hackers in."
         },
         technicalAnatomy: {
           heading: "Key and Nonce Sizing in ASCON-128",
@@ -209,7 +209,7 @@ export const LEARNING_CURRICULUM: LearningCourseCategory[] = [
             "It must always consist of only vowels"
           ],
           correctIndex: 1,
-          explanation: "Nonce stands for 'Number used ONCE'. Reusing a nonce with the same key breaks the security proofs of stream ciphers and AEAD schemes."
+          explanation: "Nonce means 'Number used ONCE'. Reusing it with the same key breaks the security and lets hackers read your messages."
         }
       }
     ]
