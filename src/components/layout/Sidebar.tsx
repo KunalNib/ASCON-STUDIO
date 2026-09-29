@@ -26,6 +26,7 @@ import { useSidebar } from "./SidebarContext";
 const NAV_ITEMS = [
   { group: "Studio", items: [
     { name: "Dashboard", href: "/studio", icon: LayoutDashboard },
+    { name: "Sensitive Data", href: "/studio/sensitive-data", icon: FileText },
     { name: "Learn", href: "/studio/learn", icon: BookOpen },
     { name: "Quiz Arena", href: "/studio/quiz", icon: Trophy },
   ]},
@@ -34,7 +35,6 @@ const NAV_ITEMS = [
     { name: "Decryption", href: "/studio/decryption", icon: Unlock },
     { name: "Permutation", href: "/studio/permutation", icon: RefreshCcw },
     { name: "320-bit State", href: "/studio/state", icon: Database },
-    { name: "3D Topology", href: "/studio/3d-view", icon: Box },
   ]},
   { group: "Analytics", items: [
     { name: "Performance", href: "/studio/performance", icon: Activity },

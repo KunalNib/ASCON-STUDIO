@@ -192,6 +192,9 @@ export function GuidedLaboratory() {
             let formatted = cleanReading.replace("Temperature:", "Temp:").replace("Humidity:", "Humid:");
             useAsconStore.setState((prev) => {
               let current = prev.plaintext || "";
+              const isDataset = current.length > 50 || current.includes("{") || current.includes("[");
+              if (isDataset) return prev; // Preserve user dataset, ignore incoming sensor data
+
               let temp = current.split(" | ").find((p) => p.startsWith("Temp:")) || "";
               let humid = current.split(" | ").find((p) => p.startsWith("Humid:")) || "";
               if (formatted.startsWith("Temp:")) temp = formatted;

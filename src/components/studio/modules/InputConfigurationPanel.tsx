@@ -3,7 +3,7 @@
 import { useAsconStore } from "@/store/useAsconStore";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useMemo } from "react";
-import { Key, Hash, Fingerprint, ChevronRight, Binary, Wifi, WifiOff } from "lucide-react";
+import { Key, Hash, Fingerprint, ChevronRight, Binary, Wifi, WifiOff, Database } from "lucide-react";
 
 type Scene = "text" | "bytes" | "params";
 
@@ -31,7 +31,7 @@ function toHexBlocks(text: string): string {
 }
 
 export function InputConfigurationPanel() {
-  const { session, plaintext } = useAsconStore();
+  const { session, plaintext, setPlaintext } = useAsconStore();
 
   // Live values from store — falls back to session values if plaintext state var is empty
   const livePlaintext    = (plaintext || session?.plaintext || "27.4 °C").trim();
@@ -41,7 +41,11 @@ export function InputConfigurationPanel() {
   const liveDevice       = session?.deviceId       || "ESP32-01";
 
   // Derived character items — recomputed whenever plaintext changes
-  const charItems = useMemo(() => buildCharItems(livePlaintext), [livePlaintext]);
+  const isCustomDataset = (plaintext && plaintext !== "27.4 °C") && (livePlaintext.includes("{") || livePlaintext.includes("[") || livePlaintext.length > 50);
+  // Truncate massively long strings so the UI doesn't freeze rendering 10,000 character blocks
+  const displayPlaintext = (isCustomDataset && livePlaintext.length > 32) ? livePlaintext.slice(0, 32) + "..." : livePlaintext;
+  
+  const charItems = useMemo(() => buildCharItems(displayPlaintext), [displayPlaintext]);
 
   const [scene, setScene] = useState<Scene>("text");
   const [typedCount, setTypedCount] = useState(0);
@@ -79,15 +83,27 @@ export function InputConfigurationPanel() {
     <div className="w-full h-full flex flex-col items-center justify-start p-4 md:p-6 max-w-4xl mx-auto gap-4 overflow-y-auto custom-scrollbar">
 
       {/* Live source badge */}
-      <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-bold shrink-0 ${
-        isLive
-          ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
-          : "bg-zinc-100 dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-500"
-      }`}>
-        {isLive
-          ? <><Wifi className="w-3 h-3" /> Live ESP32 data — {liveDevice}</>
-          : <><WifiOff className="w-3 h-3" /> Demo fallback — connect ESP32 for live data</>
-        }
+      <div className="flex flex-col items-center gap-2 shrink-0">
+        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-bold ${
+          isLive
+            ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
+            : "bg-zinc-100 dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-500"
+        }`}>
+          {isCustomDataset
+            ? <><Database className="w-3 h-3" /> Custom Dataset Processed via ASCON</>
+            : isLive
+              ? <><Wifi className="w-3 h-3" /> Live ESP32 data — {liveDevice}</>
+              : <><WifiOff className="w-3 h-3" /> Demo fallback — connect ESP32 for live data</>
+          }
+        </div>
+        {isCustomDataset && (
+          <button 
+            onClick={() => setPlaintext("27.4 °C")}
+            className="text-[10px] uppercase font-bold tracking-widest text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+          >
+            Switch back to Sensor Stream
+          </button>
+        )}
       </div>
 
       {/* Scene Tabs */}
@@ -127,11 +143,11 @@ export function InputConfigurationPanel() {
           >
             <div className="text-center">
               <p className="text-zinc-500 text-xs uppercase tracking-widest font-bold mb-2">
-                Sensor reading arriving from {liveDevice}
+                {isCustomDataset ? "Reading from user dataset (showing preview)" : `Sensor reading arriving from ${liveDevice}`}
               </p>
               <div className="flex items-center justify-center gap-1 min-h-[72px]">
                 <span className="text-5xl font-black text-zinc-900 dark:text-white font-mono tracking-widest drop-shadow-md dark:drop-shadow-[0_0_30px_rgba(255,255,255,0.15)]">
-                  {Array.from(livePlaintext).slice(0, typedCount).join("")}
+                  {Array.from(displayPlaintext).slice(0, typedCount).join("")}
                 </span>
                 <motion.span
                   animate={{ opacity: [1, 0, 1] }}

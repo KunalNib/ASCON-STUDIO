@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Activity, ShieldCheck, Zap, Cpu, Battery, Gauge, FileText, Thermometer, Droplets } from "lucide-react";
+import { Activity, ShieldCheck, Zap, Cpu, Battery, Gauge, FileText, Thermometer, Droplets, Database } from "lucide-react";
 import Link from "next/link";
 import { useAsconStore } from "@/store/useAsconStore";
 import { useEffect, useState } from "react";
@@ -76,13 +76,31 @@ export default function StudioDashboard() {
     };
   }, [setHardwareConnected]);
   // Parse sensor data if available
-  let temperature = session.plaintext || "Empty";
-  let humidity = "N/A";
+  const isCustomDataset = (session.plaintext && session.plaintext !== "27.4 °C") && 
+                          (session.plaintext.includes("{") || session.plaintext.includes("[") || session.plaintext.length > 50);
+
+  let primaryLabel = "Temperature";
+  let primaryValue = session.plaintext || "Empty";
+  let primaryIcon = Thermometer;
   
-  if (session.plaintext && session.plaintext.includes("Temp:")) {
+  let secondaryLabel = "Humidity";
+  let secondaryValue = "N/A";
+  let secondaryIcon = Droplets;
+
+  if (isCustomDataset) {
+    primaryLabel = "Data Source";
+    primaryValue = (session.plaintext.trim().startsWith("{") || session.plaintext.trim().startsWith("[")) ? "JSON Dataset" : "Custom Dataset";
+    primaryIcon = FileText;
+    
+    secondaryLabel = "Payload Size";
+    secondaryValue = `${session.plaintext.length} Bytes`;
+    secondaryIcon = Database;
+  } else if (session.plaintext && session.plaintext.includes("Temp:")) {
     const parts = session.plaintext.split(" | ");
-    temperature = parts.find(p => p.startsWith("Temp:"))?.replace("Temp: ", "") || "N/A";
-    humidity = parts.find(p => p.startsWith("Humid:"))?.replace("Humid: ", "") || "N/A";
+    primaryValue = parts.find(p => p.startsWith("Temp:"))?.replace("Temp: ", "") || "N/A";
+    secondaryValue = parts.find(p => p.startsWith("Humid:"))?.replace("Humid: ", "") || "N/A";
+  } else if (!isCustomDataset) {
+    primaryValue = session.plaintext || "N/A";
   }
 
   return (
@@ -103,8 +121,8 @@ export default function StudioDashboard() {
             icon: Cpu, 
             color: isHardwareConnected ? "text-emerald-500 dark:text-emerald-400" : "text-red-500 dark:text-red-400" 
           },
-          { label: "Temperature", value: temperature, icon: Thermometer, color: "text-red-500 dark:text-red-400" },
-          { label: "Humidity", value: humidity, icon: Droplets, color: "text-blue-400 dark:text-blue-300" },
+          { label: primaryLabel, value: primaryValue, icon: primaryIcon, color: "text-red-500 dark:text-red-400" },
+          { label: secondaryLabel, value: secondaryValue, icon: secondaryIcon, color: "text-blue-400 dark:text-blue-300" },
           { label: "Hardware FPS", value: isHardwareConnected ? metrics.fps.toFixed(1) : "0.0", icon: Activity, color: "text-cyan-500 dark:text-cyan-400" },
           { label: "Latency (End-to-End)", value: isHardwareConnected ? `${metrics.latency.toFixed(2)} ms` : "0.00 ms", icon: Gauge, color: "text-orange-500 dark:text-orange-400" },
           { label: "MCU Cycles", value: isHardwareConnected ? `${metrics.cpuCycles} / op` : "0 / op", icon: Cpu, color: "text-purple-500 dark:text-purple-400" },
