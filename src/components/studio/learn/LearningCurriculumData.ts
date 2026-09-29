@@ -52,6 +52,9 @@ export interface LearningCourseCategory {
   level: "Beginner" | "Intermediate" | "Advanced" | "Expert";
   title: string;
   description: string;
+  schedule?: string;
+  targetTimeline?: string;
+  standardDate?: string;
   lessons: LearningLesson[];
 }
 
@@ -61,6 +64,9 @@ export const LEARNING_CURRICULUM: LearningCourseCategory[] = [
     level: "Beginner",
     title: "Lightweight Cryptography Fundamentals",
     description: "Start from zero: understand why IoT needs lightweight crypto and how ASCON protects smart devices.",
+    schedule: "Phase 1 · Foundation Stage",
+    targetTimeline: "14 Mins Total · 4 Lessons",
+    standardDate: "NIST SP 800-232 Finalized",
     lessons: [
       {
         id: "iot-problem",
@@ -213,6 +219,9 @@ export const LEARNING_CURRICULUM: LearningCourseCategory[] = [
     level: "Intermediate",
     title: "The 320-Bit State & Permutation",
     description: "Explore the internal architecture: 5 word lanes, bitsliced design, and the zero-trust decryption gate.",
+    schedule: "Phase 2 · State & Permutations",
+    targetTimeline: "10 Mins Total · 2 Lessons",
+    standardDate: "320-Bit Bit-Sliced Architecture",
     lessons: [
       {
         id: "state-matrix-structure",
@@ -294,6 +303,9 @@ export const LEARNING_CURRICULUM: LearningCourseCategory[] = [
     level: "Advanced",
     title: "Permutation Math & Cryptanalysis",
     description: "Deep dive into the 3 round layers: Constant Addition (p_C), 5-bit S-Box (p_S), and Linear Diffusion (p_L).",
+    schedule: "Phase 3 · Cryptographic Layers",
+    targetTimeline: "11 Mins Total · 2 Lessons",
+    standardDate: "p_C, p_S, p_L Scramblers",
     lessons: [
       {
         id: "round-permutation",
@@ -375,6 +387,9 @@ export const LEARNING_CURRICULUM: LearningCourseCategory[] = [
     level: "Expert",
     title: "Security Proofs & Cryptanalysis",
     description: "Evaluate the Strict Avalanche Criterion (SAC), differential trails, and active security against attacks.",
+    schedule: "Phase 4 · Cryptanalysis & SAC",
+    targetTimeline: "6 Mins Total · 1 Lesson",
+    standardDate: "Strict Avalanche Proofs",
     lessons: [
       {
         id: "avalanche-criterion",
