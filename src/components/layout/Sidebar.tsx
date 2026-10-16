@@ -17,7 +17,8 @@ import {
   FileText, 
   Settings,
   Box,
-  Trophy
+  Trophy,
+  Hash
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -35,6 +36,7 @@ const NAV_ITEMS = [
     { name: "Decryption", href: "/studio/decryption", icon: Unlock },
     { name: "Permutation", href: "/studio/permutation", icon: RefreshCcw },
     { name: "320-bit State", href: "/studio/state", icon: Database },
+    { name: "ASCON-Hash", href: "/studio/hash", icon: Hash },
   ]},
   { group: "Analytics", items: [
     { name: "Performance", href: "/studio/performance", icon: Activity },

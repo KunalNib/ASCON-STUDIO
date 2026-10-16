@@ -1,18 +1,19 @@
 "use client";
 
 import { useAsconStore } from "@/store/useAsconStore";
-import { Lock, PanelLeftClose, PanelLeft, Zap, Trophy } from "lucide-react";
+import { Lock, PanelLeftClose, PanelLeft, Zap, Trophy, ShieldCheck, Hash, ArrowRight } from "lucide-react";
 import { GuidedLaboratory } from "@/components/studio/modules/GuidedLaboratory";
 import { LearningTimeline } from "@/components/studio/LearningTimeline";
 import { STEP_CHALLENGES } from "@/components/studio/StepChallenge";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 const MAX_ENCRYPTION_XP = 900;
 
 export default function EncryptionModule() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const { encryptionXp, completedSteps } = useAsconStore();
+  const { encryptionXp, completedSteps, selectedAlgorithm, setSelectedAlgorithm } = useAsconStore();
 
   const completedCount = completedSteps.filter(
     (s) => STEP_CHALLENGES[s] !== undefined
@@ -23,6 +24,32 @@ export default function EncryptionModule() {
 
   return (
     <div className="px-3 pt-3 pb-2 w-full mx-auto flex flex-col h-[calc(100vh-3.5rem)] gap-2">
+
+      {/* Hash Notice Banner if Hash is active */}
+      {selectedAlgorithm === "ASCON-Hash" && (
+        <div className="shrink-0 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl px-4 py-2 flex items-center justify-between text-xs text-emerald-800 dark:text-emerald-300">
+          <div className="flex items-center gap-2">
+            <Hash className="w-4 h-4 text-emerald-500" />
+            <span>
+              <strong>ASCON-Hash is currently selected:</strong> This module demonstrates Authenticated Encryption (AEAD). Switch to ASCON-128 / ASCON-128a or visit the dedicated Hash Lab.
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSelectedAlgorithm("ASCON-128")}
+              className="px-2.5 py-1 font-bold bg-white dark:bg-black/40 border border-emerald-500/40 rounded-lg hover:bg-emerald-50 transition-colors"
+            >
+              Use ASCON-128
+            </button>
+            <Link
+              href="/studio/hash"
+              className="px-2.5 py-1 font-bold bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors flex items-center gap-1"
+            >
+              Open Hash Lab <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* ── Mission Banner ── */}
       <div
@@ -68,18 +95,61 @@ export default function EncryptionModule() {
         </div>
       </div>
 
-      {/* ── Compact header ── */}
-      <header className="flex items-center gap-3 shrink-0 px-1">
-        <button
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="p-1.5 bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 border border-zinc-200 dark:border-white/10 rounded-lg text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all hidden md:flex items-center justify-center"
-          title={isSidebarOpen ? "Collapse Timeline" : "Expand Timeline"}
-        >
-          {isSidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeft className="w-4 h-4" />}
-        </button>
-        <Lock className="w-4 h-4 text-blue-600 dark:text-blue-500 shrink-0" />
-        <h1 className="text-sm font-bold tracking-tight text-zinc-900 dark:text-white">Interactive Execution Laboratory</h1>
-        <span className="text-zinc-500 dark:text-zinc-600 text-xs hidden lg:inline">— ASCON step-by-step walkthrough</span>
+      {/* ── Header with Algorithm Selector ── */}
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 shrink-0 px-1">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="p-1.5 bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 border border-zinc-200 dark:border-white/10 rounded-lg text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all hidden md:flex items-center justify-center"
+            title={isSidebarOpen ? "Collapse Timeline" : "Expand Timeline"}
+          >
+            {isSidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeft className="w-4 h-4" />}
+          </button>
+          <Lock className="w-4 h-4 text-blue-600 dark:text-blue-500 shrink-0" />
+          <h1 className="text-sm font-bold tracking-tight text-zinc-900 dark:text-white">
+            Interactive AEAD Execution Laboratory
+          </h1>
+          <span className="text-zinc-500 dark:text-zinc-600 text-xs hidden lg:inline">
+            — Authenticated Encryption Pipeline
+          </span>
+        </div>
+
+        {/* Algorithm Switcher Pills */}
+        <div className="flex items-center gap-1.5 bg-zinc-100/70 dark:bg-white/5 p-1 rounded-xl border border-zinc-200 dark:border-white/10">
+          <button
+            onClick={() => setSelectedAlgorithm("ASCON-128")}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+              selectedAlgorithm === "ASCON-128"
+                ? "bg-white dark:bg-purple-600 text-purple-700 dark:text-white shadow-sm border border-purple-200 dark:border-purple-500"
+                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+            }`}
+          >
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>ASCON-128</span>
+            <span className="text-[10px] opacity-70">(64b rate)</span>
+          </button>
+
+          <button
+            onClick={() => setSelectedAlgorithm("ASCON-128a")}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+              selectedAlgorithm === "ASCON-128a"
+                ? "bg-white dark:bg-blue-600 text-blue-700 dark:text-white shadow-sm border border-blue-200 dark:border-blue-500"
+                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+            }`}
+          >
+            <Zap className="w-3.5 h-3.5" />
+            <span>ASCON-128a</span>
+            <span className="text-[10px] opacity-70">(128b rate)</span>
+          </button>
+
+          <Link
+            href="/studio/hash"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+          >
+            <Hash className="w-3.5 h-3.5" />
+            <span>ASCON-Hash</span>
+          </Link>
+        </div>
       </header>
 
       {/* ── Main layout ── */}

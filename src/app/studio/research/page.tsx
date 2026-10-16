@@ -2,12 +2,28 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, Search, ShieldAlert, GitBranch, History, ChevronRight } from "lucide-react";
+import { 
+  BookOpen, 
+  Search, 
+  ShieldAlert, 
+  GitBranch, 
+  History, 
+  ExternalLink,
+  Sparkles,
+  ArrowRight,
+  Layers,
+  Cpu
+} from "lucide-react";
+import { AsconAlgorithm, ALGORITHM_REGISTRY } from "@/lib/ascon";
+import { AlgorithmModal } from "@/components/studio/research/AlgorithmModal";
+import { useAsconStore } from "@/store/useAsconStore";
+import { useRouter } from "next/navigation";
 
 type TabId = "variants" | "journey" | "security";
 
 export default function ResearchModule() {
   const [activeTab, setActiveTab] = useState<TabId>("variants");
+  const [selectedModalAlgo, setSelectedModalAlgo] = useState<AsconAlgorithm | null>(null);
 
   const tabs: { id: TabId; label: string; icon: any }[] = [
     { id: "variants", label: "ASCON Variants", icon: GitBranch },
@@ -24,11 +40,11 @@ export default function ResearchModule() {
             <BookOpen className="w-8 h-8 text-purple-600 dark:text-purple-500" /> Research Library
           </h1>
           <p className="text-zinc-600 dark:text-zinc-400">
-            Deep dive into the academic foundations of ASCON cryptography.
+            Deep dive into the academic foundations, specifications, and variants of ASCON lightweight cryptography.
           </p>
         </div>
         
-        {/* Mock Search */}
+        {/* Search */}
         <div className="relative group w-full md:w-72">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search className="w-4 h-4 text-zinc-400 dark:text-zinc-500 group-focus-within:text-purple-600 dark:group-focus-within:text-purple-400 transition-colors" />
@@ -69,37 +85,57 @@ export default function ResearchModule() {
 
       {/* Content Area */}
       <div className="flex-1 bg-white dark:bg-[#09090b] border border-zinc-200 dark:border-white/10 rounded-2xl p-6 md:p-8 overflow-y-auto shadow-sm dark:shadow-2xl relative">
-        {/* Subtle background glow */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-purple-100/50 dark:from-purple-900/10 via-transparent to-transparent pointer-events-none" />
 
         <AnimatePresence mode="wait">
-          {activeTab === "variants" && <VariantsContent key="variants" />}
+          {activeTab === "variants" && (
+            <VariantsContent 
+              key="variants" 
+              onSelectVariant={(algo) => setSelectedModalAlgo(algo)} 
+            />
+          )}
           {activeTab === "journey" && <JourneyContent key="journey" />}
           {activeTab === "security" && <SecurityContent key="security" />}
         </AnimatePresence>
       </div>
+
+      {/* Interactive Modal when clicking any variant */}
+      <AnimatePresence>
+        {selectedModalAlgo && (
+          <AlgorithmModal
+            algorithm={selectedModalAlgo}
+            onClose={() => setSelectedModalAlgo(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
-function VariantsContent() {
-  const variants = [
+function VariantsContent({ onSelectVariant }: { onSelectVariant: (algo: AsconAlgorithm) => void }) {
+  const router = useRouter();
+  const { selectedAlgorithm, setSelectedAlgorithm } = useAsconStore();
+
+  const variantList: { id: AsconAlgorithm; name: string; primary: boolean; desc: string; specs: any }[] = [
     {
+      id: "ASCON-128",
       name: "ASCON-128",
       primary: true,
-      desc: "The primary standard for lightweight AEAD. Highly optimized for constrained environments.",
+      desc: "The primary standard for lightweight AEAD. Highly optimized for constrained environments (RFID, IoT, smart cards).",
       specs: { rate: "64 bits", capacity: "256 bits", rounds: "a=12, b=6", security: "128-bit" }
     },
     {
+      id: "ASCON-128a",
       name: "ASCON-128a",
       primary: false,
-      desc: "An accelerated variant optimized for high throughput on systems with slightly more resources.",
+      desc: "An accelerated variant with 128-bit rate, absorbing twice as much data per permutation call for maximum throughput.",
       specs: { rate: "128 bits", capacity: "192 bits", rounds: "a=12, b=8", security: "128-bit" }
     },
     {
+      id: "ASCON-Hash",
       name: "ASCON-Hash",
       primary: false,
-      desc: "The companion hashing algorithm utilizing the same core permutation as the AEAD cipher.",
+      desc: "The companion cryptographic hashing algorithm utilizing the same 320-bit core permutation as the AEAD cipher.",
       specs: { rate: "64 bits", capacity: "256 bits", rounds: "a=12, b=12", security: "256-bit hash" }
     }
   ];
@@ -111,35 +147,97 @@ function VariantsContent() {
       exit={{ opacity: 0, y: -10 }}
       className="space-y-8 relative z-10"
     >
-      <div>
-        <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Algorithm Variants</h2>
-        <p className="text-zinc-600 dark:text-zinc-400 max-w-3xl leading-relaxed">
-          The ASCON suite consists of several variants, all built upon the same 320-bit permutation structure. 
-          By adjusting the <i>rate</i> and <i>capacity</i> boundaries within the sponge construction, the algorithms trade off between throughput and security margins.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Algorithm Variants</h2>
+          <p className="text-zinc-600 dark:text-zinc-400 max-w-3xl leading-relaxed text-sm">
+            The ASCON suite consists of several standardized variants, all built upon the same 320-bit permutation structure. 
+            Click on any variant card to open its interactive inspection laboratory and live execution runner.
+          </p>
+        </div>
+
+        <div className="px-3.5 py-2 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-700 dark:text-purple-300 text-xs font-semibold flex items-center gap-2 shrink-0">
+          <Sparkles className="w-4 h-4 text-purple-500" />
+          Active: <span className="font-mono font-bold">{selectedAlgorithm}</span>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {variants.map((v) => (
-          <div key={v.name} className="bg-zinc-50 dark:bg-black/50 border border-zinc-200 dark:border-white/10 rounded-xl p-6 hover:border-purple-300 dark:hover:border-purple-500/30 transition-colors group">
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-xl font-bold text-zinc-900 dark:text-white">{v.name}</h3>
-              {v.primary && (
-                <span className="px-2 py-1 text-xs font-semibold bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 rounded border border-purple-200 dark:border-purple-500/30">Primary</span>
-              )}
-            </div>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6 min-h-[60px]">{v.desc}</p>
-            
-            <div className="space-y-3">
-              {Object.entries(v.specs).map(([key, val]) => (
-                <div key={key} className="flex justify-between items-center text-sm border-b border-zinc-200 dark:border-white/5 pb-2 last:border-0 last:pb-0">
-                  <span className="text-zinc-500 capitalize">{key}</span>
-                  <span className="text-zinc-800 dark:text-zinc-200 font-mono">{val}</span>
+        {variantList.map((v) => {
+          const isSelected = selectedAlgorithm === v.id;
+          return (
+            <div 
+              key={v.id} 
+              onClick={() => onSelectVariant(v.id)}
+              className={`relative bg-zinc-50 dark:bg-black/50 border rounded-2xl p-6 transition-all duration-200 cursor-pointer group flex flex-col justify-between hover:shadow-xl ${
+                isSelected 
+                  ? "border-purple-500/60 ring-2 ring-purple-500/20 shadow-purple-500/5 bg-purple-500/[0.02]" 
+                  : "border-zinc-200 dark:border-white/10 hover:border-purple-300 dark:hover:border-purple-500/40"
+              }`}
+            >
+              {/* Card Header */}
+              <div>
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-bold text-zinc-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                      {v.name}
+                    </h3>
+                  </div>
+                  
+                  <div className="flex items-center gap-1.5">
+                    {v.primary && (
+                      <span className="px-2 py-0.5 text-[10px] font-bold bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 rounded-full border border-purple-200 dark:border-purple-500/30">
+                        Primary
+                      </span>
+                    )}
+                    {isSelected && (
+                      <span className="px-2 py-0.5 text-[10px] font-bold bg-yellow-100 dark:bg-yellow-500/20 text-yellow-800 dark:text-yellow-300 rounded-full border border-yellow-200 dark:border-yellow-500/30 flex items-center gap-1">
+                        Active
+                      </span>
+                    )}
+                  </div>
                 </div>
-              ))}
+
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-6 min-h-[48px] leading-relaxed">
+                  {v.desc}
+                </p>
+                
+                {/* Specs List */}
+                <div className="space-y-2.5 mb-6">
+                  {Object.entries(v.specs).map(([key, val]) => (
+                    <div key={key} className="flex justify-between items-center text-xs border-b border-zinc-200 dark:border-white/5 pb-2 last:border-0 last:pb-0">
+                      <span className="text-zinc-500 capitalize">{key}</span>
+                      <span className="text-zinc-800 dark:text-zinc-200 font-mono font-semibold">{val as string}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Card Footer Actions */}
+              <div className="pt-4 border-t border-zinc-200 dark:border-white/5 flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-purple-600 dark:text-purple-400 group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
+                  Click to Open <ArrowRight className="w-3.5 h-3.5" />
+                </span>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedAlgorithm(v.id);
+                    if (v.id === "ASCON-Hash") {
+                      router.push("/studio/hash");
+                    } else {
+                      router.push("/studio/encryption");
+                    }
+                  }}
+                  className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-zinc-200/70 hover:bg-zinc-300 dark:bg-white/10 dark:hover:bg-white/20 text-zinc-800 dark:text-white transition-colors"
+                >
+                  Launch Lab
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </motion.div>
   );
@@ -162,13 +260,12 @@ function JourneyContent() {
     >
       <div>
         <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">The Road to Standardization</h2>
-        <p className="text-zinc-600 dark:text-zinc-400 max-w-3xl leading-relaxed">
+        <p className="text-zinc-600 dark:text-zinc-400 max-w-3xl leading-relaxed text-sm">
           ASCON wasn't built in a day. Its selection by the National Institute of Standards and Technology (NIST) was the culmination of a rigorous 5-year public competition.
         </p>
       </div>
 
       <div className="relative pl-4 md:pl-0">
-        {/* Vertical Line */}
         <div className="absolute left-[15px] md:left-1/2 top-0 bottom-0 w-px bg-zinc-200 dark:bg-white/10 md:-translate-x-1/2" />
         
         <div className="space-y-12">
@@ -176,11 +273,8 @@ function JourneyContent() {
             const isEven = idx % 2 === 0;
             return (
               <div key={item.year} className={`relative flex flex-col md:flex-row ${isEven ? "md:flex-row-reverse" : ""} items-start md:items-center gap-8`}>
-                
-                {/* Timeline Dot */}
                 <div className="absolute left-[15px] md:left-1/2 w-4 h-4 rounded-full bg-white dark:bg-[#09090b] border-2 border-purple-500 transform -translate-x-[7px] md:-translate-x-1/2 mt-1 md:mt-0 z-10" />
                 
-                {/* Content */}
                 <div className={`w-full md:w-1/2 pl-12 md:pl-0 ${isEven ? "md:pr-16 md:text-right" : "md:pl-16"}`}>
                   <span className="text-purple-600 dark:text-purple-400 font-mono font-bold text-lg mb-1 block">{item.year}</span>
                   <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">{item.title}</h3>
@@ -205,7 +299,7 @@ function SecurityContent() {
     >
       <div>
         <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Cryptanalysis & Security</h2>
-        <p className="text-zinc-600 dark:text-zinc-400 max-w-3xl leading-relaxed">
+        <p className="text-zinc-600 dark:text-zinc-400 max-w-3xl leading-relaxed text-sm">
           ASCON provides a robust 128-bit security level against key recovery, forgery, and state recovery attacks. Its design inherently mitigates several classes of advanced cryptanalysis.
         </p>
       </div>

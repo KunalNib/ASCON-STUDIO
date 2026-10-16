@@ -12,6 +12,7 @@ from rag import AssistantRAG
 import models
 import database
 import auth
+import ascon
 
 class ConnectionManager:
     def __init__(self):
@@ -226,7 +227,81 @@ def submit_quiz(submission: QuizSubmit, db: Database = Depends(database.get_db))
 
 @app.get("/")
 def health_check():
-    return {"status": "ASCON Backend is running"}
+    return {"status": "ASCON Backend is running", "supported_algorithms": ["ASCON-128", "ASCON-128a", "ASCON-Hash"]}
+
+class CryptoEncryptRequest(BaseModel):
+    variant: str = "Ascon-128" # "Ascon-128" or "Ascon-128a"
+    key: str
+    nonce: str
+    associated_data: str = ""
+    plaintext: str
+
+class CryptoDecryptRequest(BaseModel):
+    variant: str = "Ascon-128"
+    key: str
+    nonce: str
+    associated_data: str = ""
+    ciphertext: str
+    tag: str
+
+class CryptoHashRequest(BaseModel):
+    message: str
+
+@app.post("/api/crypto/encrypt")
+def api_encrypt(req: CryptoEncryptRequest):
+    try:
+        key_bytes = bytes.fromhex(req.key.replace(" ", ""))
+        nonce_bytes = bytes.fromhex(req.nonce.replace(" ", ""))
+        ad_bytes = req.associated_data.encode("utf-8")
+        pt_bytes = req.plaintext.encode("utf-8")
+        variant = "Ascon-128a" if "128a" in req.variant.lower() else "Ascon-128"
+        
+        ct = ascon.encrypt(key_bytes, nonce_bytes, ad_bytes, pt_bytes, variant=variant)
+        ciphertext = ct[:-16].hex(" ").upper()
+        tag = ct[-16:].hex(" ").upper()
+        return {
+            "variant": variant,
+            "ciphertext": ciphertext,
+            "tag": tag,
+            "success": True
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/crypto/decrypt")
+def api_decrypt(req: CryptoDecryptRequest):
+    try:
+        key_bytes = bytes.fromhex(req.key.replace(" ", ""))
+        nonce_bytes = bytes.fromhex(req.nonce.replace(" ", ""))
+        ad_bytes = req.associated_data.encode("utf-8")
+        ct_bytes = bytes.fromhex(req.ciphertext.replace(" ", ""))
+        tag_bytes = bytes.fromhex(req.tag.replace(" ", ""))
+        variant = "Ascon-128a" if "128a" in req.variant.lower() else "Ascon-128"
+        
+        pt = ascon.decrypt(key_bytes, nonce_bytes, ad_bytes, ct_bytes + tag_bytes, variant=variant)
+        if pt is None:
+            return {"success": False, "verified": False, "detail": "Tag verification failed"}
+        return {
+            "variant": variant,
+            "verified": True,
+            "plaintext": pt.decode("utf-8", errors="replace"),
+            "success": True
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/crypto/hash")
+def api_hash(req: CryptoHashRequest):
+    try:
+        msg_bytes = req.message.encode("utf-8")
+        digest = ascon.hash(msg_bytes, variant="Ascon-Hash")
+        return {
+            "variant": "Ascon-Hash",
+            "digest": digest.hex(" ").upper(),
+            "success": True
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 class HardwareData(BaseModel):
     power: float

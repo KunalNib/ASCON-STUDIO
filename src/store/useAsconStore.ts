@@ -1,6 +1,14 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { Ascon128 } from "@/lib/ascon";
+import { 
+  Ascon128, 
+  Ascon128a, 
+  AsconHash, 
+  AsconSuite, 
+  AsconAlgorithm, 
+  ALGORITHM_REGISTRY,
+  AlgorithmMetadata 
+} from "@/lib/ascon";
 
 // The 5 Beginner-Friendly Narrative Steps
 export type NarrativeStep = 
@@ -73,6 +81,17 @@ export interface ExecutionSession {
 interface AsconState {
   session: ExecutionSession;
   
+  // ── Multi-Algorithm Selection ──
+  selectedAlgorithm: AsconAlgorithm;
+  setSelectedAlgorithm: (algo: AsconAlgorithm) => void;
+  getAlgorithmMetadata: () => AlgorithmMetadata;
+
+  // ── ASCON-Hash State ──
+  hashInput: string;
+  hashResult: ReturnType<typeof AsconHash.hash>;
+  setHashInput: (val: string) => void;
+  runHash: () => void;
+
   // Navigation
   steps: NarrativeStep[];
   currentStepIndex: number;
@@ -165,15 +184,15 @@ interface AsconState {
   setToken: (token: string | null) => void;
 }
 
-// Default parameters matching ASCON-128 specification
+// Default parameters matching ASCON specification
 const DEFAULT_DEMO_KEY = "000102030405060708090A0B0C0D0E0F";
 const DEFAULT_DEMO_NONCE = "000102030405060708090A0B0C0D0E0F";
 const DEFAULT_DEMO_AD = "ESP32-STATION-1";
 const DEFAULT_DEMO_PT = "27.4 °C";
 
-function runAsconEncryption(k: string, n: string, ad: string, pt: string) {
+function runAsconEncryption(k: string, n: string, ad: string, pt: string, algo: AsconAlgorithm = "ASCON-128") {
   try {
-    const enc = Ascon128.encryptAEAD(k, n, ad, pt);
+    const enc = AsconSuite.encrypt(algo === "ASCON-Hash" ? "ASCON-128" : algo, k, n, ad, pt);
     const ptBytes = Array.from(new TextEncoder().encode(pt))
       .map((b) => b.toString(16).toUpperCase().padStart(2, "0"))
       .join(" ");
@@ -187,16 +206,16 @@ function runAsconEncryption(k: string, n: string, ad: string, pt: string) {
     console.error("Encryption error:", e);
     return {
       ciphertext: "04 C4 2F 82 A8 7B EF A3",
-      authenticationTag: "FC 6F BB FA DF F5 56 79 7C 62 51 71 F5 67 71 88",
+      authenticationTag: "6B 4B BC B6 D4 61 E8 C4 39 DF 2F 20 69 4D 80 18",
       initialState: ["80400C0600000000", "0001020304050607", "08090A0B0C0D0E0F", "0001020304050607", "08090A0B0C0D0E0F"],
       plaintextBytes: "32 37 2E 34 20 C2 B0 43",
     };
   }
 }
 
-// Generate the initial deterministic session matching real ASCON-128
-const initialDemoSession = (): ExecutionSession => {
-  const enc = runAsconEncryption(DEFAULT_DEMO_KEY, DEFAULT_DEMO_NONCE, DEFAULT_DEMO_AD, DEFAULT_DEMO_PT);
+// Generate the initial deterministic session matching real ASCON
+const initialDemoSession = (algo: AsconAlgorithm = "ASCON-128"): ExecutionSession => {
+  const enc = runAsconEncryption(DEFAULT_DEMO_KEY, DEFAULT_DEMO_NONCE, DEFAULT_DEMO_AD, DEFAULT_DEMO_PT, algo);
   return {
     sessionId: "DEMO-EXEC-001",
     deviceId: "ESP32-01",
@@ -215,8 +234,8 @@ const initialDemoSession = (): ExecutionSession => {
     authenticationTag: enc.authenticationTag,
     verificationResult: true,
     performanceMetrics: {
-      timeMs: 0.24,
-      throughput: 3.2,
+      timeMs: algo === "ASCON-128a" ? 0.14 : 0.24,
+      throughput: algo === "ASCON-128a" ? 6.4 : 3.2,
     },
     timestamp: new Date().toISOString(),
   };
@@ -231,10 +250,57 @@ const defaultSteps: NarrativeStep[] = [
   "AUTH_OUTPUT"
 ];
 
+const initialHashData = AsconHash.hash("ascon");
+
 export const useAsconStore = create<AsconState>()(
   persist(
     (set, get) => ({
-      session: initialDemoSession(),
+      selectedAlgorithm: "ASCON-128",
+      getAlgorithmMetadata: () => ALGORITHM_REGISTRY[get().selectedAlgorithm] || ALGORITHM_REGISTRY["ASCON-128"],
+      
+      setSelectedAlgorithm: (algo: AsconAlgorithm) => {
+        const state = get();
+        if (algo === "ASCON-Hash") {
+          const hRes = AsconHash.hash(state.hashInput || "ascon");
+          return set({
+            selectedAlgorithm: algo,
+            hashResult: hRes,
+          });
+        }
+        const enc = runAsconEncryption(state.key, state.nonce, state.associatedData, state.plaintext, algo);
+        const dec = AsconSuite.decrypt(algo, state.key, state.nonce, state.associatedData, enc.ciphertext, enc.authenticationTag);
+        return set({
+          selectedAlgorithm: algo,
+          decryptionCiphertext: enc.ciphertext,
+          decryptionAuthTag: enc.authenticationTag,
+          decryptionRecoveredPlaintext: dec.recoveredPlaintext,
+          decryptionTampered: false,
+          session: {
+            ...state.session,
+            ciphertext: enc.ciphertext,
+            authenticationTag: enc.authenticationTag,
+            initialState: enc.initialState,
+            performanceMetrics: {
+              timeMs: algo === "ASCON-128a" ? 0.14 : 0.24,
+              throughput: algo === "ASCON-128a" ? 6.4 : 3.2,
+            },
+          },
+        });
+      },
+
+      hashInput: "ascon",
+      hashResult: initialHashData,
+      setHashInput: (val: string) => {
+        const res = AsconHash.hash(val);
+        set({ hashInput: val, hashResult: res });
+      },
+      runHash: () => {
+        const val = get().hashInput;
+        const res = AsconHash.hash(val);
+        set({ hashResult: res });
+      },
+
+      session: initialDemoSession("ASCON-128"),
       
       steps: defaultSteps,
       currentStepIndex: 0,
@@ -269,7 +335,7 @@ export const useAsconStore = create<AsconState>()(
       decryptionCompletedSteps: [],
       decryptionTampered: false,
       decryptionCiphertext: "04 C4 2F 82 A8 7B EF A3",
-      decryptionAuthTag: "FC 6F BB FA DF F5 56 79 7C 62 51 71 F5 67 71 88",
+      decryptionAuthTag: "6B 4B BC B6 D4 61 E8 C4 39 DF 2F 20 69 4D 80 18",
       decryptionKey: DEFAULT_DEMO_KEY,
       decryptionNonce: DEFAULT_DEMO_NONCE,
       decryptionAssociatedData: DEFAULT_DEMO_AD,
@@ -297,7 +363,6 @@ export const useAsconStore = create<AsconState>()(
       setDecryptionTampered: (tampered: boolean) => set((state) => {
         let ct = state.decryptionCiphertext;
         if (tampered) {
-          // Flip bit 0 of the first byte of authentic ciphertext
           const cleanBytes = ct.trim().split(/\s+/);
           if (cleanBytes.length > 0) {
             const firstByte = (parseInt(cleanBytes[0], 16) ^ 0x01)
@@ -307,10 +372,10 @@ export const useAsconStore = create<AsconState>()(
             ct = [firstByte, ...cleanBytes.slice(1)].join(" ");
           }
         } else {
-          // Restore authentic ciphertext from session
           ct = state.session.ciphertext || "04 C4 2F 82 A8 7B EF A3";
         }
-        const dec = Ascon128.decryptAEAD(
+        const dec = AsconSuite.decrypt(
+          state.selectedAlgorithm === "ASCON-128a" ? "ASCON-128a" : "ASCON-128",
           state.decryptionKey,
           state.decryptionNonce,
           state.decryptionAssociatedData,
@@ -324,7 +389,8 @@ export const useAsconStore = create<AsconState>()(
         };
       }),
       setDecryptionCiphertext: (ct: string) => set((state) => {
-        const dec = Ascon128.decryptAEAD(
+        const dec = AsconSuite.decrypt(
+          state.selectedAlgorithm === "ASCON-128a" ? "ASCON-128a" : "ASCON-128",
           state.decryptionKey,
           state.decryptionNonce,
           state.decryptionAssociatedData,
@@ -337,7 +403,8 @@ export const useAsconStore = create<AsconState>()(
         };
       }),
       setDecryptionAuthTag: (tag: string) => set((state) => {
-        const dec = Ascon128.decryptAEAD(
+        const dec = AsconSuite.decrypt(
+          state.selectedAlgorithm === "ASCON-128a" ? "ASCON-128a" : "ASCON-128",
           state.decryptionKey,
           state.decryptionNonce,
           state.decryptionAssociatedData,
@@ -350,7 +417,8 @@ export const useAsconStore = create<AsconState>()(
         };
       }),
       setDecryptionKey: (k: string) => set((state) => {
-        const dec = Ascon128.decryptAEAD(
+        const dec = AsconSuite.decrypt(
+          state.selectedAlgorithm === "ASCON-128a" ? "ASCON-128a" : "ASCON-128",
           k,
           state.decryptionNonce,
           state.decryptionAssociatedData,
@@ -363,7 +431,8 @@ export const useAsconStore = create<AsconState>()(
         };
       }),
       setDecryptionNonce: (n: string) => set((state) => {
-        const dec = Ascon128.decryptAEAD(
+        const dec = AsconSuite.decrypt(
+          state.selectedAlgorithm === "ASCON-128a" ? "ASCON-128a" : "ASCON-128",
           state.decryptionKey,
           n,
           state.decryptionAssociatedData,
@@ -376,7 +445,8 @@ export const useAsconStore = create<AsconState>()(
         };
       }),
       setDecryptionAssociatedData: (ad: string) => set((state) => {
-        const dec = Ascon128.decryptAEAD(
+        const dec = AsconSuite.decrypt(
+          state.selectedAlgorithm === "ASCON-128a" ? "ASCON-128a" : "ASCON-128",
           state.decryptionKey,
           state.decryptionNonce,
           ad,
@@ -390,11 +460,14 @@ export const useAsconStore = create<AsconState>()(
       }),
       syncDecryptionFromEncryption: () => set((state) => {
         const ct = state.session.ciphertext || "04 C4 2F 82 A8 7B EF A3";
-        const tag = state.session.authenticationTag || "FC 6F BB FA DF F5 56 79 7C 62 51 71 F5 67 71 88";
+        const tag = state.session.authenticationTag || "6B 4B BC B6 D4 61 E8 C4 39 DF 2F 20 69 4D 80 18";
         const k = state.session.key || DEFAULT_DEMO_KEY;
         const n = state.session.nonce || DEFAULT_DEMO_NONCE;
         const ad = state.session.associatedData || DEFAULT_DEMO_AD;
-        const dec = Ascon128.decryptAEAD(k, n, ad, ct, tag);
+        const dec = AsconSuite.decrypt(
+          state.selectedAlgorithm === "ASCON-128a" ? "ASCON-128a" : "ASCON-128",
+          k, n, ad, ct, tag
+        );
         return {
           decryptionCiphertext: ct,
           decryptionAuthTag: tag,
@@ -410,7 +483,7 @@ export const useAsconStore = create<AsconState>()(
         const n = DEFAULT_DEMO_NONCE;
         const ad = DEFAULT_DEMO_AD;
         const ct = "04 C4 2F 82 A8 7B EF A3";
-        const tag = "FC 6F BB FA DF F5 56 79 7C 62 51 71 F5 67 71 88";
+        const tag = "6B 4B BC B6 D4 61 E8 C4 39 DF 2F 20 69 4D 80 18";
         const dec = Ascon128.decryptAEAD(k, n, ad, ct, tag);
         return set({
           currentDecryptionStepIndex: 0,
@@ -430,7 +503,7 @@ export const useAsconStore = create<AsconState>()(
       
       setToken: (t: string | null) => set({ token: t }),
       setPlaintext: (pt: string) => set((state) => {
-        const enc = runAsconEncryption(state.key, state.nonce, state.associatedData, pt);
+        const enc = runAsconEncryption(state.key, state.nonce, state.associatedData, pt, state.selectedAlgorithm);
         return {
           plaintext: pt,
           session: {
@@ -445,7 +518,7 @@ export const useAsconStore = create<AsconState>()(
         };
       }),
       setKey: (k: string) => set((state) => {
-        const enc = runAsconEncryption(k, state.nonce, state.associatedData, state.plaintext);
+        const enc = runAsconEncryption(k, state.nonce, state.associatedData, state.plaintext, state.selectedAlgorithm);
         return {
           key: k,
           session: {
@@ -458,7 +531,7 @@ export const useAsconStore = create<AsconState>()(
         };
       }),
       setNonce: (n: string) => set((state) => {
-        const enc = runAsconEncryption(state.key, n, state.associatedData, state.plaintext);
+        const enc = runAsconEncryption(state.key, n, state.associatedData, state.plaintext, state.selectedAlgorithm);
         return {
           nonce: n,
           session: {
@@ -471,7 +544,7 @@ export const useAsconStore = create<AsconState>()(
         };
       }),
       setAssociatedData: (ad: string) => set((state) => {
-        const enc = runAsconEncryption(state.key, state.nonce, ad, state.plaintext);
+        const enc = runAsconEncryption(state.key, state.nonce, ad, state.plaintext, state.selectedAlgorithm);
         return {
           associatedData: ad,
           session: {
@@ -489,7 +562,7 @@ export const useAsconStore = create<AsconState>()(
       setActiveFlippedBit: (index: number | null) => set({ activeFlippedBit: index }),
       setHoveredOperation: (op: string | null) => set({ hoveredOperation: op }),
       encrypt: () => set((state) => {
-        const enc = runAsconEncryption(state.key, state.nonce, state.associatedData, state.plaintext);
+        const enc = runAsconEncryption(state.key, state.nonce, state.associatedData, state.plaintext, state.selectedAlgorithm);
         return {
           session: {
             ...state.session,
@@ -542,23 +615,23 @@ export const useAsconStore = create<AsconState>()(
       setPlaybackState: (st) => set({ playbackState: st }),
       setAnimationSpeed: (speed) => set({ animationSpeed: speed }),
       
-      startFullDemo: () => set({
+      startFullDemo: () => set((state) => ({
         currentStepIndex: 0,
         playbackState: "playing",
-        session: { ...initialDemoSession(), currentStage: "INPUT_PARAMETERS" }
-      }),
+        session: { ...initialDemoSession(state.selectedAlgorithm), currentStage: "INPUT_PARAMETERS" }
+      })),
       
-      reset: () => set({
-        session: initialDemoSession(),
+      reset: () => set((state) => ({
+        session: initialDemoSession(state.selectedAlgorithm),
         currentStepIndex: 0,
         playbackState: "idle",
         encryptionXp: 0,
         completedSteps: [],
-      })
+      }))
     }),
     {
       name: 'ascon-auth-storage',
-      version: 6,
+      version: 7,
       migrate: (persistedState: any, version: number) => {
         const state = persistedState as AsconState;
         const validStage = defaultSteps.includes(state?.session?.currentStage as any)
@@ -567,9 +640,15 @@ export const useAsconStore = create<AsconState>()(
         
         const validCompleted = (state?.completedSteps || []).filter(s => defaultSteps.includes(s as any));
         const validDecryptedCompleted = (state?.decryptionCompletedSteps || []).filter(s => defaultDecryptionSteps.includes(s as any));
+        const selectedAlgo = (state?.selectedAlgorithm === "ASCON-128a" || state?.selectedAlgorithm === "ASCON-Hash")
+          ? state.selectedAlgorithm
+          : "ASCON-128";
 
         return {
           ...state,
+          selectedAlgorithm: selectedAlgo,
+          hashInput: state?.hashInput || "ascon",
+          hashResult: state?.hashResult || initialHashData,
           steps: defaultSteps,
           decryptionSteps: defaultDecryptionSteps,
           currentDecryptionStepIndex: state?.currentDecryptionStepIndex ?? 0,
@@ -579,7 +658,7 @@ export const useAsconStore = create<AsconState>()(
           decryptionCompletedSteps: validDecryptedCompleted,
           decryptionTampered: state?.decryptionTampered ?? false,
           decryptionCiphertext: state?.decryptionCiphertext ?? "04 C4 2F 82 A8 7B EF A3",
-          decryptionAuthTag: state?.decryptionAuthTag ?? "FC 6F BB FA DF F5 56 79 7C 62 51 71 F5 67 71 88",
+          decryptionAuthTag: state?.decryptionAuthTag ?? "6B 4B BC B6 D4 61 E8 C4 39 DF 2F 20 69 4D 80 18",
           decryptionKey: state?.decryptionKey ?? DEFAULT_DEMO_KEY,
           decryptionNonce: state?.decryptionNonce ?? DEFAULT_DEMO_NONCE,
           decryptionAssociatedData: state?.decryptionAssociatedData ?? DEFAULT_DEMO_AD,
@@ -589,7 +668,6 @@ export const useAsconStore = create<AsconState>()(
             currentStage: validStage
           },
           currentStepIndex: defaultSteps.indexOf(validStage) !== -1 ? defaultSteps.indexOf(validStage) : 0,
-          // Ensure new gamification fields exist after migration
           xp: state?.xp ?? 0,
           encryptionXp: state?.encryptionXp ?? 0,
           completedSteps: validCompleted,
