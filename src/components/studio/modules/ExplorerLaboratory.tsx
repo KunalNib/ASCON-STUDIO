@@ -6,6 +6,7 @@ import { PermutationExplorer } from "@/components/studio/modules/PermutationExpl
 import { InputConfigurationPanel } from "@/components/studio/modules/InputConfigurationPanel";
 import { AssociatedDataFlow } from "@/components/studio/modules/AssociatedDataFlow";
 import { FinalizationAndTag } from "@/components/studio/modules/FinalizationAndTag";
+import { AuthOutputFlow } from "@/components/studio/modules/AuthOutputFlow";
 import { PlaintextProcessingFlow } from "@/components/studio/modules/PlaintextProcessingFlow";
 
 export function ExplorerLaboratory() {
@@ -56,7 +57,7 @@ export function ExplorerLaboratory() {
              {activeExplorerTab === "permutation" && <PermutationExplorer />}
              {activeExplorerTab === "ad" && <AssociatedDataFlow />}
              {activeExplorerTab === "encryption" && <PlaintextProcessingFlow />}
-             {activeExplorerTab === "tag" && <FinalizationAndTag />}
+             {activeExplorerTab === "tag" && <AuthOutputFlow />}
              {activeExplorerTab === "debugger" && (
                 <div className="flex-1 flex flex-col w-full p-6">
                    <h3 className="text-zinc-600 dark:text-zinc-400 mb-4 font-mono text-sm self-start">320-BIT TRACE DEBUGGER</h3>

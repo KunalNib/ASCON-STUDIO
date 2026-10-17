@@ -3,277 +3,298 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAsconStore } from "@/store/useAsconStore";
-import { Key, CheckCircle, ShieldX, ShieldAlert, Lock } from "lucide-react";
 import {
-  AUTH_TAG_BYTES,
+  Lock,
+  Key,
+  Layers,
+  ArrowRight,
+  ShieldAlert,
+  Cpu,
+  RefreshCw,
+  Sparkles,
+} from "lucide-react";
+import {
   FINAL_STATE_BEFORE_TAG,
-  DEMO_AUTH_TAG,
   DEMO_KEY,
+  ROUND_CONSTANTS,
 } from "@/lib/asconDemoData";
 
 export function FinalizationAndTag() {
-  const { session } = useAsconStore();
-  const [tampered, setTampered] = useState(false);
-  const [verifying, setVerifying] = useState(false);
-  const [result, setResult] = useState<"match" | "mismatch" | null>(null);
-  const [squeezeStep, setSqueezeStep] = useState(0);
-  const [visibleTagBytes, setVisibleTagBytes] = useState(0);
+  const { session, nextStep, key } = useAsconStore();
+  const [activeStage, setActiveStage] = useState<1 | 2 | 3>(1);
+  const [animatingRounds, setAnimatingRounds] = useState(false);
+  const [currentRound, setCurrentRound] = useState(0);
 
-  // Auto-animate tag squeeze on mount
+  const activeKey = key || session?.key || DEMO_KEY;
+  const keyHi = activeKey.slice(0, 16);
+  const keyLo = activeKey.slice(16, 32);
+
+  // Auto-progress animation on mount
   useEffect(() => {
-    setSqueezeStep(0);
-    setVisibleTagBytes(0);
-    const t1 = setTimeout(() => setSqueezeStep(1), 500);
-    const t2 = setTimeout(() => setSqueezeStep(2), 1200);
-    const t3 = setTimeout(() => {
-      setSqueezeStep(3);
-      let count = 0;
+    setActiveStage(1);
+    const t1 = setTimeout(() => {
+      setActiveStage(2);
+      setAnimatingRounds(true);
+      let r = 0;
       const interval = setInterval(() => {
-        count++;
-        setVisibleTagBytes(count);
-        if (count >= 16) clearInterval(interval);
-      }, 100);
-    }, 2200);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+        r++;
+        setCurrentRound(r);
+        if (r >= 12) {
+          clearInterval(interval);
+          setAnimatingRounds(false);
+          setActiveStage(3);
+        }
+      }, 120);
+    }, 1200);
+
+    return () => clearTimeout(t1);
   }, []);
 
-  const handleVerify = () => {
-    setVerifying(true);
-    setResult(null);
-    setTimeout(() => {
-      setVerifying(false);
-      setResult(tampered ? "mismatch" : "match");
-    }, 1500);
-  };
-
-  const displayTag = session?.authenticationTag || DEMO_AUTH_TAG;
-
   const stateWords = [
-    { label: "x0", bytes: FINAL_STATE_BEFORE_TAG.x0, role: "Rate",     dim: true },
-    { label: "x1", bytes: FINAL_STATE_BEFORE_TAG.x1, role: "Rate",     dim: true },
-    { label: "x2", bytes: FINAL_STATE_BEFORE_TAG.x2, role: "Capacity", dim: true },
-    { label: "x3", bytes: FINAL_STATE_BEFORE_TAG.x3, role: "Tag[0:7]", dim: false, color: "emerald" },
-    { label: "x4", bytes: FINAL_STATE_BEFORE_TAG.x4, role: "Tag[8:15]",dim: false, color: "emerald" },
+    {
+      label: "x0",
+      bytes: FINAL_STATE_BEFORE_TAG.x0,
+      role: "Rate Word",
+      dim: true,
+      desc: "Contains mixed rate data; discarded before tag extraction.",
+    },
+    {
+      label: "x1",
+      bytes: FINAL_STATE_BEFORE_TAG.x1,
+      role: "Capacity Word",
+      dim: true,
+      desc: "Absorbs Key[0:7] in finalization sandwich.",
+    },
+    {
+      label: "x2",
+      bytes: FINAL_STATE_BEFORE_TAG.x2,
+      role: "Capacity Word",
+      dim: true,
+      desc: "Absorbs Key[8:15] in finalization sandwich.",
+    },
+    {
+      label: "x3",
+      bytes: FINAL_STATE_BEFORE_TAG.x3,
+      role: "Tag Reservoir [0:7]",
+      dim: false,
+      color: "emerald",
+      desc: "Secret capacity word that will form the first 64 bits of the tag.",
+    },
+    {
+      label: "x4",
+      bytes: FINAL_STATE_BEFORE_TAG.x4,
+      role: "Tag Reservoir [8:15]",
+      dim: false,
+      color: "emerald",
+      desc: "Secret capacity word that will form the last 64 bits of the tag.",
+    },
   ];
 
   return (
-    <div className="w-full h-full flex flex-col p-4 md:p-6 max-w-5xl mx-auto gap-5 overflow-y-auto custom-scrollbar items-center">
+    <div className="w-full h-full flex flex-col p-4 md:p-6 max-w-5xl mx-auto gap-5 overflow-y-auto custom-scrollbar">
 
-      {/* Header */}
+      {/* ── Step 5 Header ── */}
       <div className="text-center shrink-0">
-        <h2 className="text-2xl font-bold flex items-center justify-center gap-3 text-zinc-900 dark:text-white mb-2">
-          <Lock className="w-6 h-6 text-emerald-600 dark:text-emerald-500" />
-          Finalization &amp; 128-bit Authentication Tag
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-bold mb-2 border border-rose-500/20">
+          <Layers className="w-3.5 h-3.5" />
+          <span>Step 5 of 6 · State Finalization &amp; Permutation</span>
+        </div>
+        <h2 className="text-2xl md:text-3xl font-extrabold flex items-center justify-center gap-3 text-zinc-900 dark:text-white mb-2">
+          <Lock className="w-7 h-7 text-rose-600 dark:text-rose-500" />
+          State Finalization &amp; The Key Sandwich
         </h2>
-        <p className="text-zinc-600 dark:text-zinc-400 max-w-xl text-sm leading-relaxed">
-          After encrypting all plaintext, ASCON re-absorbs the secret key and runs one final p¹² permutation.
-          The bottom two words (x3, x4) are XORed with the key to produce the 128-bit MAC tag.
+        <p className="text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto text-sm leading-relaxed">
+          Before releasing the authentication tag, ASCON executes the <strong>Key Sandwich</strong>:
+          the secret key is absorbed into capacity words, permuted through 12 rounds of <code className="font-mono font-bold text-rose-500">p¹²</code>,
+          and re-injected a second time to prevent length-extension and state-recovery attacks.
         </p>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-5 w-full">
+      {/* ── Key Sandwich Three-Step Visual Pipeline ── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
 
-        {/* Left — Tag Generation */}
-        <div className="flex-1 bg-white dark:bg-black rounded-3xl border border-zinc-200 dark:border-white/5 p-5 flex flex-col gap-4 shadow-sm dark:shadow-xl relative overflow-hidden">
-          <h3 className="text-blue-600 dark:text-blue-400 uppercase tracking-widest text-[10px] font-bold">Tag Extraction Phase</h3>
-
-          {/* State matrix — mini view */}
-          <div className="flex flex-col gap-1.5">
-            {stateWords.map((w, i) => (
-              <motion.div
-                key={w.label}
-                initial={{ opacity: 0, x: -15 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.08 }}
-                className={`flex items-center gap-2 p-2.5 rounded-xl border ${
-                  w.dim
-                    ? "bg-zinc-100 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 opacity-40"
-                    : squeezeStep >= 1
-                    ? "bg-emerald-100 dark:bg-emerald-900/20 border-emerald-300 dark:border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.15)]"
-                    : "bg-zinc-50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800"
-                }`}
-              >
-                <span className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold font-mono text-xs border ${
-                  w.dim ? "bg-zinc-200 dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-500" : "bg-emerald-100 dark:bg-emerald-900/40 border-emerald-300 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300"
-                }`}>
-                  {w.label}
-                </span>
-                <div className="flex gap-0.5 flex-1">
-                  {w.bytes.map((b, bi) => (
-                    <div key={bi} className={`flex-1 h-6 text-[10px] font-mono flex items-center justify-center rounded ${
-                      w.dim ? "text-zinc-500 dark:text-zinc-700" : squeezeStep >= 2 ? "text-emerald-600 dark:text-emerald-300 font-bold" : "text-zinc-500 dark:text-zinc-400"
-                    }`}>
-                      {b}
-                    </div>
-                  ))}
-                </div>
-                <span className={`text-[9px] font-bold shrink-0 ${w.dim ? "text-zinc-500 dark:text-zinc-700" : "text-emerald-600 dark:text-emerald-500"}`}>
-                  {w.role}
-                </span>
-              </motion.div>
-            ))}
+        {/* Step 1: Key Ingestion */}
+        <div
+          className={`p-4 rounded-2xl border transition-all flex flex-col gap-2.5 ${
+            activeStage >= 1
+              ? "bg-amber-50/70 dark:bg-amber-950/20 border-amber-300 dark:border-amber-500/30 shadow-sm"
+              : "bg-zinc-50 dark:bg-[#0c0d10] border-zinc-200 dark:border-white/5 opacity-50"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+              <Key className="w-3.5 h-3.5" /> 1. Key Ingestion
+            </span>
+            <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold text-xs">
+              1
+            </span>
           </div>
-
-          {/* Key XOR step */}
-          <AnimatePresence>
-            {squeezeStep >= 1 && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                className="bg-amber-50 dark:bg-amber-950/20 border border-amber-300 dark:border-amber-500/20 rounded-xl p-3 flex items-center gap-3 text-xs overflow-hidden"
-              >
-                <Key className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                <span className="text-amber-700 dark:text-amber-300 font-bold">x3 ⊕ Key[0:7], x4 ⊕ Key[8:15]</span>
-                <span className="text-zinc-500 dark:text-zinc-600 font-mono truncate ml-auto text-[10px]">{DEMO_KEY.slice(0, 16)}...</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* p^12 wheel */}
-          <AnimatePresence>
-            {squeezeStep >= 2 && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="flex justify-center"
-              >
-                <div className="flex items-center gap-3">
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                    className="w-14 h-14 rounded-full border-4 border-blue-500/30 border-t-blue-500 flex items-center justify-center text-zinc-900 dark:text-white font-bold text-xs"
-                  >
-                    p¹²
-                  </motion.div>
-                  <div className="text-xs text-zinc-600 dark:text-zinc-400">Final permutation<br /><span className="text-zinc-500 dark:text-zinc-600">12 rounds running...</span></div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Tag bytes squeeze out */}
-          <AnimatePresence>
-            {squeezeStep >= 3 && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="bg-emerald-50 dark:bg-emerald-950/30 border-2 border-emerald-200 dark:border-emerald-500/40 rounded-2xl p-4 shadow-sm dark:shadow-[0_0_25px_rgba(16,185,129,0.15)]"
-              >
-                <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-widest mb-3 text-center">
-                  128-bit Authentication Tag (squeezing out)
-                </div>
-                <div className="flex gap-1.5 flex-wrap justify-center">
-                  {AUTH_TAG_BYTES.map((b, i) => (
-                    <AnimatePresence key={i}>
-                      {i < visibleTagBytes ? (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.4, y: -15 }}
-                          animate={{ opacity: 1, scale: 1, y: 0 }}
-                          transition={{ type: "spring", stiffness: 400, damping: 18 }}
-                          className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-600/30 border border-emerald-300 dark:border-emerald-400/50 flex items-center justify-center font-mono text-xs text-emerald-700 dark:text-emerald-100 font-bold shadow-sm dark:shadow-[0_0_10px_rgba(16,185,129,0.3)]"
-                        >
-                          {b}
-                        </motion.div>
-                      ) : (
-                        <div className="w-9 h-9 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-800" />
-                      )}
-                    </AnimatePresence>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <h4 className="text-xs font-bold text-zinc-900 dark:text-white">
+            XOR Key into Capacity Words
+          </h4>
+          <div className="font-mono text-[11px] p-2 bg-white dark:bg-black/40 rounded-xl border border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-300">
+            x1 ⊕ Key[0:7]<br />
+            x2 ⊕ Key[8:15]
+          </div>
+          <p className="text-[11px] text-zinc-600 dark:text-zinc-400 leading-snug">
+            Re-binds the internal memory to the secret key after absorbing all plaintext data.
+          </p>
         </div>
 
-        {/* Right — Verification */}
-        <div className="flex-1 bg-zinc-50 dark:bg-[#09090b] rounded-3xl border border-zinc-200 dark:border-white/5 p-5 flex flex-col gap-4 shadow-sm dark:shadow-xl">
-          <h3 className="text-purple-600 dark:text-purple-400 uppercase tracking-widest text-[10px] font-bold flex items-center gap-2">
-            <ShieldAlert className="w-4 h-4" /> Interactive Tag Verification
-          </h3>
-
-          <p className="text-xs text-zinc-600 dark:text-zinc-500 leading-relaxed">
-            On the receiver's side: they recompute the tag using the same key and compare it.
-            Toggle a tampered bit to see how even 1 bit change causes total mismatch.
-          </p>
-
-          <div className="space-y-3">
-            <div className="bg-white dark:bg-black/50 border border-zinc-200 dark:border-white/5 p-3 rounded-xl flex items-center justify-between gap-3 shadow-sm dark:shadow-none">
-              <span className="text-zinc-500 text-xs shrink-0">Received Ciphertext</span>
-              <button
-                onClick={() => { setTampered(!tampered); setResult(null); }}
-                className={`px-3 py-1.5 text-xs rounded-full font-bold transition-all ${
-                  !tampered
-                    ? "bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-300 dark:hover:bg-zinc-700"
-                    : "bg-rose-600 text-white shadow-[0_0_15px_rgba(225,29,72,0.5)] animate-pulse"
-                }`}
-              >
-                {tampered ? "⚠ Bit Flipped! (Tampered)" : "Original — Click to Tamper"}
-              </button>
-            </div>
-
-            <div className="bg-white dark:bg-black/50 border border-zinc-200 dark:border-white/5 p-3 rounded-xl flex items-center justify-between gap-3 shadow-sm dark:shadow-none">
-              <span className="text-zinc-500 text-xs shrink-0">Received Tag</span>
-              <span className={`font-mono text-xs transition-colors ${tampered ? "text-rose-500 dark:text-rose-400 line-through opacity-50" : "text-zinc-700 dark:text-zinc-300"}`}>
-                {displayTag.slice(0, 23)}...
-              </span>
-            </div>
+        {/* Step 2: Full 12-Round Permutation */}
+        <div
+          className={`p-4 rounded-2xl border transition-all flex flex-col gap-2.5 ${
+            activeStage >= 2
+              ? "bg-blue-50/70 dark:bg-blue-950/20 border-blue-300 dark:border-blue-500/30 shadow-sm"
+              : "bg-zinc-50 dark:bg-[#0c0d10] border-zinc-200 dark:border-white/5 opacity-50"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-wider text-blue-700 dark:text-blue-400 flex items-center gap-1.5">
+              <RefreshCw className={`w-3.5 h-3.5 ${animatingRounds ? "animate-spin" : ""}`} /> 2. p¹² Permutation
+            </span>
+            <span className="w-5 h-5 rounded-full bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-xs">
+              2
+            </span>
           </div>
+          <h4 className="text-xs font-bold text-zinc-900 dark:text-white">
+            12 Full Rounds (Rounds 0–11)
+          </h4>
+          <div className="flex items-center justify-between font-mono text-[11px] p-2 bg-white dark:bg-black/40 rounded-xl border border-blue-200 dark:border-blue-500/20 text-blue-800 dark:text-blue-300">
+            <span>Rounds: {currentRound}/12 complete</span>
+            <span className="font-bold text-blue-600 dark:text-blue-400">pC → pS → pL</span>
+          </div>
+          <p className="text-[11px] text-zinc-600 dark:text-zinc-400 leading-snug">
+            Diffuses the secret key and all processed history across all 320 bits of memory.
+          </p>
+        </div>
 
-          <button
-            onClick={handleVerify}
-            disabled={verifying}
-            className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 hover:shadow-[0_0_20px_rgba(37,99,235,0.4)]"
-          >
-            {verifying ? (
-              <>
-                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}>
-                  <Key className="w-4 h-4" />
-                </motion.div>
-                Recomputing tag...
-              </>
-            ) : "Authenticate Payload"}
-          </button>
+        {/* Step 3: Second Key Injection */}
+        <div
+          className={`p-4 rounded-2xl border transition-all flex flex-col gap-2.5 ${
+            activeStage >= 3
+              ? "bg-rose-50/70 dark:bg-rose-950/20 border-rose-300 dark:border-rose-500/30 shadow-sm"
+              : "bg-zinc-50 dark:bg-[#0c0d10] border-zinc-200 dark:border-white/5 opacity-50"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-400 flex items-center gap-1.5">
+              <Lock className="w-3.5 h-3.5" /> 3. Double Key Locking
+            </span>
+            <span className="w-5 h-5 rounded-full bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center font-bold text-xs">
+              3
+            </span>
+          </div>
+          <h4 className="text-xs font-bold text-zinc-900 dark:text-white">
+            XOR Key into x3 and x4
+          </h4>
+          <div className="font-mono text-[11px] p-2 bg-white dark:bg-black/40 rounded-xl border border-rose-200 dark:border-rose-500/20 text-rose-800 dark:text-rose-300">
+            x3 ⊕ Key[0:7]<br />
+            x4 ⊕ Key[8:15]
+          </div>
+          <p className="text-[11px] text-zinc-600 dark:text-zinc-400 leading-snug">
+            Binds the final state directly to the secret key, ready for tag extraction in Step 6.
+          </p>
+        </div>
 
-          {/* Result */}
-          <div className="flex-1 flex items-center justify-center min-h-[100px]">
-            <AnimatePresence mode="wait">
-              {result === "match" && (
-                <motion.div
-                  key="match"
-                  initial={{ scale: 0.6, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                  className="flex flex-col items-center text-emerald-600 dark:text-emerald-500 gap-2"
+      </div>
+
+      {/* ── Internal State Matrix After Finalization ── */}
+      <div className="bg-white dark:bg-[#0a0a0c] rounded-3xl border border-zinc-200 dark:border-white/10 p-5 flex flex-col gap-4 shadow-md">
+        <div className="flex items-center justify-between border-b border-zinc-100 dark:border-white/5 pb-3">
+          <div className="flex items-center gap-2">
+            <Cpu className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+            <h3 className="text-base font-bold text-zinc-900 dark:text-white">
+              320-Bit State Structure After Finalization
+            </h3>
+          </div>
+          <span className="text-[10px] px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-mono font-bold">
+            5 × 64-bit Words
+          </span>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          {stateWords.map((w, i) => (
+            <motion.div
+              key={w.label}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.06 }}
+              className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-2xl border transition-all ${
+                !w.dim
+                  ? "bg-emerald-50/70 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-500/40 shadow-sm"
+                  : "bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200 dark:border-white/5 opacity-60"
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <span
+                  className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold font-mono text-xs border ${
+                    !w.dim
+                      ? "bg-emerald-600 text-white border-emerald-500 shadow-sm"
+                      : "bg-zinc-200 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400"
+                  }`}
                 >
-                  <CheckCircle className="w-12 h-12 shadow-[0_0_30px_rgba(16,185,129,0.4)] rounded-full" />
-                  <span className="font-bold tracking-widest uppercase text-sm">Tag Match — Message Verified!</span>
-                  <p className="text-xs text-zinc-600 dark:text-zinc-500 text-center max-w-xs">
-                    The recomputed tag matches the received tag exactly. The data is authentic and unmodified.
-                  </p>
-                </motion.div>
-              )}
-              {result === "mismatch" && (
-                <motion.div
-                  key="mismatch"
-                  initial={{ scale: 0.6, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ type: "spring" }}
-                  className="flex flex-col items-center text-rose-600 dark:text-rose-500 gap-2"
-                >
-                  <ShieldX className="w-12 h-12 shadow-[0_0_30px_rgba(225,29,72,0.4)] rounded-full" />
-                  <span className="font-bold tracking-widest uppercase text-sm">Avalanche! Tag Mismatch!</span>
-                  <p className="text-xs text-zinc-600 dark:text-zinc-500 text-center max-w-xs">
-                    Even 1 flipped bit in the ciphertext causes the entire 128-bit tag to differ completely.
-                    This is the Strict Avalanche Effect in action.
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  {w.label}
+                </span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-zinc-900 dark:text-white">
+                      {w.role}
+                    </span>
+                    {!w.dim && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold uppercase">
+                        Tag Source
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                    {w.desc}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex gap-1 font-mono text-xs overflow-x-auto">
+                {w.bytes.map((byte, bi) => (
+                  <span
+                    key={bi}
+                    className={`px-1.5 py-0.5 rounded text-[11px] font-bold ${
+                      !w.dim
+                        ? "bg-white dark:bg-zinc-900 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30"
+                        : "text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800/60"
+                    }`}
+                  >
+                    {byte}
+                  </span>
+                ))}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Security Takeaway Banner */}
+        <div className="bg-zinc-50 dark:bg-black/50 border border-zinc-200 dark:border-white/5 rounded-2xl p-4 flex items-start gap-3">
+          <ShieldAlert className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+          <div className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+            <strong className="text-zinc-900 dark:text-white">Why Double Key Injection Matters:</strong> In sponge ciphers, if the final tag were produced without the key re-injected at the end, an attacker knowing the internal permutation could invert the function and recover the internal state. The double key sandwich mathematically prevents backwards reconstruction.
           </div>
         </div>
       </div>
+
+      {/* ── Transition to Step 6 CTA ── */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 pb-6 border-t border-zinc-200 dark:border-white/10">
+        <div className="text-xs text-zinc-500 text-center sm:text-left">
+          State finalization complete. Lower words <code className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">x3</code> and <code className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">x4</code> are primed to yield the 128-bit authentication tag.
+        </div>
+
+        <button
+          onClick={nextStep}
+          className="flex items-center gap-2 px-6 py-3 bg-zinc-900 dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-100 rounded-2xl text-sm font-bold transition-all shadow-md hover:scale-105 active:scale-95 shrink-0"
+        >
+          <span>Proceed to Step 6: Auth &amp; Output</span>
+          <ArrowRight className="w-4 h-4 text-emerald-500" />
+        </button>
+      </div>
+
     </div>
   );
 }

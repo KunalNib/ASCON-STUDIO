@@ -11,6 +11,7 @@ import { PermutationExplorer } from "@/components/studio/modules/PermutationExpl
 import { AssociatedDataFlow } from "@/components/studio/modules/AssociatedDataFlow";
 import { PlaintextProcessingFlow } from "@/components/studio/modules/PlaintextProcessingFlow";
 import { FinalizationAndTag } from "@/components/studio/modules/FinalizationAndTag";
+import { AuthOutputFlow } from "@/components/studio/modules/AuthOutputFlow";
 import { GuidedTour, TourStep } from "@/components/studio/GuidedTour";
 import { StepChallenge, STEP_CHALLENGES } from "@/components/studio/StepChallenge";
 import { ProcessGuide } from "@/components/studio/ProcessGuide";
@@ -316,10 +317,6 @@ export function GuidedLaboratory() {
   const data = explanations[currentStage] || explanations["INPUT_PARAMETERS"];
 
   const renderActiveVisual = () => {
-    if (completedSteps.includes("AUTH_OUTPUT") && currentStage === "AUTH_OUTPUT") {
-      return <EncryptionSummaryScreen />;
-    }
-
     switch (currentStage) {
       case "INPUT_PARAMETERS":
         return <InputConfigurationPanel />;
@@ -332,7 +329,7 @@ export function GuidedLaboratory() {
       case "FINALIZATION":
         return <FinalizationAndTag />;
       case "AUTH_OUTPUT":
-        return <FinalizationAndTag />;
+        return <AuthOutputFlow />;
       default:
         return <div className="w-full h-full flex items-center justify-center"><InteractiveStateGrid /></div>;
     }
